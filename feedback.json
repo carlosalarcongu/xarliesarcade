@@ -1,0 +1,124 @@
+[
+  {
+    "date": "2026-01-22T18:10:29.845Z",
+    "type": "insult",
+    "content": "cabron",
+    "extra": {}
+  },
+  {
+    "date": "2026-01-22T18:10:41.043Z",
+    "type": "improvement",
+    "content": "Mete el lobo joder ",
+    "extra": {}
+  },
+  {
+    "date": "2026-01-23T21:35:45.577Z",
+    "type": "newword",
+    "content": "[PALABRA] Acebo bebiendo a medias",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Acebo bebiendo a medias",
+      "hint": "joven"
+    }
+  },
+  {
+    "date": "2026-01-23T21:38:02.957Z",
+    "type": "newword",
+    "content": "[PALABRA] Natos y Ron",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Natos y Ron",
+      "hint": "alcohol"
+    }
+  },
+  {
+    "date": "2026-01-23T21:38:27.768Z",
+    "type": "newword",
+    "content": "[PALABRA] Japa Y Acebo El Dia De La Paella",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Japa Y Acebo El Dia De La Paella",
+      "hint": "Legendario"
+    }
+  },
+  {
+    "date": "2026-01-23T21:38:45.968Z",
+    "type": "newword",
+    "content": "[PALABRA] Ges",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Ges",
+      "hint": "Solares"
+    }
+  },
+  {
+    "date": "2026-01-23T21:39:17.654Z",
+    "type": "newword",
+    "content": "[PALABRA] Pienso en Ti",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Pienso en Ti",
+      "hint": "Laura"
+    }
+  },
+  {
+    "date": "2026-01-23T21:40:52.665Z",
+    "type": "newword",
+    "content": "[PALABRA] Bobby",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Bobby",
+      "hint": "Perrito"
+    }
+  },
+  {
+    "date": "2026-01-23T21:41:12.342Z",
+    "type": "newword",
+    "content": "[PALABRA] Play Robada Del Garito ",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Play Robada Del Garito ",
+      "hint": "Abierto"
+    }
+  },
+  {
+    "date": "2026-01-23T21:41:35.393Z",
+    "type": "newword",
+    "content": "[PALABRA] Espejo de Óscar ",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Espejo de Óscar ",
+      "hint": "Macro"
+    }
+  },
+  {
+    "date": "2026-01-23T21:43:14.328Z",
+    "type": "newword",
+    "content": "[PALABRA] Garito",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Garito",
+      "hint": "Te hodiste, no hay pista "
+    }
+  },
+  {
+    "date": "2026-01-23T21:47:21.895Z",
+    "type": "newword",
+    "content": "[PALABRA] Ana López",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "Ana López",
+      "hint": "Vecina"
+    }
+  },
+  {
+    "date": "2026-01-23T21:59:12.469Z",
+    "type": "newword",
+    "content": "[PALABRA] El Rompe-Cazoletas",
+    "extra": {
+      "category": "La plaza (vitamina D)",
+      "word": "El Rompe-Cazoletas",
+      "hint": "Tren"
+    }
+  }
+]
