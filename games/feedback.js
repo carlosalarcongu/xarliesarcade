@@ -1,28 +1,47 @@
 const fs = require('fs');
 const path = require('path');
-const database = require('./database'); // <--- IMPORTAMOS LA BASE DE DATOS
 
 const FEEDBACK_FILE = path.join(__dirname, '../feedback.json');
-const WORDS_FILE = path.join(__dirname, '../suggested_words.json');
 
-module.exports = {
-    init: (io, socket) => {
-        // 1. NUEVO: Petición de categorías
-        socket.on('getCategories', () => {
-            socket.emit('categoriesList', database);
-        });
+module.exports = (io, socket) => {
+    
+    // 1. RECIBIR FEEDBACK (Ya lo tenías)
+    socket.on('sendFeedback', (data) => {
+        const entry = {
+            date: new Date().toISOString(),
+            ...data
+        };
 
-        // 2. Guardar Feedback (Igual que antes)
-        socket.on('sendFeedback', (data) => {
-            const newEntry = { date: new Date().toISOString(), ...data };
-            const targetFile = (data.type === 'newword') ? WORDS_FILE : FEEDBACK_FILE;
+        // Leer archivo existente
+        let history = [];
+        try {
+            if (fs.existsSync(FEEDBACK_FILE)) {
+                const raw = fs.readFileSync(FEEDBACK_FILE);
+                history = JSON.parse(raw);
+            }
+        } catch (e) { console.error("Error leyendo feedback", e); }
 
-            fs.readFile(targetFile, (err, fileData) => {
-                let json = [];
-                if (!err && fileData.length > 0) try { json = JSON.parse(fileData); } catch(e) {}
-                json.push(newEntry);
-                fs.writeFile(targetFile, JSON.stringify(json, null, 2), (err) => {});
-            });
-        });
-    }
+        history.push(entry);
+
+        // Guardar
+        fs.writeFileSync(FEEDBACK_FILE, JSON.stringify(history, null, 2));
+        console.log(`[FEEDBACK] Nuevo mensaje: ${data.type}`);
+    });
+
+    // 2. LEER FEEDBACK (NUEVO)
+    socket.on('getFeedback', () => {
+        try {
+            if (fs.existsSync(FEEDBACK_FILE)) {
+                const raw = fs.readFileSync(FEEDBACK_FILE);
+                const history = JSON.parse(raw);
+                // Enviamos el historial al usuario que lo pidió
+                socket.emit('feedbackHistory', history.reverse()); // .reverse() para ver lo más nuevo primero
+            } else {
+                socket.emit('feedbackHistory', []);
+            }
+        } catch (e) {
+            console.error("Error enviando feedback", e);
+            socket.emit('feedbackHistory', []);
+        }
+    });
 };
