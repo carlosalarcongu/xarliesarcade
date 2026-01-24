@@ -18,7 +18,11 @@ const GAME_RULES = {
     elmas: "🏆 FLUJO: 1) Lobby (espera jugadores) → 2) Salen preguntas una a una → 3) Votación (quién encaja más) → 4) Puntos por mayoría → 5) Resultados\n\n\
     REGLA: Salen preguntas comprometidas (ej. ¿Quién liga más?). Votad a la persona que más encaje. Ganas puntos \
     si votas lo mismo que la mayoría. ¡Cuidado con votar solo!\n\n\
-    👑 Nota: Quien se registre como 'admin' al final de su nombre  (p.ej: pepe -> pepe admin) será administrador."
+    👑 Nota: Quien se registre como 'admin' al final de su nombre  (p.ej: pepe -> pepe admin) será administrador.",
+    tabu: "🚫 FLUJO: 1) Equipos Azul/Rojo → 2) Ronda (60s) → 3) Un jugador describe, su equipo adivina → 4) \
+    Si aciertan, siguiente palabra. Si dicen tabú, turno pasa.\n\n" + 
+          "REGLA: Describe la palabra superior SIN decir ninguna de las 4 palabras prohibidas de abajo. El \
+          equipo contrario vigila. ¡Más aciertos gana!",
 };
 
 // Namespace Global
@@ -37,7 +41,7 @@ window.app = {
 
     // BUSCA SI YA ESTOY EN ALGUNA SALA REGISTRADO
     findActiveSession: () => {
-        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas'];
+        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu'];
         for (let r of rooms) {
             if (localStorage.getItem(r + '_playerId')) return r;
         }
@@ -64,6 +68,7 @@ window.app = {
         else if (room === 'lobo') title = '🐺 El Lobo';
         else if (room === 'anecdotas') title = '📜 Anécdotas'; 
         else if (room === 'elmas') title = '🏆 El MÁS de todos';
+        else if (room === 'tabu') title = '🚫 Tabú';
         
         app.currentRoom = room;
         const savedId = localStorage.getItem(room + '_playerId');
