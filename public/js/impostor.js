@@ -55,7 +55,7 @@ socket.on('updateSettings', (s) => {
     }
 
     document.getElementById('adminHintCheck').checked = s.hintsEnabled;
-    document.getElementById('hintStatusText').innerText = s.hintsEnabled ? "✅ ACTIVADAS" : "❌ DESACTIVADAS";
+    document.getElementById('hintStatusText').innerText = s.hintsEnabled ? "✅ PISTAS ACTIVADAS" : "❌ PISTAS DESACTIVADAS";
 });
 
 socket.on('updateList', (data) => {
@@ -148,7 +148,7 @@ socket.on('updateSettings', (s) => {
     document.querySelectorAll('.cat-item').forEach(d => d.classList.remove('selected'));
     s.selectedCategories.forEach(c => document.getElementById('cat_' + c)?.classList.add('selected'));
     document.getElementById('adminHintCheck').checked = s.hintsEnabled;
-    document.getElementById('hintStatusText').innerText = s.hintsEnabled ? "✅ ACTIVADAS" : "❌ DESACTIVADAS";
+    document.getElementById('hintStatusText').innerText = s.hintsEnabled ? "✅ PISTAS ACTIVADAS" : "❌ PISTAS DESACTIVADAS";
 });
 
 socket.on('gameSummary', (data) => {

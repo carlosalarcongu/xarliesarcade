@@ -23,7 +23,7 @@ module.exports = {
         socket.on('impostor_action', (action) => {
             // --- AJUSTES (Broadcast inmediato para ver cambios en tiempo real) ---
             if (action.type === 'changeImpostorCount') {
-                settings.impostorCount = Math.max(1, Math.min(players.length - 1, settings.impostorCount + action.value));
+                settings.impostorCount = Math.max(0, Math.min(players.length, settings.impostorCount + action.value));
                 broadcast(io);
             }
             if (action.type === 'toggleCategory') {

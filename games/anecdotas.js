@@ -139,15 +139,38 @@ module.exports = {
                     players.forEach(p => p.votedFor = null);
 
                     if (currentRoundIndex >= anecdoteQueue.length) {
-                        // FIN DEL JUEGO
-                        gameInProgress = false;
-                        roundStage = 'LOBBY';
-                        io.to('anecdotas').emit('gameEnded');
+                        // --- FASE PODIO (NUEVO) ---
+                        gameInProgress = true; // Seguimos "jugando" técnicamente
+                        roundStage = 'PODIUM';
+                        
+                        // 1. Calcular Ganadores
+                        const sorted = [...players].sort((a,b) => b.score - a.score).slice(0, 3);
+                        
+                        // 2. Enviar Podio
+                        io.to('anecdotas').emit('showPodium', sorted);
+                        broadcast(io); // Para que actualice el estado de fondo
+
+                        // 3. Esperar 10 segundos antes de resetear
+                        setTimeout(() => {
+                            gameInProgress = false;
+                            roundStage = 'LOBBY';
+                            
+                            // Resetear datos
+                            players.forEach(p => { 
+                                p.score = 0; 
+                                p.anecdote = ""; 
+                                p.votedFor = null;
+                            });
+
+                            io.to('anecdotas').emit('gameEnded');
+                            broadcast(io);
+                        }, 10000); // 10 Segundos de gloria
+
                     } else {
                         // SIGUIENTE ANÉCDOTA
                         roundStage = 'VOTING';
-                    }
-                    broadcast(io);
+                        broadcast(io);
+                    }                    broadcast(io);
                 }, 5000);
             }
 

@@ -4,7 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xarlie's Arcade</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=3.5">
+    <style>
+    /* ESTILO FORZADO PARA VOTO SELECCIONADO */
+    .selected-vote {
+        border: 4px solid #2ed573 !important;
+        background-color: rgba(46, 213, 115, 0.3) !important;
+        transform: scale(1.05);
+        box-shadow: 0 0 15px #2ed573 !important;
+        transition: all 0.2s ease;
+    }
+</style>
 </head>
 <body>
     <audio id="countSound" src="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3"></audio>
@@ -112,6 +122,17 @@
         <h1 style="color:#ff9ff3; font-size:3em" id="revealAuthor">...</h1>
         <div id="revealVoters" style="color:#2ed573; margin-top:20px; font-weight:bold;">...</div>
         <p style="color:#aaa; margin-top:30px;">Siguiente ronda en 5s...</p>
+    </div>
+
+    <div id="anecdotasPodiumModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; padding:20px; display:flex; flex-direction:column; justify-content:center; box-sizing: border-box;">
+        <h1 style="color:#ff9ff3; margin-bottom:30px; font-size: 2.5em;">🏆 MEJORES CUENTACUENTOS</h1>
+        
+        <div class="podium-container">
+            <div class="podium-bar p-silver"><span class="p-name" id="anecPodium2">...</span>🥈</div>
+            <div class="podium-bar p-gold"><span class="p-name" id="anecPodium1">...</span>🥇</div>
+            <div class="podium-bar p-bronze"><span class="p-name" id="anecPodium3">...</span>🥉</div>
+        </div>
+        <p style="color:#aaa; margin-top:30px">Volviendo al lobby en 10s...</p>
     </div>
 
     <div id="loginScreen" class="hidden">

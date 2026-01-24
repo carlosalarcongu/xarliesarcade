@@ -1,22 +1,57 @@
 app.elmas = {
     iAmAdmin: false,
+    myLocalVote: null, // <--- 1. MEMORIA LOCAL DEL VOTO
     
     send: (type, payload) => socket.emit('elmas_action', { type, ...payload }),
     
     start: () => {
+        app.elmas.myLocalVote = null; // Reset al empezar
         const rounds = document.getElementById('elmasRoundsInput').value;
         app.elmas.send('start', { rounds });
     },
     
     vote: (targetId) => {
-        document.querySelectorAll('.elmas-vote-card').forEach(el => el.classList.remove('selected-vote'));
-        document.getElementById('ev_' + targetId)?.classList.add('selected-vote');
+        console.log("Votando a: " + targetId);
+        
+        // 2. GUARDAMOS VOTO EN MEMORIA
+        app.elmas.myLocalVote = targetId;
+
+        // 3. LIMPIEZA VISUAL (Reseteamos estilos manuales)
+        document.querySelectorAll('.elmas-vote-card').forEach(el => {
+            el.classList.remove('selected-vote');
+            el.style.border = "";
+            el.style.backgroundColor = "";
+            el.style.transform = "";
+        });
+
+        // 4. APLICAMOS ESTILO (FUERZA BRUTA)
+        const card = document.getElementById('ev_' + targetId);
+        if(card) {
+            card.classList.add('selected-vote');
+            // Inyectamos estilo directo para ignorar fallos de CSS
+            card.style.border = "4px solid #2ed573";
+            card.style.backgroundColor = "rgba(46, 213, 115, 0.3)";
+            card.style.transform = "scale(1.05)";
+        } else {
+            console.error("No encuentro la tarjeta: ev_" + targetId);
+        }
+
+        // 5. Enviar al servidor
         app.elmas.send('vote', { targetId });
     },
 
-    next: () => app.elmas.send('next', {}), // Calcular
-    continue: () => app.elmas.send('continue', {}), // Pasar a siguiente ronda
-    reset: () => app.elmas.send('reset', {})
+    next: () => {
+        app.elmas.myLocalVote = null; // Limpiar para siguiente calculo
+        app.elmas.send('next', {}); 
+    },
+    continue: () => {
+        app.elmas.myLocalVote = null; // Limpiar para siguiente ronda
+        app.elmas.send('continue', {});
+    },
+    reset: () => {
+        app.elmas.myLocalVote = null;
+        app.elmas.send('reset', {});
+    }
 };
 
 socket.on('updateElMasList', (data) => {
@@ -34,11 +69,9 @@ socket.on('updateElMasList', (data) => {
         
         players.forEach(p => {
             const li = document.createElement('li');
-            
-            // Estructura base
             li.innerHTML = `<span>${p.name} ${p.isAdmin ? '👑' : ''}</span><span>${p.score} pts</span>`;
             
-            // LOGICA DEL BOTÓN ECHAR (IGUAL QUE IMPOSTOR)
+            // LOGICA DEL BOTÓN ECHAR
             if (app.elmas.iAmAdmin && !p.isAdmin) {
                 li.innerHTML += `<button class="kick-btn" style="margin-left:10px" onclick="app.elmas.send('kick', { targetId: '${p.id}' })">Echar</button>`;
             }
@@ -74,7 +107,18 @@ socket.on('updateElMasList', (data) => {
             div.className = "elmas-vote-card";
             div.id = "ev_" + p.id;
             
-            if(me && me.votedFor === p.id) div.classList.add('selected-vote');
+            // --- AQUÍ ESTÁ EL ARREGLO (Doble comprobación) ---
+            const isSelectedByServer = (me && me.votedFor === p.id);
+            const isSelectedLocally = (app.elmas.myLocalVote === p.id);
+
+            if(isSelectedByServer || isSelectedLocally) {
+                div.classList.add('selected-vote');
+                // Fuerza bruta visual en el repintado también
+                div.style.border = "4px solid #2ed573";
+                div.style.backgroundColor = "rgba(46, 213, 115, 0.3)";
+                div.style.transform = "scale(1.05)";
+            }
+            // -------------------------------------------------
 
             let status = p.voted ? '🗳️' : '';
             let revealInfo = "";
@@ -106,6 +150,7 @@ socket.on('updateElMasList', (data) => {
 });
 
 socket.on('showPodium', (winners) => {
+    app.elmas.myLocalVote = null; // Limpiar al final
     const modal = document.getElementById('elmasPodiumModal');
     modal.classList.remove('hidden');
     
@@ -116,11 +161,11 @@ socket.on('showPodium', (winners) => {
     set(1, 'podium2');
     set(2, 'podium3');
     
-    // Música triunfal
     if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
 });
 
 socket.on('gameEnded', () => {
+    app.elmas.myLocalVote = null;
     app.showScreen('elmasLobby');
     document.getElementById('elmasPodiumModal').classList.add('hidden');
 });

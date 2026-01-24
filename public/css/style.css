@@ -85,12 +85,12 @@ input:checked + .slider:before { transform: translateX(24px); }
 .rules-box { background: #222; padding: 10px; border-radius: 8px; font-size: 0.8em; color: #aaa; margin-top: 15px; text-align: left; border-left: 3px solid #a29bfe; }
 .anecdota-card { background: #2c2c54; padding: 20px; border-radius: 15px; border: 2px solid #a29bfe; margin-bottom: 20px; font-style: italic; font-size: 1.2em; color: #fff; }
 .vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* CLASE BASE VOTACION (Limpia) */
 .vote-card { background: #333; padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-.vote-card.selected-vote { border-color: #2ed573; background: #1e3728; transform: scale(1.02); }
 
 /* EL MAS DE TODOS */
 .elmas-vote-card { background: #2f3542; padding: 15px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: 0.2s; position:relative;}
-.elmas-vote-card.selected-vote { border-color: #2ed573; background: #1e3728; transform: scale(1.05); }
 .elmas-question { font-size: 1.5em; color: #ff9f43; font-weight: bold; margin: 20px 0; padding: 10px; border-bottom: 2px solid #444; }
 
 /* PODIO */
@@ -101,18 +101,13 @@ input:checked + .slider:before { transform: translateX(24px); }
 .p-bronze { height: 100px; background: #8e44ad; order: 3; background-color: #cd6133; } /* Marrón/Bronce */
 .p-name { margin-bottom: 10px; color: #000; font-size: 0.9em; word-wrap: break-word;}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* === ESTILO MAESTRO DE SELECCIÓN === 
+   Este es el único que manda ahora. Se aplica a cualquiera de las tarjetas de arriba.
+*/
+.selected-vote {
+    border: 4px solid #2ed573 !important; /* Borde Verde Neón */
+    background-color: rgba(46, 213, 115, 0.3) !important; /* Fondo verdoso transparente */
+    transform: scale(1.05); /* Efecto Pop */
+    box-shadow: 0 0 20px rgba(46, 213, 115, 0.6) !important; /* Resplandor */
+    transition: all 0.1s ease;
+}

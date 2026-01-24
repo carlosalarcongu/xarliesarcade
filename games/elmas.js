@@ -127,6 +127,11 @@ module.exports = {
                     setTimeout(() => {
                         gameInProgress = false;
                         roundStage = 'LOBBY';
+                        
+                        // --- AÑADIR ESTO: RESETEAR PUNTOS AL TERMINAR ---
+                        players.forEach(p => p.score = 0);
+                        // ------------------------------------------------
+                        
                         io.to('elmas').emit('gameEnded');
                         broadcast(io);
                     }, 10000);
