@@ -183,7 +183,7 @@ window.app = {
             app.goBackToHub();
         },
 
-        // --- FUNCIONES DE LECTURA (NUEVO) ---
+        // --- FUNCIONES DE LECTURA (NUEVO QUE FALTABA) ---
         toggleReadMode: () => {
             const section = document.getElementById('feedbackReadSection');
             const isHidden = section.classList.contains('hidden');
@@ -221,12 +221,12 @@ window.app = {
                 
                 // Contenido extra
                 let extraHtml = "";
-                if (item.extra) {
+                if (item.extra && item.extra.word) {
                     extraHtml = `
                         <div style="background:#222; padding:5px; margin-top:5px; border-radius:4px; font-size:0.9em; width:100%; box-sizing:border-box;">
-                            <strong>Cat:</strong> ${item.extra.cat} <br>
-                            <strong>Palabra:</strong> ${item.extra.word} <br>
-                            <strong>Pista:</strong> ${item.extra.hint}
+                            <strong>Cat:</strong> ${item.extra.cat || "?"} <br>
+                            <strong>Palabra:</strong> ${item.extra.word || "?"} <br>
+                            <strong>Pista:</strong> ${item.extra.hint || "?"}
                         </div>`;
                 }
 
@@ -281,7 +281,7 @@ socket.on('categoriesList', (data) => {
 
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
-// --- EVENTO HISTORIAL DE FEEDBACK (NUEVO) ---
+// --- EVENTO HISTORIAL DE FEEDBACK (NUEVO QUE FALTABA) ---
 socket.on('feedbackHistory', (data) => {
     app.feedback.cache = data;
     app.feedback.renderList();

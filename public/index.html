@@ -151,13 +151,13 @@
     </div>
 
     
-
 <div id="feedbackScreen" class="hidden">
         <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver al Hub</button></div>
         <h1 style="color:#a29bfe">Buzón de Sugerencias</h1>
         
         <div id="feedbackSendSection">
             <p>¿Qué quieres decirnos?</p>
+            
             <select id="fbType" onchange="app.feedback.renderForm()">
                 <option value="general">💬 Comentario General</option>
                 <option value="bug">🐛 Reportar Bug</option>
@@ -166,11 +166,26 @@
                 <option value="lobo">🐺 Sobre el Lobo</option>
             </select>
 
+            <div id="fbStandardForm">
+                <textarea id="fbContent" style="width:100%; height:100px; padding:10px; box-sizing:border-box; background:#222; color:#fff; border:1px solid #444; border-radius:8px;" placeholder="Escribe aquí tu mensaje..."></textarea>
             </div>
+
+            <div id="fbWordForm" class="hidden">
+                <label style="display:block; text-align:left; color:#aaa; font-size:0.8em; margin-top:10px">Categoría:</label>
+                <select id="fbCatSelect" onchange="app.feedback.checkOtherCat()"></select>
+                
+                <input type="text" id="fbCatOther" class="hidden" placeholder="Nombre de la categoría nueva...">
+                
+                <input type="text" id="fbWord" placeholder="Palabra / Expresión">
+                <input type="text" id="fbHint" placeholder="Pista corta (1-2 palabras)">
+            </div>
+
+            <button onclick="app.feedback.submit()" style="margin-top:15px; background:#a29bfe;">🚀 Enviar</button>
+        </div>
 
         <hr style="border-color:#444; margin: 30px 0;">
 
-        <button class="secondary" onclick="app.feedback.toggleReadMode()">📂 Leer Feedback Recibido</button>
+        <button class="secondary" onclick="app.feedback.toggleReadMode()" style="background:#57606f;">📂 Leer Feedback Recibido</button>
         
         <div id="feedbackReadSection" class="hidden" style="margin-top:20px; text-align:left;">
             <label style="color:#aaa; font-size:0.9em;">Filtrar por sección:</label>
@@ -187,6 +202,7 @@
                 </ul>
         </div>
     </div>
+
 
     <div id="impostorLobby" class="hidden">
         <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>

@@ -1,0 +1,22 @@
+[
+  {
+    "date": "2026-01-24T16:44:27.042Z",
+    "type": "general",
+    "content": "Probando 4"
+  },
+  {
+    "date": "2026-01-24T16:44:41.638Z",
+    "type": "general",
+    "content": "Ole ole"
+  },
+  {
+    "date": "2026-01-24T16:48:11.667Z",
+    "type": "newword",
+    "content": "[PALABRA] Los pedos de Japa",
+    "extra": {
+      "cat": "La Plaza (Vitamina D)",
+      "word": "Los pedos de Japa",
+      "hint": "ges"
+    }
+  }
+]
