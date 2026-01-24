@@ -925,7 +925,20 @@ module.exports = {
             { word: "Audi A3", hint: "Modelo" }, // Silvia y Mario
             { word: "Generación 2003", hint: "Año" }, // Casi todos
             { word: "El Mus", hint: "Naipes" }, // Carlos, Javier, Dani
-            { word: "Facultad de Ciencias", hint: "Universidad" } // Japa y otros
+            { word: "Facultad de Ciencias", hint: "Universidad" }, // Japa y otros
+
+            { word: "Acebo bebiendo a medias", hint: "joven" },
+            { word: "Natos y Ron", hint: "alcohol" },
+            { word: "Japa Y Acebo El Dia De La Paella", hint: "Legendario" },
+            { word: "Ges", hint: "Solares" },
+            { word: "Pienso en Ti", hint: "Laura" },
+            { word: "Bobby", hint: "Perrito" },
+            { word: "Play Robada Del Garito", hint: "Abierto" },
+            { word: "Espejo de Óscar", hint: "Macro" },
+            { word: "Garito", hint: "Te hodiste, no hay pista" },
+            { word: "Ana López", hint: "Vecina" },
+            { word: "El Rompe-Cazoletas", hint: "Tren" },
+            { word: "Fordfi", hint: "faro" },
             // Sin revisar:
           ]
     }
