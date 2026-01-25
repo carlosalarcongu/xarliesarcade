@@ -159,6 +159,30 @@ button:active { transform: scale(0.96); }
     margin-bottom: 5px;
 }
 
+/* Estilo específico para la palabra dentro de la tarjeta */
+#myRoleWord {
+    font-size: 1.4em !important; /* Más pequeño (antes era 2em o 2.5em) */
+    text-align: center !important;  /* Alineado a la izquierda */
+    width: 100%;                  /* Ocupar todo el ancho para poder alinearse */
+    padding-left: 15px;           /* Un poco de margen izquierdo para que no pegue al borde */
+    margin: 5px 0 !important;     /* Reducir margen vertical */
+}
+
+/* Opcional: Ajustar también el título (IMPOSTOR/CIUDADANO) si quieres que todo vaya a la izquierda */
+#myRoleTitle {
+    width: 100%;
+    text-align: left !important;
+    padding-left: 15px;
+    font-size: 1.5em !important; /* Ajuste opcional de tamaño */
+}
+
+/* Opcional: Ajustar la descripción */
+#myRoleInfo {
+    width: 100%;
+    text-align: left !important;
+    padding-left: 15px;
+}
+
 /* Estado Oculto (Blur) */
 .blur-content > * {
     filter: blur(20px);

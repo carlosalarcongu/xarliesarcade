@@ -111,7 +111,7 @@ socket.on('updateList', (data) => {
                     }
                 }
 
-                if(app.impostor.iAmAdmin && p.id !== me.id) {
+                if(app.impostor.iAmAdmin) {
                     html += `<div style="margin-top:5px; display:flex; gap:5px; z-index:5;">
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kill(event, '${p.id}')">💀</button>
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kick('${p.id}')">❌</button>
@@ -213,9 +213,11 @@ socket.on('gameSummary', (data) => {
         div.style.margin = "5px 0";
         
         if (imp.isDead) {
+            // Impostor muerto (tachado)
             div.innerHTML = `<span style="text-decoration:line-through; color:#7f8fa6;">😈 ${imp.name}</span> <span style="font-size:0.8em; color:#ff4757;">(ELIMINADO)</span>`;
         } else {
-            div.innerHTML = `<span style="color:#ff4757; font-weight:bold;">😈 ${imp.name}</span>`;
+            // Impostor vivo - CAMBIA EL COLOR AQUÍ (ej. #ffeaa7 para amarillo claro)
+            div.innerHTML = `<span style="color:#ffeaa7; font-weight:bold;">😈 ${imp.name}</span>`;
         }
         list.appendChild(div);
     });

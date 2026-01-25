@@ -104,7 +104,7 @@ socket.on('updateLoboList', (data) => {
                     }
                 }
 
-                if(app.lobo.iAmAdmin && p.id !== me.id) {
+                if(app.lobo.iAmAdmin) {
                     html += `<div style="margin-top:5px; display:flex; gap:5px; z-index:5;">
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.lobo.kill(event, '${p.id}')">💀</button>
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="socket.emit('lobo_action', {type:'kick', targetId:'${p.id}'})">❌</button>
