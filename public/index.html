@@ -4,389 +4,337 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xarlie's Arcade</title>
-    <link rel="stylesheet" href="css/style.css?v=3.5">
-    <style>
-    /* ESTILO FORZADO PARA VOTO SELECCIONADO */
-    .selected-vote {
-        border: 4px solid #2ed573 !important;
-        background-color: rgba(46, 213, 115, 0.3) !important;
-        transform: scale(1.05);
-        box-shadow: 0 0 15px #2ed573 !important;
-        transition: all 0.2s ease;
-    }
-</style>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+
     <audio id="countSound" src="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3"></audio>
     <audio id="revealSound" src="https://www.myinstants.com/media/sounds/tada-fanfare-a.mp3"></audio>
     <audio id="dieSound" src="https://www.myinstants.com/media/sounds/sad-trombone.mp3"></audio>
+    <audio id="youDiedSound" src="https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3"></audio>
 
     <div id="hubScreen">
-        <h1 style="color:#ffa502; font-size: 2.5em; margin-bottom: 5px;">XARLIE'S<br>ARCADE</h1>
-        <p style="color:#777; margin-bottom: 30px;">Selecciona una sala:</p>
+        <h1 style="color:#ffa502; font-size: 2.8em; margin-bottom: 5px; line-height: 1;">XARLIE'S<br>ARCADE</h1>
+        <p style="color:#7f8fa6; margin-bottom: 25px;">Selecciona una sala:</p>
         
-        <!-- Impostor Room Card Inicio -->
-        <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-color: #ffa502;">
-            <div class="hub-icon">🕵️</div>
-                <div style="text-align:center">
-                <div class="hub-title">El Impostor</div>
-                    <div style="font-size:0.8em; color:#aaa">El impostor pasará desapercibido sin saber la palabra</div>
-                </div><div style="font-size:1.5em">➜</div>
+        <div class="hub-grid">
+            <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #ffa502;">
+                <div class="hub-icon">🕵️</div>
+                <div class="hub-info"><div class="hub-title">El Impostor</div><div class="hub-desc">Palabras ocultas y espías.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-left-color: #74b9ff;">
+                <div class="hub-icon">🐺</div>
+                <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('anecdotas')" style="border-left-color: #ff9ff3;">
+                <div class="hub-icon">📜</div>
+                <div class="hub-info"><div class="hub-title">Anécdotas</div><div class="hub-desc">Historias verdaderas (o no).</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('elmas')" style="border-left-color: #ff9f43;">
+                <div class="hub-icon">🏆</div>
+                <div class="hub-info"><div class="hub-title">El MÁS...</div><div class="hub-desc">Vota quién encaja mejor.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-left-color: #00b894;">
+                <div class="hub-icon">🚫</div>
+                <div class="hub-info"><div class="hub-title">Tabú</div><div class="hub-desc">Equipos y palabras prohibidas.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #a29bfe; margin-top: 15px;">
+                <div class="hub-icon">💌</div>
+                <div class="hub-info"><div class="hub-title">Feedback</div><div class="hub-desc">Sugerencias y errores.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
         </div>
-        <!-- Impostor Room Card Fin -->
-
-        <!-- Lobo Room Card Inicio -->
-        <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-color: #74b9ff;">
-            <div class="hub-icon">🐺</div>
-                <div style="text-align:center">
-                    <div class="hub-title">El Lobo</div>
-                    <div style="font-size:0.8em; color:#aaa">Unos lobos aprovechan que el pueblo duerme</div>
-                </div><div style="font-size:1.5em">➜</div>
-        </div>
-        <!-- Lobo Room Card Fin -->
-
-        <!-- Anécdotas Room Card Inicio -->
-        <div class="hub-card" onclick="app.selectRoom('anecdotas')" style="border-color: #ff9ff3;">
-            <div class="hub-icon">📜</div>
-                <div style="text-align:center">
-                    <div class="hub-title">Anécdota's</div>
-                    <div style="font-size:0.8em; color:#aaa">¿De quién es esta historia?</div>
-                </div><div style="font-size:1.5em">➜</div>
-        </div>
-        <!-- Anécdotas Room Card Fin -->
-
-        <!-- El MÁS Room Card Inicio -->
-        <div class="hub-card" onclick="app.selectRoom('elmas')" style="border-color: #ff9f43;">
-            <div class="hub-icon">🏆</div>
-                <div style="text-align:center">
-                    <div class="hub-title">El MÁS de todos</div>
-                    <div style="font-size:0.8em; color:#aaa">Vota al que más encaje en la expresión</div>
-                </div><div style="font-size:1.5em">➜</div>
-        </div>
-        <!-- El MÁS Room Card Fin -->
-
-        <!-- Tabu Room Card Inicio -->
-        <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-color: #00b894;">
-            <div class="hub-icon">🧩</div>
-                <div style="text-align:center">
-                    <div class="hub-title">Tabú</div>
-                    <div style="font-size:0.8em; color:#aaa">¡No digas las palabras prohibidas!</div>
-                </div><div style="font-size:1.5em">➜</div>
-        </div>
-        <!-- Tabu Room Card Fin -->
-        
-        <!-- Feedback Room Card Inicio -->
-        <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-color: #a29bfe;">
-            <div class="hub-icon">💌</div>
-                <div style="text-align:center">
-                    <div class="hub-title">Feedback</div>
-                    <div style="font-size:0.8em; color:#aaa">Comentarios y sugerencias</div>
-                </div><div style="font-size:1.5em">➜</div>
-        </div>
-        <!-- Feedback Room Card Fin -->
-
-        <div class="footer-area"><h3>¿Qué pasa pisha?</h3><div class="footer-img">🤠</div></div>
-        
-</div>
-    </div>
-
-
-    <div id="anecdotasLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
-        <h2 style="color:#ff9ff3">📜 Anécdotas</h2>
-        
-        <textarea id="anecdotaInput" class="anecdota-input" placeholder="Escribe aquí tu anécdota breve..."></textarea>
-        <button id="saveAnecdotaBtn" onclick="app.anecdotas.save()" style="margin-top:10px;">💾 Salvar Anécdota</button>
-
-        <h3>Participantes</h3>
-        <ul id="anecdotasList"></ul>
-
-        <button id="anecdotasStartBtn" class="secondary hidden" onclick="app.anecdotas.start()">▶️ LANZAR PARTIDA</button>
-        <p id="anecdotasWaitMsg" style="color:#aaa; font-size:0.9em;">Esperando al admin...</p>
-
-        <div class="rules-box">
-            <b>Reglas de Puntuación:</b><br>
-            🎯 +3 Puntos: Si aciertas el autor.<br>
-            😐 +2 Puntos (Autor): Si algunos aciertan y otros fallan.<br>
-            🧠 +1 Punto (Autor): Si TODOS aciertan (muy obvio).<br>
-            🤡 -1 Punto (Autor): Si NADIE acierta (muy difícil/falso).
-        </div>
-    </div>
-
-    <div id="anecdotasGame" class="hidden">
-        <h3 id="roundCounter" style="color:#aaa">Ronda 1</h3>
-        <div class="anecdota-card" id="currentAnecdotaText">...</div>
-        
-        <p style="color:#ccc">¿De quién es?</p>
-        <div id="votingGrid" class="vote-grid"></div>
-
-        <br><br>
-        <button id="nextRoundBtn" class="secondary hidden" onclick="app.anecdotas.next()">📊 Contar y Siguiente</button>
-        <button onclick="app.anecdotas.reset()" class="hidden kick-btn" style="margin-top:20px">Reset Total</button>
-    </div>
-
-    <div id="anecdotasRevealModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-        <h2 style="color:#ccc">El autor era...</h2>
-        <h1 style="color:#ff9ff3; font-size:3em" id="revealAuthor">...</h1>
-        <div id="revealVoters" style="color:#2ed573; margin-top:20px; font-weight:bold;">...</div>
-        <p style="color:#aaa; margin-top:30px;">Siguiente ronda en 5s...</p>
-    </div>
-
-    <div id="anecdotasPodiumModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; padding:20px; display:flex; flex-direction:column; justify-content:center; box-sizing: border-box;">
-        <h1 style="color:#ff9ff3; margin-bottom:30px; font-size: 2.5em;">🏆 MEJORES CUENTACUENTOS</h1>
-        
-        <div class="podium-container">
-            <div class="podium-bar p-silver"><span class="p-name" id="anecPodium2">...</span>🥈</div>
-            <div class="podium-bar p-gold"><span class="p-name" id="anecPodium1">...</span>🥇</div>
-            <div class="podium-bar p-bronze"><span class="p-name" id="anecPodium3">...</span>🥉</div>
-        </div>
-        <p style="color:#aaa; margin-top:30px">Volviendo al lobby en 10s...</p>
+        <div style="margin-top: 30px; text-align: center; color: #555;"><h3>¿Qué pasa pisha?</h3><div style="font-size: 2em;">🤠</div></div>
     </div>
 
     <div id="loginScreen" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver al Hub</button></div>
-        <h1 style="color:#ffa502" id="loginTitle">Juego</h1>
-        
-        <p>Elige tu nombre para entrar:</p>
-        <input type="text" id="username" placeholder="Tu nombre..." autocomplete="off" onkeyup="if(event.key === 'Enter') app.joinGame()" />
-        
-        <button onclick="app.joinGame()">Entrar a la Sala</button>
-
-        <div id="loginRulesArea" class="rules-box hidden" style="margin-top:20px; border-left-color: #ffa502;">
-            <h4 style="margin-top:0">📖 Cómo se juega:</h4>
-            <div id="loginRulesText" style="line-height: 1.4em;">...</div>
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
+        <h1 style="color:#ffa502">Juego</h1>
+        <div class="card">
+            <p style="margin-bottom:10px;">Nombre:</p>
+            <input type="text" id="username" placeholder="Tu nombre..." maxlength="12" autocomplete="off">
+            <button class="main-btn" onclick="app.joinGame()">ENTRAR</button>
+        </div>
+        <div id="loginRulesArea" class="rules-box hidden" style="margin-top:20px; border-left: 5px solid #ffa502; background: #2f3542; padding: 15px; text-align: left;">
+            <h3 style="margin-top:0; color: #fff;">📖 Cómo se juega:</h3>
+            <div id="loginRulesText" style="line-height: 1.4em; color: #ccc;">...</div>
         </div>
     </div>
-
-    
-<div id="feedbackScreen" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver al Hub</button></div>
-        <h1 style="color:#a29bfe">Buzón de Sugerencias</h1>
-        
-        <div id="feedbackSendSection">
-            <p>¿Qué quieres decirnos?</p>
-            
-            <select id="fbType" onchange="app.feedback.renderForm()">
-                <option value="general">💬 Comentario General</option>
-                <option value="bug">🐛 Reportar Bug</option>
-                <option value="newword">✨ Proponer Palabra/Idea</option>
-                <option value="impostor">🕵️ Sobre el Impostor</option>
-                <option value="lobo">🐺 Sobre el Lobo</option>
-            </select>
-
-            <div id="fbStandardForm">
-                <textarea id="fbContent" style="width:100%; height:100px; padding:10px; box-sizing:border-box; background:#222; color:#fff; border:1px solid #444; border-radius:8px;" placeholder="Escribe aquí tu mensaje..."></textarea>
-            </div>
-
-            <div id="fbWordForm" class="hidden">
-                <label style="display:block; text-align:left; color:#aaa; font-size:0.8em; margin-top:10px">Categoría:</label>
-                <select id="fbCatSelect" onchange="app.feedback.checkOtherCat()"></select>
-                
-                <input type="text" id="fbCatOther" class="hidden" placeholder="Nombre de la categoría nueva...">
-                
-                <input type="text" id="fbWord" placeholder="Palabra / Expresión">
-                <input type="text" id="fbHint" placeholder="Pista corta (1-2 palabras)">
-            </div>
-
-            <button onclick="app.feedback.submit()" style="margin-top:15px; background:#a29bfe;">🚀 Enviar</button>
-        </div>
-
-        <hr style="border-color:#444; margin: 30px 0;">
-
-        <button class="secondary" onclick="app.feedback.toggleReadMode()" style="background:#57606f;">📂 Leer Feedback Recibido</button>
-        
-        <div id="feedbackReadSection" class="hidden" style="margin-top:20px; text-align:left;">
-            <label style="color:#aaa; font-size:0.9em;">Filtrar por sección:</label>
-            <select id="fbFilterSelect" onchange="app.feedback.renderList()">
-                <option value="ALL">🌍 VER TODO</option>
-                <option value="general">💬 General</option>
-                <option value="bug">🐛 Bugs</option>
-                <option value="newword">✨ Nuevas Palabras</option>
-                <option value="impostor">🕵️ Impostor</option>
-                <option value="lobo">🐺 Lobo</option>
-            </select>
-
-            <ul id="feedbackList" style="margin-top:15px; max-height: 400px; overflow-y: auto;">
-                </ul>
-        </div>
-    </div>
-
 
     <div id="impostorLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
-        <h2 style="color:#ffa502">🕵️ Sala Impostor</h2>
-        <div id="settingsPanel">
-            <div id="adminCats" class="categories-grid hidden"></div>
-            <div id="userCats" class="setting-value" style="margin-top:5px; font-size:0.9em; color:#ddd"></div>
-            <div class="admin-controls hidden" id="impControls">
-                <button class="circle-btn" onclick="app.impostor.send('changeImpostorCount', -1)">-</button>
-                <span id="impostorCountDisplay">1</span>
-                <button class="circle-btn" onclick="app.impostor.send('changeImpostorCount', 1)">+</button>
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button><button onclick="app.changeName()">✏️ Nombre</button></div>
+        <h2 style="color:#ffa502">🕵️ Impostor Lobby</h2>
+        
+        <div id="adminControls" class="admin-panel hidden">
+            <div class="control-row">
+                <button onclick="app.impostor.changeImpostors(-1)">-</button>
+                <span>Impostores: <span id="impostorCountDisp">1</span></span>
+                <button onclick="app.impostor.changeImpostors(1)">+</button>
             </div>
-            <label id="hintSwitch" class="switch hidden"><input type="checkbox" id="adminHintCheck" onclick="app.impostor.send('toggleHints')"><span class="slider"></span></label>
-            <span id="hintStatusText" class="setting-value"></span>
-            <button id="startBtn" class="secondary hidden" onclick="app.impostor.send('start')">▶️ LANZAR</button>
+            <div class="control-row">
+                <span style="flex-grow:1; text-align:left; padding-left:10px;">Pistas:</span>
+                <button onclick="app.impostor.toggleHints()" id="btnToggleHints" style="width:auto; height:auto; border-radius:5px; padding:5px 15px; font-size:0.8em; background:rgba(0,0,0,0.3);">SI</button>
+            </div>
+            <div id="catButtons" class="category-grid"></div>
+            <button class="start-btn" onclick="app.impostor.startGame()">▶️ EMPEZAR PARTIDA</button>
         </div>
-        <button class="logout-btn" onclick="app.changeName()">✏️ Cambiar Nombre</button>
+
+        <p id="waitMsg" style="color:#aaa; font-style:italic;">Esperando al administrador...</p>
+        
         <h3>Jugadores (<span id="playerCount">0</span>)</h3>
-        <ul id="lobbyPlayerList"></ul>
+        <ul id="playerList"></ul>
     </div>
 
     <div id="impostorGame" class="hidden">
-        <div id="starterDisplay">...</div>
-        <div id="roleCard"><h1 id="roleTitle">...</h1><div id="roleContent">...</div></div>
-        <div style="margin-top:20px; text-align:left;">
-            <div style="display:flex; justify-content:space-between;"><h4 style="color:#ccc;">Votaciones:</h4><button id="clearVotesBtn" class="hidden kick-btn" onclick="app.impostor.send('clearVotes')">Limpiar</button></div>
-            <ul id="gamePlayerList"></ul>
+        <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
+            <h2 style="margin:0">En Curso</h2>
+            <button onclick="app.impostor.backToLobby()" style="background:#57606f; width:auto; padding:5px 15px; font-size:0.8em;">🏠 Sala</button>
         </div>
-        <button id="resetBtn" onclick="app.impostor.send('reset')" class="hidden" style="background:#555">🔄 Nueva Partida</button>
+
+        <div id="roleCard" class="blur-content" onclick="app.impostor.toggleRole()">
+            <h1 id="myRoleTitle">...</h1>
+            <p id="myRoleWord" style="font-size: 2em; font-weight: 900; color: #ffeaa7; margin: 10px 0;">...</p>
+            <p id="myRoleInfo" style="font-size: 0.9em; color: #ccc;">...</p>
+        </div>
+        <div class="card-note">👆 Clicar o mantener para ver rol</div>
+
+        <div style="font-size: 0.8em; color:#888; margin-bottom: 20px;">
+            Iniciador: <span id="starterName" style="color:white">...</span> | Cat: <span id="catsPlayed" style="color:white">...</span>
+        </div>
+
+        <div id="voteSection" class="hidden" style="width:100%">
+            <h3 style="color:#ff4757">🗳️ ¡VOTAR AL IMPOSTOR!</h3>
+            
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px; gap: 5px;">
+                 <button id="btnShowResults" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px; background:#ffa502;" onclick="app.impostor.revealResults()">👁️ Resultados</button>
+                 
+                 <button id="btnEndVoting" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px;" onclick="app.impostor.resetGame()">⏹️ Finalizar</button>
+                 <button id="btnClearVotes" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px; background:#555;" onclick="app.impostor.clearVotes()">Limpiar Votos</button>
+            </div>
+            
+            <div id="voteGrid" class="vote-grid"></div>
+        </div>
+        
+    <div id="countdownOverlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; display:flex; justify-content:center; align-items:center;">
+        <div id="countdownNumber" style="font-size:10em; color:#ff4757; font-weight:900;">3</div>
+    </div>
+        
+        <div id="summaryModal" class="hidden modal-overlay">
+            <h1 style="color:#e17055; font-size:3em;">RESUMEN</h1>
+            <h2 id="sumWord" style="color:#ffeaa7; font-size:2.5em; margin:10px 0;"></h2>
+            <p id="sumHint" style="color:#ccc"></p>
+            <div style="background:#ff4757; color:white; padding:10px; width:100%; border-radius:10px; margin:20px 0;">
+                <h3>🔪 Eran Impostores:</h3>
+                <div id="sumImpostors" style="font-size:1.5em; font-weight:bold;"></div>
+            </div>
+            <button onclick="document.getElementById('summaryModal').classList.add('hidden')" class="main-btn">Continuar</button>
+        </div>
     </div>
 
     <div id="loboLobby" class="hidden">
         <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
-        <h2 style="color:#74b9ff">🐺 Sala Lobo</h2>
-        <div id="loboSettingsPanel">
-            <div class="setting-number-control">
-                <span>🐺 Lobos:</span>
-                <div class="admin-controls hidden" id="loboAdminControls1">
-                     <button class="circle-btn" onclick="app.lobo.sendSetting('wolvesCount', -1)">-</button>
-                     <span id="wolvesCountDisp" style="margin:0 10px; font-weight:bold">2</span>
-                     <button class="circle-btn" onclick="app.lobo.sendSetting('wolvesCount', 1)">+</button>
-                </div>
-                <span id="wolvesCountUser" class="setting-value">2</span>
+        <h2 style="color:#74b9ff">🐺 Sala El Lobo</h2>
+        
+        <div id="loboAdminPanel" class="admin-panel hidden">
+            <div class="control-row">
+                <button onclick="app.lobo.adj('wolvesCount',-1)">-</button>
+                <span>Lobos: <span id="val_wolvesCount">2</span></span>
+                <button onclick="app.lobo.adj('wolvesCount',1)">+</button>
             </div>
-            <div id="loboRolesChecks" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <div class="cat-item" id="role_seer" onclick="app.lobo.toggleRole('hasSeer')">🔮 Vidente: <span id="val_hasSeer">SI</span></div>
-                <div class="cat-item" id="role_girl" onclick="app.lobo.toggleRole('hasGirl')">👧 Niña: <span id="val_hasGirl">NO</span></div>
-                <div class="cat-item" id="role_cupid" onclick="app.lobo.toggleRole('hasCupid')">💘 Cupido: <span id="val_hasCupid">NO</span></div>
-                <div class="cat-item" id="role_hunter" onclick="app.lobo.toggleRole('hasHunter')">🔫 Cazador: <span id="val_hasHunter">NO</span></div>
+            <div class="category-grid">
+                <button class="cat-btn" id="btn_hasSeer" onclick="app.lobo.tog('hasSeer')">🔮 Vidente<br><span id="val_hasSeer">SI</span></button>
+                <button class="cat-btn" id="btn_hasGirl" onclick="app.lobo.tog('hasGirl')">👧 Niña<br><span id="val_hasGirl">NO</span></button>
+                <button class="cat-btn" id="btn_hasCupid" onclick="app.lobo.tog('hasCupid')">💘 Cupido<br><span id="val_hasCupid">NO</span></button>
+                <button class="cat-btn" id="btn_hasHunter" onclick="app.lobo.tog('hasHunter')">🔫 Cazador<br><span id="val_hasHunter">NO</span></button>
             </div>
-            <br>
-            <button id="startLoboBtn" class="secondary hidden" onclick="socket.emit('lobo_action', {type:'start'})">🌙 EMPEZAR</button>
+            <button class="start-btn" onclick="app.lobo.start()">🌙 EMPEZAR</button>
         </div>
-        <button class="logout-btn" onclick="app.changeName()">✏️ Cambiar Nombre</button>
+        
+        <p id="loboWaitMsg" style="color:#aaa">Esperando al admin...</p>
         <h3>Aldeanos (<span id="loboPlayerCount">0</span>)</h3>
-        <ul id="loboPlayerList"></ul>
+        <ul id="loboPlayerList" style="margin-top:20px"></ul>
     </div>
 
     <div id="loboGame" class="hidden">
-        <div id="loboCard" class="lobo-card">
-            <h2 style="color:#ccc; margin:0">TU ROL ES:</h2>
-            <div id="loboRoleTitle">...</div>
-            <p id="loboRoleDesc">...</p>
-            <div id="wolvesListArea" class="hidden"><span style="color:#ff7675">Lobos:</span> <b id="wolvesListText"></b></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:15px; width:100%">
+            <h2 style="margin:0">Partida</h2>
+            <button onclick="app.lobo.backToLobby()" style="background:#57606f; width:auto; font-size:0.8em; padding:5px 10px;">🏠 Sala</button>
         </div>
-        <ul id="loboGamePlayerList"></ul>
-        <button id="resetLoboBtn" onclick="socket.emit('lobo_action', {type:'reset'})" class="hidden" style="background:#555">🔄 Nuevo Día</button>
+        
+        <div id="loboCard" class="blur-content" onclick="app.lobo.toggleRole()">
+            <h1>Tu Rol</h1>
+            <div id="loboRoleTitle" style="font-size:2.5em; font-weight:bold; color:white;">...</div>
+            <p id="loboRoleDesc" style="color:#ccc;">...</p>
+            <div id="loboWolfPartners" class="hidden" style="background:#2d3436; padding:10px; border-radius:5px; margin-top:10px;">
+                <strong style="color:#ff7675">Compañeros:</strong><br>
+                <span id="loboPartnersText"></span>
+            </div>
+        </div>
+        <div class="card-note">👆 Clicar o mantener para ver rol</div>
+
+        <div style="margin-top:20px; width:100%">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="color:#74b9ff; margin:0">🗳️ Votación</h3>
+                <button id="loboClearVotesBtn" class="kick-btn hidden" style="width:auto; padding:5px 10px; font-size:0.8em; background:#555" onclick="app.lobo.clearVotes()">Limpiar</button>
+            </div>
+            <div id="loboVoteGrid" class="vote-grid"></div>
+        </div>
+
+        <button onclick="app.lobo.reset()" class="kick-btn hidden" id="loboResetBtn" style="margin-top:20px; width:100%;">Resetear Partida</button>
     </div>
 
-    <div id="countdownOverlay" class="hidden"><div id="countdownNumber">3</div></div>
-    <div id="summaryModal" class="hidden">
-        <div class="summary-box">
-            <h2>Resumen</h2><h1 style="color:#ffa502" id="sumWord">...</h1><i id="sumHint">...</i>
-            <hr><p>Impostores:</p><h3 style="color:#ff4757" id="sumImpostors">...</h3>
-            <button onclick="document.getElementById('summaryModal').classList.add('hidden')">Continuar</button>
+    <div id="anecdotasLobby" class="hidden">
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
+        <h2 style="color:#ff9ff3">📜 Anécdotas</h2>
+        <div class="card" style="background:#dfe6e9; border:none;">
+            <h3 style="color:#2d3436">Tu historia:</h3>
+            <textarea id="anecdotaInput" class="anecdota-input" placeholder="Cuenta algo breve..."></textarea>
+            <button id="saveAnecdotaBtn" class="main-btn" onclick="app.anecdotas.save()" style="background:#6c5ce7;">💾 Listo</button>
         </div>
+        <ul id="anecdotasList"></ul>
+        <button id="anecdotasStartBtn" class="start-btn hidden" onclick="app.anecdotas.start()">▶️ EMPEZAR</button>
+    </div>
+
+    <div id="anecdotasGame" class="hidden">
+        <div id="anecdotasRevealModal" class="hidden modal-overlay">
+            <h2 style="color:#ccc">El autor era...</h2>
+            <h1 style="color:#2ed573; font-size:3.5em; margin:20px 0;" id="revealAuthor">...</h1>
+            <div id="revealVoters" style="color:#fff; font-weight:bold;"></div>
+            <p style="color:#aaa; margin-top:30px;">Siguiente en 5s...</p>
+        </div>
+        
+        <div id="anecdotasPodiumModal" class="hidden modal-overlay">
+            <h1 style="color:#f1c40f; margin-bottom:30px;">🏆 GANADORES</h1>
+            <div class="podium-container">
+                <div class="podium-bar p-silver"><span class="p-name" id="anecPodium2">...</span>🥈</div>
+                <div class="podium-bar p-gold"><span class="p-name" id="anecPodium1">...</span>🥇</div>
+                <div class="podium-bar p-bronze"><span class="p-name" id="anecPodium3">...</span>🥉</div>
+            </div>
+            <button onclick="app.anecdotas.reset()" class="main-btn" style="margin-top:30px">Volver al Lobby</button>
+        </div>
+
+        <h3 id="roundCounter" style="color:#aaa">Ronda 1</h3>
+        <div class="anecdota-card">
+            <p id="currentAnecdotaText">...</p>
+        </div>
+        <p style="text-align:center; margin-bottom:10px;">¿De quién es?</p>
+        <div id="votingGrid" class="vote-grid"></div>
+        <button id="nextRoundBtn" class="main-btn hidden" onclick="app.anecdotas.next()">Siguiente ➡</button>
+        <button onclick="app.anecdotas.reset()" class="kick-btn hidden" style="margin-top:20px">Reset Total</button>
     </div>
 
     <div id="elmasLobby" class="hidden">
         <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
-        <h2 style="color:#ff9f43">🏆 El MÁS de todos</h2>
-        
-        <div id="elmasAdminArea" class="hidden settings-panel">
-            <label>Número de Rondas:</label>
-            <input type="number" id="elmasRoundsInput" value="5" min="3" max="20" style="width:60px; text-align:center;">
-            <button class="secondary" onclick="app.elmas.start()">▶️ LANZAR PARTIDA</button>
+        <h2 style="color:#ff9f43">🏆 El MÁS...</h2>
+        <div id="elmasAdminPanel" class="admin-panel hidden">
+            <div class="control-row">
+                <span>Rondas:</span>
+                <input type="number" id="elmasRoundsInput" value="5" min="3" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center; color:#000;">
+            </div>
+            <button class="start-btn" onclick="app.elmas.start()">▶️ EMPEZAR</button>
         </div>
-        <p id="elmasWaitMsg" style="color:#aaa;">Esperando al admin...</p>
-
-        <button class="logout-btn" onclick="app.changeName()">✏️ Cambiar Nombre</button>
-        <h3>Jugadores</h3>
-        <ul id="elmasList"></ul>
-        
-        <div class="rules-box">
-            <b>Puntuación:</b><br>
-            👍 Si votas lo que la mayoría: Ganas puntos igual al nº de votos.<br>
-            👎 Si votas solo (o a ti mismo solo): Restas 1 punto.<br>
-            ¡Intenta coincidir con el grupo!
-        </div>
+        <ul id="elmasList" style="margin-top:20px;"></ul>
     </div>
 
     <div id="elmasGame" class="hidden">
-        <h4 id="elmasRoundCount" style="color:#aaa">Ronda 1/5</h4>
-        <div id="elmasQuestionText" class="elmas-question">...</div>
-        
-        <div id="elmasGrid" class="vote-grid"></div>
-
-        <br>
-        <button id="elmasNextBtn" class="secondary hidden" onclick="app.elmas.next()">📊 Ver Votos</button>
-        <button id="elmasContinueBtn" class="secondary hidden" onclick="app.elmas.continue()">➡️ Siguiente Pregunta</button>
-        <br><button onclick="app.elmas.reset()" class="hidden kick-btn" style="margin-top:20px">Reset Total</button>
-    </div>
-
-    <div id="elmasPodiumModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; padding:20px; display:flex; flex-direction:column; justify-content:center;">
-        <h1 style="color:#ff9f43; margin-bottom:30px">🏆 RESULTADOS 🏆</h1>
-        
-        <div class="podium-container">
-            <div class="podium-bar p-silver"><span class="p-name" id="podium2">...</span>🥈</div>
-            <div class="podium-bar p-gold"><span class="p-name" id="podium1">...</span>🥇</div>
-            <div class="podium-bar p-bronze"><span class="p-name" id="podium3">...</span>🥉</div>
+        <div id="elmasPodiumModal" class="hidden modal-overlay">
+            <h1 style="color:#ff9f43; margin-bottom:30px">🏆 RESULTADOS</h1>
+            <div class="podium-container">
+                <div class="podium-bar p-silver"><span class="p-name" id="podium2">...</span>🥈</div>
+                <div class="podium-bar p-gold"><span class="p-name" id="podium1">...</span>🥇</div>
+                <div class="podium-bar p-bronze"><span class="p-name" id="podium3">...</span>🥉</div>
+            </div>
+            <button onclick="app.elmas.reset()" class="main-btn" style="margin-top:30px">Salir</button>
         </div>
-        <p style="color:#aaa; margin-top:30px">Cerrando en 10 segundos...</p>
+
+        <h3 id="elmasCounter" style="color:#aaa">Pregunta 1</h3>
+        <div class="card" style="background:#ff9f43; color:#2d3436; border:none;">
+            <p id="elmasQuestionText" style="font-size:1.3em; font-weight:bold;">...</p>
+        </div>
+        <div id="elmasVotingGrid" class="vote-grid"></div>
+        <button id="elmasNextBtn" class="main-btn hidden" onclick="app.elmas.next()">Ver Votos ➡</button>
+        <button id="elmasContinueBtn" class="main-btn hidden" onclick="app.elmas.continue()">Siguiente ➡</button>
     </div>
 
     <div id="tabuLobby" class="hidden">
         <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
-        <h2 style="color:#a55eea">🚫 Sala Tabú</h2>
+        <h2 style="color:#00b894">🚫 Sala Tabú</h2>
         
-        <div class="team-select-container" style="display:flex; justify-content:center; gap:20px; margin-bottom:20px;">
-            <div style="width:45%">
-                <button id="btnTeamBLUE" class="team-btn team-blue" onclick="app.tabu.joinTeam('BLUE')">EQUIPO AZUL 🔵</button>
-                <ul id="listBlue" style="min-height:100px; background:#2c3e50; border:2px solid #2980b9; border-radius:5px;"></ul>
+        <div style="display:flex; gap:10px; margin-bottom:20px; width:100%">
+            <div style="flex:1">
+                <button class="team-btn team-blue" onclick="app.tabu.joinTeam('BLUE')" style="width:100%">AZUL 🔵</button>
+                <ul id="listBlue" style="margin-top:5px; min-height:50px; background:rgba(9, 132, 227, 0.2)"></ul>
             </div>
-            <div style="width:45%">
-                <button id="btnTeamRED" class="team-btn team-red" onclick="app.tabu.joinTeam('RED')">EQUIPO ROJO 🔴</button>
-                <ul id="listRed" style="min-height:100px; background:#2c3e50; border:2px solid #c0392b; border-radius:5px;"></ul>
+            <div style="flex:1">
+                <button class="team-btn team-red" onclick="app.tabu.joinTeam('RED')" style="width:100%">ROJO 🔴</button>
+                <ul id="listRed" style="margin-top:5px; min-height:50px; background:rgba(214, 48, 49, 0.2)"></ul>
             </div>
         </div>
         
-        <h4 style="color:#aaa">Espectadores</h4>
-        <ul id="listSpectators" style="min-height:50px; background:#222; margin-bottom:20px;"></ul>
+        <h4 style="color:#aaa">Espectadores:</h4>
+        <ul id="listSpectators"></ul>
 
-        <div id="tabuAdminPanel" class="hidden">
-            <label>Rondas:</label>
-            <input type="number" id="tabuRounds" value="3" style="width:50px; text-align:center">
-            <button class="secondary" onclick="app.tabu.start()">▶️ EMPEZAR PARTIDA</button>
+        <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
+            <button class="start-btn" onclick="app.tabu.start()">▶️ EMPEZAR</button>
         </div>
-        <p id="tabuWaitMsg">Esperando al admin...</p>
     </div>
 
-    <div id="tabuGame" class="hidden" style="transition: background 0.5s;">
-        <div style="display:flex; justify-content:space-between; padding:10px; background:rgba(0,0,0,0.5); border-radius:0 0 10px 10px;">
-            <div style="font-size:1.5em; color:#54a0ff; font-weight:bold">🔵 <span id="scoreBlue">0</span></div>
+    <div id="tabuGame" class="hidden">
+        <div style="display:flex; justify-content:space-between; background:#2f3542; padding:10px; border-radius:10px; border:2px solid #57606f; margin-bottom:20px;">
+            <div style="color:#0984e3; font-weight:bold; font-size:1.5em">🔵 <span id="scoreBlue">0</span></div>
             <div style="text-align:center">
                 <div id="timerDisp" style="font-size:2em; font-weight:bold; font-family:monospace">60</div>
-                <div id="roundDisp" style="font-size:0.8em; color:#ccc">Ronda 1/3</div>
+                <div id="roundDisp" style="font-size:0.8em; color:#aaa">Ronda 1</div>
             </div>
-            <div style="font-size:1.5em; color:#ff6b6b; font-weight:bold"><span id="scoreRed">0</span> 🔴</div>
+            <div style="color:#d63031; font-weight:bold; font-size:1.5em"><span id="scoreRed">0</span> 🔴</div>
         </div>
 
-        <div id="tabuCardArea" style="padding:20px;"></div>
+        <div id="tabuCardArea" style="width:100%"></div>
 
-        <div id="tabuActionButtons" class="hidden" style="position:fixed; bottom:20px; left:0; width:100%; padding:20px; box-sizing:border-box; display:flex; gap:10px;">
-            <button onclick="app.tabu.taboo()" style="background:#ff4757; flex:1; height:80px; font-size:1.5em">🚫 TABÚ / ERROR</button>
-            <button onclick="app.tabu.correct()" style="background:#2ed573; flex:1; height:80px; font-size:1.5em">✅ ACIERTO</button>
+        <div id="tabuActionButtons" class="hidden" style="position:fixed; bottom:20px; left:0; width:100%; padding:20px; display:flex; gap:15px;">
+            <button onclick="app.tabu.taboo()" style="background:#ff4757; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #c0392b">🚫 MAL</button>
+            <button onclick="app.tabu.correct()" style="background:#2ed573; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #218c74">✅ BIEN</button>
         </div>
         
-        <button onclick="app.tabu.reset()" class="hidden kick-btn" style="position:fixed; top:10px; right:10px; width:auto;">Reset</button>
+        <div id="tabuGameOverModal" class="hidden modal-overlay">
+            <h1 id="winnerText" style="color:#a55eea; font-size:3em">...</h1>
+            <h2 id="finalScoreText" style="color:#fff">0 - 0</h2>
+            <h3 style="margin-top:20px; color:#aaa">Estadísticas (Aciertos)</h3>
+            <ul id="mvpList" style="max-height:300px; overflow-y:auto; text-align:left;"></ul>
+            
+            <button id="tabuAdminResetBtn" onclick="app.tabu.reset()" class="main-btn hidden" style="margin-top:20px">Volver al Lobby (Admin)</button>
+            <p id="tabuWaitingMsg" class="waiting-text hidden">Esperando al admin...</p>
+        </div>
     </div>
 
-    <div id="tabuGameOverModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; padding:20px; display:flex; flex-direction:column; justify-content:center;">
-        <h1 id="winnerText" style="color:#a55eea; font-size:3em">...</h1>
-        <h2 id="finalScoreText" style="color:#fff">0 - 0</h2>
-        <h3 style="margin-top:20px; color:#aaa">Estadísticas Individuales (Aciertos)</h3>
-        <ul id="mvpList" style="max-height:300px; overflow-y:auto"></ul>
-        <button onclick="app.tabu.reset()" style="margin-top:20px">Volver al Lobby</button>
+    <div id="feedbackScreen" class="hidden">
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
+        <h2 style="color:#a29bfe">💌 Feedback</h2>
+        <div class="card">
+            <select id="fbType" onchange="app.feedback.renderForm()" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px;">
+                <option value="newword">✨ Idea / Palabra</option>
+                <option value="bug">🐛 Reportar Error</option>
+                <option value="general">💬 Comentario</option>
+            </select>
+            <div id="fbWordForm">
+                <input id="fbWord" type="text" placeholder="Palabra sugerida..." style="margin-bottom:5px;">
+                <input id="fbHint" type="text" placeholder="Pista (opcional)...">
+            </div>
+            <div id="fbStandardForm" class="hidden">
+                <textarea id="fbContent" rows="3" style="width:100%; border-radius:5px; padding:5px;" placeholder="Escribe aquí..."></textarea>
+            </div>
+            <button onclick="app.feedback.submit()" class="main-btn" style="background:#a29bfe; box-shadow:0 4px 0 #6c5ce7">Enviar</button>
+        </div>
+        <button onclick="app.feedback.toggleReadMode()" class="secondary">📖 Leer Feedback</button>
+        <div id="feedbackReadSection" class="hidden">
+            <ul id="feedbackList" style="margin-top:10px; max-height:300px; overflow-y:auto; background:#222; padding:10px; border-radius:5px;"></ul>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -397,5 +345,18 @@
     <script src="js/elmas.js"></script>
     <script src="js/tabu.js"></script>
     
+    <script>
+        // Funcionalidad extra para el toggle de carta
+        app.impostor.toggleRole = function() {
+            const card = document.getElementById('roleCard');
+            if (card.classList.contains('blur-content')) {
+                card.classList.remove('blur-content');
+                card.classList.add('reveal-content');
+            } else {
+                card.classList.add('blur-content');
+                card.classList.remove('reveal-content');
+            }
+        };
+    </script>
 </body>
 </html>

@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const logger = require('./debug_logger'); // Importamos logger si existe, opcional
 
 const app = express();
 const server = http.createServer(app);
@@ -24,81 +25,92 @@ io.on('connection', (socket) => {
 
     // --- UNIRSE A SALA (JOIN) ---
     socket.on('joinRoom', ({ name, room }) => {
+        // Validación básica
+        if (!name || !room) return;
+        
         socket.join(room);
         
-        if (room === 'impostor') {
-            const game = require('./games/impostor');
-            if(game.handleJoin) game.handleJoin(socket, name);
-        }
-        else if (room === 'lobo') {
-            const game = require('./games/lobo');
-            if(game.handleJoin) game.handleJoin(socket, name);
-        }
-        else if (room === 'anecdotas') {
-            const game = require('./games/anecdotas');
-            if(game.handleJoin) game.handleJoin(socket, name);
-        }
-        else if (room === 'elmas') {
-            const game = require('./games/elmas');
-            if(game.handleJoin) game.handleJoin(socket, name);
-        }
-        else if (room === 'tabu') {
-            const game = require('./games/tabu');
-            if(game.handleJoin) game.handleJoin(socket, name);
+        // Delegación dinámica (Switch más limpio)
+        switch(room) {
+            case 'impostor': require('./games/impostor').handleJoin(socket, name); break;
+            case 'lobo': require('./games/lobo').handleJoin(socket, name); break;
+            case 'anecdotas': require('./games/anecdotas').handleJoin(socket, name); break;
+            case 'elmas': require('./games/elmas').handleJoin(socket, name); break;
+            case 'tabu': require('./games/tabu').handleJoin(socket, name); break;
         }
     });
 
-    // --- RECONEXIÓN (REJOIN) - AQUÍ ESTABA EL ERROR ---
+    // --- RECONEXIÓN (REJOIN) ---
+    // ESTA ES LA CLAVE DE LA PERSISTENCIA
     socket.on('rejoin', ({ savedId, savedRoom }) => {
+        if (!savedId || !savedRoom) return;
+
         socket.join(savedRoom);
-        console.log(`[REJOIN] Jugador ${savedId} reconectado a ${savedRoom}`);
+        console.log(`[REJOIN] Jugador ${savedId} intentando volver a ${savedRoom}`);
         
-        // AHORA SÍ AVISAMOS AL JUEGO ESPECÍFICO
-        if (savedRoom === 'impostor') {
-            const game = require('./games/impostor');
-            if(game.handleRejoin) game.handleRejoin(socket, savedId);
+        // Delegamos al juego específico para que restaure el estado (roles, cartas, etc.)
+        switch(savedRoom) {
+            case 'impostor': 
+                if(require('./games/impostor').handleRejoin) 
+                    require('./games/impostor').handleRejoin(socket, savedId); 
+                break;
+            case 'lobo': 
+                if(require('./games/lobo').handleRejoin) 
+                    require('./games/lobo').handleRejoin(socket, savedId); 
+                break;
+            case 'anecdotas': 
+                if(require('./games/anecdotas').handleRejoin) 
+                    require('./games/anecdotas').handleRejoin(socket, savedId); 
+                break;
+            case 'elmas': 
+                if(require('./games/elmas').handleRejoin) 
+                    require('./games/elmas').handleRejoin(socket, savedId); 
+                break;
+            case 'tabu': 
+                if(require('./games/tabu').handleRejoin) 
+                    require('./games/tabu').handleRejoin(socket, savedId); 
+                break;
         }
-        else if (savedRoom === 'lobo') {
-            const game = require('./games/lobo');
-            if(game.handleRejoin) game.handleRejoin(socket, savedId);
-        }
-        else if (savedRoom === 'anecdotas') {
-            const game = require('./games/anecdotas');
-            if(game.handleRejoin) game.handleRejoin(socket, savedId);
-        }
-        else if (savedRoom === 'elmas') {
-            const game = require('./games/elmas');
-            if(game.handleRejoin) game.handleRejoin(socket, savedId);
-        }
-        else if (savedRoom === 'tabu') {
-            const game = require('./games/tabu');
-            if(game.handleRejoin) game.handleRejoin(socket, savedId);
-        }
-        
-        // Nota: Ya no hacemos socket.emit('joinedSuccess') aquí genérico,
-        // porque cada juego lo hace dentro de su handleRejoin enviando además el estado del juego.
     });
 
+    // --- SALIR (LEAVE) ---
     socket.on('leaveGame', ({ playerId, room }) => {
-        console.log(`[LEAVE] Jugador ${playerId} sale de ${room}`);
+        console.log(`[LEAVE] Jugador ${playerId} sale voluntariamente de ${room}`);
         socket.leave(room);
         
-        // OPCIONAL: Avisar al juego para que lo quite de la lista inmediatamente
-        if (room === 'tabu') {
-             require('./games/tabu').handleLeave(playerId);
-             // Forzar actualización visual a los demás
-             // (Esto requiere que el juego tenga un broadcast expuesto o que handleLeave lo haga)
+        // Avisar al juego para borrado inmediato (sin timeout)
+        switch(room) {
+            case 'impostor': require('./games/impostor').handleLeave(playerId); break;
+            case 'lobo': require('./games/lobo').handleLeave(playerId); break;
+            case 'anecdotas': require('./games/anecdotas').handleLeave(playerId); break;
+            case 'elmas': require('./games/elmas').handleLeave(playerId); break;
+            case 'tabu': require('./games/tabu').handleLeave(playerId); break;
         }
-        // Repetir para otros juegos si quieres borrado inmediato al salir voluntariamente
+    });
+
+    // --- RESET DE MEMORIA (PARA TESTS) ---
+    socket.on('debug_reset', () => {
+        console.log('[SERVER] 🧹 EJECUTANDO RESET DE MEMORIA...');
+        try {
+            if(require('./games/impostor').resetInternalState) require('./games/impostor').resetInternalState();
+            if(require('./games/lobo').resetInternalState) require('./games/lobo').resetInternalState();
+            if(require('./games/anecdotas').resetInternalState) require('./games/anecdotas').resetInternalState();
+            if(require('./games/elmas').resetInternalState) require('./games/elmas').resetInternalState();
+            if(require('./games/tabu').resetInternalState) require('./games/tabu').resetInternalState();
+            
+            socket.emit('debug_reset_ok');
+        } catch (e) {
+            console.error('[SERVER] Error en reset:', e);
+        }
     });
 
     socket.on('disconnect', () => {
-        console.log('[SOCKET] Desconexión:', socket.id);
-        // Cada juego maneja su propia desconexión internamente mediante los listeners
+        // La desconexión se maneja en cada módulo de juego individualmente
+        // para aplicar los timeouts de seguridad.
     });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`✅ SERVIDOR MODULARIZADO LISTO EN PUERTO ${PORT}`);
+    console.log(`✅ SERVIDOR LISTO EN PUERTO ${PORT}`);
 });

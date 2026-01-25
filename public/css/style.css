@@ -1,164 +1,320 @@
-/* ESTILOS GENERALES */
-body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #eee; text-align: center; padding: 15px; margin: 0; padding-bottom: 50px;}
+/* --- RESET Y BASE --- */
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+body { background-color: #1e272e; color: white; font-family: 'Poppins', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 15px; padding-bottom: 50px; }
+h1, h2, h3 { text-align: center; margin-bottom: 15px; }
 .hidden { display: none !important; }
 
-/* INPUTS Y BOTONES */
-input, select, textarea { padding: 15px; font-size: 16px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; width: 80%; margin-bottom: 20px; box-sizing: border-box;}
-button { padding: 15px; font-size: 16px; background: #ff4757; color: white; border: none; border-radius: 12px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; transition: 0.2s; box-shadow: 0 4px 0 #b33939;}
-button:active { transform: translateY(4px); box-shadow: none; }
-button.secondary { background: #2ed573; box-shadow: 0 4px 0 #218c74; }
-button.secondary:active { transform: translateY(4px); box-shadow: none; }
+/* --- CONTENEDORES --- */
+div[id$="Lobby"], div[id$="Game"], div[id$="Screen"] { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; padding-bottom: 80px; }
 
-/* HUB */
-.hub-card { 
-    background: #2f3542; border: 2px solid #57606f; padding: 25px; 
-    border-radius: 15px; margin-bottom: 15px; cursor: pointer; 
-    transition: 0.2s; display: flex; align-items: center; justify-content: space-between;
-}
-.hub-card:active { transform: scale(0.98); background: #3c4454; }
-.hub-icon { font-size: 2em; margin-right: 15px; }
-.hub-title { font-size: 1.2em; font-weight: bold; color: white; }
-
-/* FOOTER */
-.footer-area { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; color: #777; }
-.footer-img { width: 80px; height: 80px; background: #222; border-radius: 50%; display: inline-block; margin-top: 10px; border: 2px dashed #444; line-height: 80px; font-size: 0.8em; overflow: hidden;}
-
-/* LISTAS JUGADORES */
-ul { list-style: none; padding: 0; }
-li { background: #2f3542; margin: 8px 0; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; position: relative;}
-
-/* BOTONES ADMIN */
-.kick-btn { background: #ff4757; padding: 5px 10px; font-size: 12px; border-radius: 4px; width: auto; margin:0; box-shadow: none; z-index: 10;}
-.kill-btn { background: #222; border: 1px solid #ff4757; color: #ff4757; padding: 5px 10px; font-size: 14px; border-radius: 4px; cursor: pointer; width: auto; margin:0; box-shadow: none; z-index: 10;}
-
-/* ESTADO JUGADORES */
-li.dead-player { background: #1a0505; border: 1px solid #500; opacity: 0.8; }
-li.dead-player span.name-text { text-decoration: line-through; color: #999; }
-
-/* VOTACIONES IMPOSTOR */
-.vote-area { flex-grow: 1; text-align: left; padding-left: 10px; cursor: pointer; }
-.vote-sticks { color: #ff4757; font-weight: bold; letter-spacing: 2px; margin-left: 10px; font-family: monospace; font-size: 1.2em;}
-li.voted-by-me { border: 2px solid #ffa502; background: #3c40c6; }
-
-/* ESTILOS ESPECIFICOS LOBO */
-.lobo-card { border: 4px solid #74b9ff; background: #2c3e50; padding: 20px; border-radius: 15px; margin-top:20px; }
-.role-lobo { color: #ff7675; font-size: 2.5em; font-weight: 800; text-transform: uppercase; }
-.role-aldeano { color: #55efc4; font-size: 2.5em; font-weight: 800; text-transform: uppercase; }
-.role-vidente { color: #a29bfe; font-size: 2.5em; font-weight: 800; text-transform: uppercase; }
-.role-especial { color: #ffeaa7; font-size: 2.5em; font-weight: 800; text-transform: uppercase; }
-.setting-number-control { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; background:#222; padding:10px; border-radius:8px;}
-
-/* SETTINGS & FEEDBACK */
-.feedback-box { background: #2c2c54; padding: 15px; border-radius: 10px; text-align: left; border: 1px solid #474787;}
-.logout-btn { background: #57606f; font-size: 12px; padding: 8px 15px; margin-bottom: 20px; width: auto; display: inline-block; box-shadow: 0 4px 0 #3a414c;}
-#settingsPanel, #loboSettingsPanel { background: #2c2c54; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #474787; text-align: left; }
-.categories-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-.cat-item { background: #222; padding: 8px; border-radius: 5px; font-size: 0.8em; display: flex; align-items: center; cursor: pointer; border: 1px solid #444;}
-.cat-item.selected { background: #2ed573; color: #121212; font-weight: bold; border-color: #2ed573; }
-
-.admin-controls { display: flex; gap: 10px; align-items: center;}
-.circle-btn { width: 35px; height: 35px; border-radius: 50%; padding: 0; line-height: 35px; text-align: center; font-size: 1.2em; background: #5352ed; box-shadow: none; margin:0;}
-
-/* SWITCH */
-.switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-input:checked + .slider { background-color: #2ed573; }
-input:checked + .slider:before { transform: translateX(24px); }
-
-#roleCard { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-top: 10px; border: 4px solid #444; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-.word-reveal { font-size: 2.5em; font-weight: 800; color: #ffa502; text-transform: uppercase; margin: 10px 0; }
-
-/* MODALES */
-#summaryModal, #countdownOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-.summary-box { background: #2f3542; padding: 20px; border-radius: 15px; width: 100%; max-width: 400px; border: 2px solid #ff4757; }
-
-#countdownNumber { font-size: 10em; color: #ff4757; font-weight: bold; animation: pop 0.5s infinite alternate; }
-@keyframes pop { from { transform: scale(1); } to { transform: scale(1.1); } }
-
-.back-nav { text-align: left; margin-bottom: 10px; }
-.back-nav button { width: auto; background: transparent; border: 1px solid #555; font-size: 0.9em; padding: 5px 10px; box-shadow: none; color: #aaa;}
-
-/* ESTILOS ANÉCDOTAS */
-.anecdota-input { width: 90%; height: 100px; padding: 10px; border-radius: 10px; border: 2px solid #a29bfe; background: #222; color: white; font-family: sans-serif; resize: none; }
-.rules-box { background: #222; padding: 10px; border-radius: 8px; font-size: 0.8em; color: #aaa; margin-top: 15px; text-align: left; border-left: 3px solid #a29bfe; }
-.anecdota-card { background: #2c2c54; padding: 20px; border-radius: 15px; border: 2px solid #a29bfe; margin-bottom: 20px; font-style: italic; font-size: 1.2em; color: #fff; }
-.vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-/* CLASE BASE VOTACION (Limpia) */
-.vote-card { background: #333; padding: 15px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-
-/* EL MAS DE TODOS */
-.elmas-vote-card { background: #2f3542; padding: 15px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: 0.2s; position:relative;}
-.elmas-question { font-size: 1.5em; color: #ff9f43; font-weight: bold; margin: 20px 0; padding: 10px; border-bottom: 2px solid #444; }
-
-/* PODIO */
-.podium-container { display: flex; align-items: flex-end; justify-content: center; gap: 10px; margin-top: 20px; }
-.podium-bar { width: 80px; text-align: center; font-weight: bold; color: #222; border-radius: 5px 5px 0 0; padding: 10px 5px; box-sizing: border-box; display:flex; flex-direction:column; justify-content:flex-end;}
-.p-gold { height: 200px; background: #f1c40f; order: 2; border: 2px solid #fff; box-shadow: 0 0 20px #f1c40f;}
-.p-silver { height: 140px; background: #bdc3c7; order: 1; }
-.p-bronze { height: 100px; background: #8e44ad; order: 3; background-color: #cd6133; } /* Marrón/Bronce */
-.p-name { margin-bottom: 10px; color: #000; font-size: 0.9em; word-wrap: break-word;}
-
-/* === ESTILO MAESTRO DE SELECCIÓN === 
-   Este es el único que manda ahora. Se aplica a cualquiera de las tarjetas de arriba.
-*/
-.selected-vote {
-    border: 4px solid #2ed573 !important; /* Borde Verde Neón */
-    background-color: rgba(46, 213, 115, 0.3) !important; /* Fondo verdoso transparente */
-    transform: scale(1.05); /* Efecto Pop */
-    box-shadow: 0 0 20px rgba(46, 213, 115, 0.6) !important; /* Resplandor */
-    transition: all 0.1s ease;
-}
-
-/* TABU TEAMS */
-.team-btn { padding: 10px; margin-bottom: 5px; opacity: 0.5; border: 2px solid transparent; }
-.team-btn.selected { opacity: 1; transform: scale(1.05); font-weight:bold; box-shadow: 0 0 10px white; }
-.team-blue { background: #2980b9; color:white; }
-.team-red { background: #c0392b; color:white; }
-
-/* TABU GAME */
-.bg-blue-turn { background: radial-gradient(circle, #2c3e50 0%, #0c2461 100%) !important; }
-.bg-red-turn { background: radial-gradient(circle, #2c3e50 0%, #b33939 100%) !important; }
-
-.tabu-card {
-    background: #fff;
-    color: #000;
+/* --- TARJETAS GENERALES --- */
+.card {
+    background-color: #2f3542;
     padding: 20px;
     border-radius: 15px;
-    max-width: 300px;
-    /* CAMBIO AQUÍ: Añadir margen inferior grande para que no toque los botones */
-    margin: 20px auto 100px auto; 
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-    border: 5px solid #a55eea;
-    position: relative; /* Para asegurarnos de que el z-index funcione si fuera necesario */
+    width: 100%;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    text-align: center;
+    border: 2px solid #404856;
+}
+
+/* --- BOTONES PRINCIPALES (ROJOS ANCHOS) --- */
+button { cursor: pointer; border: none; outline: none; border-radius: 12px; font-weight: bold; font-size: 1rem; transition: transform 0.1s, filter 0.2s; font-family: 'Poppins', sans-serif;}
+button:active { transform: scale(0.96); }
+
+.main-btn, .start-btn, .kick-btn {
+    background-color: #ff4757;
+    color: white;
+    padding: 18px;
+    width: 100%;
+    margin-top: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 5px 0 #c0392b;
+    letter-spacing: 1px;
+}
+
+/* Botones secundarios (Volver, etc) */
+.back-nav { width: 100%; display: flex; justify-content: space-between; margin-bottom: 15px; }
+.back-nav button { background: transparent; border: 2px solid #57606f; color: #a4b0be; padding: 8px 15px; font-size: 0.85em; box-shadow: none; border-radius: 20px;}
+.logout-btn { background: #57606f; color: white; padding: 8px 15px; width: auto; font-size: 0.8em; margin-bottom: 15px; box-shadow: 0 3px 0 #3a414c; }
+
+/* --- CONTROLES +/- (ESTILO BARRA ROJA) --- */
+.admin-panel { width: 100%; }
+
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ff4757; /* Fondo rojo */
+    padding: 8px 10px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #c0392b;
+    width: 100%;
+}
+
+/* Los botones circulares dentro de la barra */
+.control-row button {
+    background: rgba(0,0,0,0.2);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    padding: 0;
+    box-shadow: none;
+    line-height: 1;
+    margin: 0; /* Reset margen */
+}
+.control-row button:active { background: rgba(0,0,0,0.4); transform: scale(0.9); }
+.control-row span { font-size: 1.1em; text-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+
+/* --- SELECCIÓN FORMATO LIBRO (2 COLUMNAS) - ESTILO FINO --- */
+.category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas exactas */
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.cat-btn {
+    background-color: transparent;
+    color: #a4b0be; /* Gris claro */
+    padding: 10px 5px; 
+    border-radius: 8px; 
+    font-size: 0.85em; 
+    border: 1px solid #57606f; /* Borde sutil */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 50px; 
+    box-shadow: none;
+    font-weight: normal;
+}
+
+.cat-btn:hover {
+    border-color: #7f8fa6;
+    background-color: rgba(255,255,255,0.02);
+}
+
+/* ESTADO SELECCIONADO (VERDE/AMARILLO FINO) */
+.cat-btn.selected {
+    background-color: rgba(46, 213, 115, 0.1) !important; /* Fondo muy suave */
+    border: 1px solid #2ed573 !important; /* Borde verde fino */
+    color: #2ed573 !important; /* Texto verde */
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(46, 213, 115, 0.2); /* Resplandor sutil */
+    transform: none; 
+}
+
+/* Marca de verificación discreta */
+.cat-btn.selected::before {
+    content: "✓ ";
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+/* --- ANÉCDOTAS (TIMES NEW ROMAN) --- */
+.anecdota-input, .anecdota-card, .anecdota-read {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 1.3em;
+    line-height: 1.4;
+    font-style: italic;
+}
+.anecdota-input {
+    width: 100%; height: 120px; padding: 15px; border-radius: 10px;
+    border: 2px solid #a29bfe; background: #dfe6e9; color: #2d3436;
+    resize: none; outline: none;
+}
+.anecdota-card {
+    background: #f1f2f6; color: #2d3436; padding: 25px;
+    border: 1px solid #ccc; box-shadow: 5px 5px 0 #bdc3c7;
+    transform: rotate(-1deg); margin: 20px 0;
+    width: 100%;
+}
+
+/* --- CARTA ROL (UNIFICADA - SIEMPRE AZUL) --- */
+#roleCard, #loboCard {
+    position: relative;
+    cursor: pointer;
+    background: #2f3542; /* Azul oscuro siempre */
+    border: 3px dashed #57606f; /* Borde neutro */
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s;
+    margin-bottom: 5px;
+}
+
+/* Estado Oculto (Blur) */
+.blur-content > * {
+    filter: blur(20px);
+    opacity: 0.1;
+}
+
+.blur-content::after {
+    content: "🔒 PULSAR PARA VER";
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #a4b0be;
+    font-weight: bold;
+    font-size: 1.2em;
     z-index: 10;
 }
 
-/* Asegurar que el contenedor principal permite scroll si la carta es muy alta */
-#tabuGame {
-    overflow-y: auto; 
-    height: 100vh; /* Altura completa de la ventana */
-    padding-bottom: 120px; /* Espacio extra abajo para los botones fijos */
-    box-sizing: border-box;
+/* Estado Visible */
+.reveal-content {
+    background: #2f3542;
+    border: 3px solid #a4b0be; /* Borde gris claro al revelar */
 }
-.tabu-word { font-size: 2em; font-weight: 900; color: #a55eea; text-transform: uppercase; margin-bottom: 10px; }
-.forbidden-list { text-align: left; font-size: 1.2em; color: #555; font-weight: bold; margin-top: 10px; }
-.forbidden-list div { padding: 5px 0; border-bottom: 1px solid #eee; }
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+.reveal-content > * {
+    filter: none;
+    opacity: 1;
 }
 
+/* Nota pequeña bajo la carta */
+.card-note { font-size: 0.8em; color: #7f8fa6; margin-top: 5px; margin-bottom: 20px;}
 
+/* --- VOTACIÓN Y TARJETAS REDONDEADAS --- */
+.vote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    width: 100%;
+}
 
+/* Forzar redondeo y estilo en las cartas de votación */
+.vote-card, .vote-btn, .elmas-vote-card {
+    background-color: #353b48;
+    color: white;
+    padding: 15px 5px;
+    border-radius: 20px !important; /* <--- MUY REDONDEADO */
+    font-size: 0.9em;
+    border: 3px solid transparent; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.1s;
+    min-height: 80px;
+    position: relative;
+}
 
+/* Tic verde de "Ya ha votado" */
+.voted-tick {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: #2ed573;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+}
 
+/* Estado Eliminado/Muerto */
+.vote-btn.dead {
+    opacity: 0.7;
+    background-color: #2d3436;
+    border: 2px solid #ff4757;
+    pointer-events: none; /* No se puede clicar */
+}
 
+.eliminated-text {
+    color: #ff4757;
+    font-weight: bold;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
 
+.vote-card:active, .vote-btn:active, .elmas-vote-card:active {
+    transform: scale(0.95);
+}
 
+/* Estado Seleccionado (Impostor, Anécdotas, El Más) */
+.selected, .selected-vote {
+    border-color: #2ed573 !important;
+    background-color: rgba(46, 213, 115, 0.2) !important;
+    box-shadow: 0 0 15px #2ed573 !important;
+    transform: scale(1.05);
+}
 
+.vote-btn.dead, .vote-card.dead {
+    opacity: 0.5;
+    text-decoration: line-through;
+    pointer-events: none;
+    background-color: #2f3542;
+}
 
+/* --- INPUTS GENERALES --- */
+input[type="text"], input[type="number"] {
+    width: 100%; padding: 15px; border-radius: 10px;
+    border: 2px solid #57606f; background-color: #2f3542;
+    color: white; font-size: 1rem; margin-bottom: 15px; outline: none; text-align: center;
+}
+input:focus { border-color: #ff4757; }
+
+/* --- LISTAS --- */
+ul { list-style: none; width: 100%; padding: 0; }
+li {
+    background-color: #2f3542;
+    margin-bottom: 8px; padding: 12px 20px; border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 500; border-left: 4px solid #57606f;
+}
+
+/* --- HUB --- */
+.hub-grid { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; }
+.hub-card {
+    background-color: #2f3542; border-left: 6px solid #ccc;
+    padding: 20px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: space-between; cursor: pointer; transition: transform 0.2s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+.hub-card:active { transform: scale(0.98); margin-top: 2px; box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+.hub-icon { font-size: 2.2em; margin-right: 15px; }
+.hub-info { flex-grow: 1; text-align: left; }
+.hub-title { font-weight: 900; font-size: 1.3em; display: block; text-transform: uppercase; letter-spacing: 0.5px;}
+.hub-desc { font-size: 0.8em; color: #a4b0be; }
+
+/* --- TABU Y EL MAS --- */
+.team-btn { font-weight: bold; opacity: 0.6; transition: 0.3s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); border-radius: 10px;}
+.team-btn.selected { opacity: 1; transform: scale(1.05); }
+.team-blue { background: #0984e3; color: white; }
+.team-red { background: #d63031; color: white; }
+.elmas-question { font-size: 1.4em; font-weight: bold; color: white; margin: 20px 0; }
+
+/* Mensaje de espera en Tabú */
+.waiting-text {
+    color: #a4b0be;
+    font-style: italic;
+    margin-top: 20px;
+    animation: pulse 1.5s infinite;
+}
+
+/* --- MODALES --- */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
+.podium-container { display: flex; align-items: flex-end; gap: 10px; margin-top: 20px; }
+.podium-bar { width: 70px; border-radius: 5px 5px 0 0; color: #2d3436; font-weight: bold; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 5px; }
+.p-gold { height: 180px; background: #f1c40f; border: 2px solid white; box-shadow: 0 0 20px #f1c40f; order: 2; }
+.p-silver { height: 120px; background: #bdc3c7; order: 1; }
+.p-bronze { height: 90px; background: #cd6133; order: 3; }
+.p-name { font-size: 0.8em; margin-bottom: 5px; color:white; text-shadow: 1px 1px 0 #000; }
+
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
