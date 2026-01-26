@@ -183,31 +183,34 @@ button:active { transform: scale(0.96); }
     padding-left: 15px;
 }
 
-/* Estado Oculto (Blur) */
-.blur-content > * {
-    filter: blur(20px);
-    opacity: 0.1;
+#pintuImpRoleCard {
+    position: relative; /* CRÍTICO: Para que lo de dentro se posicione respecto a esto */
+    overflow: hidden;   /* Para que el blur no se salga */
+    min-height: 150px;  /* Altura mínima para que quepa el texto */
+    cursor: pointer;
 }
 
-/* Forzar que el texto "PULSAR PARA VER" aparezca arriba */
+/* Estado Oculto (Blur) */
+.blur-content > * {
+    filter: blur(15px);
+    pointer-events: none;
+}
+
+/* Ajuste del texto "CANDADO" */
 .blur-content::after {
-    content: "🔒 PULSAR PARA VER"; /* Aseguramos el texto */
+    content: "🔒 PULSAR PARA VER";
     position: absolute;
+    top: 50%;           /* Centrado vertical */
+    left: 50%;          /* Centrado horizontal */
+    transform: translate(-50%, -50%); /* Ajuste fino */
     
-    /* CAMBIO: En vez de 50%, lo ponemos fijo arriba */
-    top: 10% !important; 
-    left: 50%;
-    
-    /* CAMBIO: Solo centramos en horizontal (X), quitamos el centrado vertical */
-    transform: translateX(-50%) !important; 
-    
-    /* Estilos visuales (mantenemos los que sueles tener) */
     color: white;
     font-weight: bold;
     font-size: 1.2em;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-    pointer-events: none;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.9);
+    pointer-events: none; /* CLAVE: El clic pasa a través del texto al div padre */
     white-space: nowrap;
+    z-index: 10;
 }
 
 /* Estado Visible */
@@ -221,7 +224,14 @@ button:active { transform: scale(0.96); }
 }
 
 /* Nota pequeña bajo la carta */
-.card-note { font-size: 0.8em; color: #7f8fa6; margin-top: 5px; margin-bottom: 20px;}
+/* El texto "Tu Rol (Toca para ver)" externo */
+.card-note {
+    text-align: center;
+    color: #aaa;
+    font-size: 0.8em;
+    margin-bottom: 5px;
+    pointer-events: none; /* Para que el clic atraviese si se solapa */
+}
 
 /* --- VOTACIÓN Y TARJETAS REDONDEADAS --- */
 .vote-grid {
@@ -229,6 +239,7 @@ button:active { transform: scale(0.96); }
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 10px;
     width: 100%;
+    
 }
 
 /* Forzar redondeo y estilo en las cartas de votación */

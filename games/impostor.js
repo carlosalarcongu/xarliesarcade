@@ -60,10 +60,8 @@ const handleJoin = (socket, name) => {
     
     players.push(newPlayer);
     socket.join('impostor');
-    socket.emit('joinedSuccess', { playerId: newPlayer.id, room: 'impostor' });
-    
+    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'impostor' });
     broadcast(socket.server);
-    socket.emit('initSetup', { isAdmin: newPlayer.isAdmin, categories: database });
 };
 
 const handleRejoin = (socket, savedId) => {
@@ -82,7 +80,7 @@ const handleRejoin = (socket, savedId) => {
         player.connected = true;
         socket.join('impostor');
         
-        socket.emit('joinedSuccess', { playerId: savedId, room: 'impostor', isRejoin: true });
+        socket.emit('joinedSuccess', { playerId: savedId, name: player.name, room: 'impostor', isRejoin: true });
         socket.emit('initSetup', { isAdmin: player.isAdmin, categories: database });
         
         broadcast(socket.server);

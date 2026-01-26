@@ -51,7 +51,7 @@ const handleJoin = (socket, name) => {
     
     players.push(newPlayer);
     socket.join('anecdotas');
-    socket.emit('joinedSuccess', { playerId: newPlayer.id, room: 'anecdotas' });
+    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'anecdotas' });
     broadcast(socket.server);
 };
 
@@ -61,7 +61,7 @@ const handleRejoin = (socket, savedId) => {
         p.socketId = socket.id;
         p.connected = true;
         socket.join('anecdotas');
-        socket.emit('joinedSuccess', { playerId: savedId, room: 'anecdotas', isRejoin: true });
+        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'anecdotas', isRejoin: true });
         broadcast(socket.server);
     } else {
         socket.emit('sessionExpired');

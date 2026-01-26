@@ -69,8 +69,7 @@ const handleJoin = (socket, name) => {
     
     players.push(newPlayer);
     socket.join('lobo');
-    socket.emit('joinedSuccess', { playerId: newPlayer.id, room: 'lobo' });
-    
+    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'lobo' });
     broadcast(socket.server);
 };
 
@@ -85,7 +84,7 @@ const handleRejoin = (socket, savedId) => {
         p.connected = true;
         socket.join('lobo');
         
-        socket.emit('joinedSuccess', { playerId: savedId, room: 'lobo', isRejoin: true });
+        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'lobo', isRejoin: true });
         
         // --- RECUPERAR ROL ---
         if (gameInProgress && turnData[p.id]) {
