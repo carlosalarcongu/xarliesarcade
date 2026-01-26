@@ -3,16 +3,36 @@ app.pinturilloImp = {
     ctx: null,
     isMyTurn: false,
     hasDrawn: false,
+    myStrokesThisTurn: 0, // Nuevo: Contador para lógica de deshacer/pasar
     
-    // Envío de acciones al servidor con el tipo 'pintuImp_action'
     send: (type, val) => socket.emit('pintuImp_action', { type, value: val }),
     
-    start: () => app.pinturilloImp.send('start'),
+    start: () => {
+        const rounds = document.getElementById('pintuRounds').value;
+        const cat = document.getElementById('pintuCategory').value;
+        const hints = document.getElementById('pintuHints').checked;
+        app.pinturilloImp.send('start', { rounds, category: cat, hints });
+    },
+    
     reset: () => app.pinturilloImp.send('reset'),
     changeImpostors: (v) => app.pinturilloImp.send('changeImpostors', v),
     
-    undo: () => app.pinturilloImp.send('undo'),
-    passTurn: () => app.pinturilloImp.send('pass'),
+    undo: () => {
+        if(app.pinturilloImp.myStrokesThisTurn > 0) {
+            app.pinturilloImp.myStrokesThisTurn--;
+            if(app.pinturilloImp.myStrokesThisTurn === 0) {
+                document.getElementById('btnPassTurn').disabled = true;
+                app.pinturilloImp.hasDrawn = false;
+            }
+            app.pinturilloImp.send('undo');
+        }
+    },
+
+    passTurn: () => {
+        if(app.pinturilloImp.hasDrawn) {
+            app.pinturilloImp.send('pass');
+        }
+    },
     
     vote: (id) => {
         document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
@@ -27,14 +47,14 @@ app.pinturilloImp = {
     kill: (e, id) => { e.stopPropagation(); if(confirm("¿Matar?")) app.pinturilloImp.send('kill', id); },
     
     toggleRole: () => {
-        const c = document.getElementById('pintuImpRoleCard'); // ID actualizado
+        const c = document.getElementById('pintuImpRoleCard');
         if(c.classList.contains('blur-content')) { c.classList.remove('blur-content'); c.classList.add('reveal-content'); }
         else { c.classList.remove('reveal-content'); c.classList.add('blur-content'); }
     },
     backToLobby: () => { if(confirm("¿Salir?")) app.showScreen('hubScreen'); },
 
     initCanvas: () => {
-        const canvas = document.getElementById('pintuImpCanvas'); // ID actualizado
+        const canvas = document.getElementById('pintuImpCanvas');
         if(!canvas) return;
         
         app.pinturilloImp.ctx = canvas.getContext('2d');
@@ -48,8 +68,9 @@ app.pinturilloImp = {
             if(!app.pinturilloImp.isMyTurn) return;
             drawing = true;
             app.pinturilloImp.hasDrawn = true;
-            const btnPass = document.getElementById('btnPassTurn');
-            if(btnPass) btnPass.disabled = false;
+            app.pinturilloImp.myStrokesThisTurn++; // Sumamos trazo
+            
+            document.getElementById('btnPassTurn').disabled = false;
             
             const pos = getPos(e);
             app.pinturilloImp.send('draw_start', pos);
@@ -80,7 +101,6 @@ app.pinturilloImp = {
 
         canvas.onmousedown = start;
         canvas.ontouchstart = (e) => { e.preventDefault(); start(e); };
-        // Usamos window para capturar si se sale del canvas
         window.addEventListener('mousemove', move);
         window.addEventListener('touchmove', (e) => { if(drawing) e.preventDefault(); move(e); }, {passive: false});
         window.addEventListener('mouseup', end);
@@ -90,7 +110,7 @@ app.pinturilloImp = {
     redraw: (history) => {
         const ctx = app.pinturilloImp.ctx;
         if(!ctx) return;
-        ctx.clearRect(0, 0, 300, 300); // Asumiendo tamaño fijo 300x300
+        ctx.clearRect(0, 0, 300, 300);
         
         history.forEach(stroke => {
             ctx.beginPath();
@@ -105,23 +125,22 @@ app.pinturilloImp = {
     }
 };
 
-// Escuchar actualizaciones del estado del juego
 socket.on('pintuImpUpdate', (data) => {
     const { players, gameInProgress, settings, turn, phase } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     app.pinturilloImp.iAmAdmin = me ? me.isAdmin : false;
 
-    // LOBBY
     if (!gameInProgress) {
-        app.showScreen('pinturilloImpLobby'); // ID actualizado
-        document.getElementById('pintuImpCount').innerText = players.length; // ID actualizado
-        document.getElementById('pintuImpImpostorCount').innerText = settings.impostors; // ID actualizado
+        app.showScreen('pinturilloImpLobby');
+        document.getElementById('pintuImpCount').innerText = players.length;
+        document.getElementById('pintuImpImpostorCount').innerText = settings.impostors;
+        document.getElementById('pintuImpSummaryModal').classList.add('hidden'); // Cierre automático al volver a lobby
         
-        const list = document.getElementById('pintuImpList'); // ID actualizado
+        const list = document.getElementById('pintuImpList');
         list.innerHTML = players.map(p => `<li>${p.name} ${p.isAdmin?'👑':''} ${app.pinturilloImp.iAmAdmin && !p.isAdmin ? `<button class="kick-btn" style="width:auto; padding:2px 8px;" onclick="app.pinturilloImp.kick('${p.id}')">❌</button>`:''}</li>`).join('');
 
-        const adminControls = document.getElementById('pintuImpAdminControls'); // ID actualizado
-        const waitMsg = document.getElementById('pintuImpWaitMsg'); // ID actualizado
+        const adminControls = document.getElementById('pintuImpAdminControls');
+        const waitMsg = document.getElementById('pintuImpWaitMsg');
         
         if (app.pinturilloImp.iAmAdmin) {
             adminControls.classList.remove('hidden');
@@ -131,20 +150,30 @@ socket.on('pintuImpUpdate', (data) => {
             waitMsg.classList.remove('hidden');
         }
         
-        // Reset canvas context si existe
         if(app.pinturilloImp.ctx) app.pinturilloImp.ctx.clearRect(0,0,300,300);
     } 
-    // GAME
     else {
-        app.showScreen('pinturilloImpGame'); // ID actualizado
+        app.showScreen('pinturilloImpGame');
         if(!app.pinturilloImp.ctx) app.pinturilloImp.initCanvas();
 
+        // Cerrar modal de resultados anterior si estaba abierto al empezar nueva partida
+        document.getElementById('pintuImpSummaryModal').classList.add('hidden');
+
         if (phase === 'DRAW') {
-            document.getElementById('pintuImpDrawArea').classList.remove('hidden'); // ID actualizado
-            document.getElementById('pintuImpVoteSection').classList.add('hidden'); // ID actualizado
+            document.getElementById('pintuImpDrawArea').classList.remove('hidden');
+            document.getElementById('pintuImpVoteSection').classList.add('hidden');
+            document.getElementById('pintuRoundIndicator').innerText = `Vuelta ${turn.currentLap}/${settings.rounds}`;
             
             const drawer = players.find(p => p.id === turn.currentDrawer);
             const isMe = drawer && drawer.id === me.id;
+            
+            // Si cambia el turno y ahora soy yo, reseteo mis contadores locales
+            if (isMe && !app.pinturilloImp.isMyTurn) {
+                app.pinturilloImp.myStrokesThisTurn = 0;
+                app.pinturilloImp.hasDrawn = false;
+                document.getElementById('btnPassTurn').disabled = true;
+            }
+            
             app.pinturilloImp.isMyTurn = isMe;
             
             const drawControls = document.getElementById('myDrawControls');
@@ -152,18 +181,13 @@ socket.on('pintuImpUpdate', (data) => {
             else drawControls.classList.add('hidden');
             
             document.getElementById('drawStatus').innerText = isMe ? "🖌️ TU TURNO: DIBUJA" : `Esperando a ${drawer ? drawer.name : '...'}`;
-            
-            if(isMe && !app.pinturilloImp.hasDrawn) {
-                const btnPass = document.getElementById('btnPassTurn');
-                if(btnPass) btnPass.disabled = true;
-            }
 
         } else {
-            // VOTING
             document.getElementById('pintuImpDrawArea').classList.add('hidden');
             document.getElementById('pintuImpVoteSection').classList.remove('hidden');
+            document.getElementById('pintuRoundIndicator').innerText = "Fase de Votación";
             
-            const grid = document.getElementById('pintuImpVoteGrid'); // ID actualizado
+            const grid = document.getElementById('pintuImpVoteGrid');
             grid.innerHTML = "";
             
             players.forEach(p => {
@@ -180,7 +204,7 @@ socket.on('pintuImpUpdate', (data) => {
                     if(p.votes > 0) html += `<div style="color:#ffa502; font-weight:bold">${p.votes} VOTOS</div>`;
                 }
 
-                if(app.pinturilloImp.iAmAdmin && p.id !== me.id) { // Permitir admin acciones sobre otros
+                if(app.pinturilloImp.iAmAdmin && p.id !== me.id) {
                     html += `<div style="margin-top:5px; z-index:5"><button style="padding:2px; width:30px;" onclick="app.pinturilloImp.kill(event,'${p.id}')">💀</button></div>`;
                 }
 
@@ -189,8 +213,7 @@ socket.on('pintuImpUpdate', (data) => {
                 grid.appendChild(btn);
             });
 
-            // Admin buttons visibility
-            ['pintuImpShowRes','pintuImpEndVote','pintuImpClearVote'].forEach(id => { // IDs actualizados
+            ['pintuImpShowRes','pintuImpEndVote','pintuImpClearVote'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) {
                     if(app.pinturilloImp.iAmAdmin) el.classList.remove('hidden');
@@ -202,8 +225,9 @@ socket.on('pintuImpUpdate', (data) => {
 });
 
 socket.on('pintuImpRole', (data) => {
-    const roleTitle = document.getElementById('pintuImpRoleTitle'); // ID actualizado
-    const roleWord = document.getElementById('pintuImpRoleWord'); // ID actualizado
+    const roleTitle = document.getElementById('pintuImpRoleTitle');
+    const roleWord = document.getElementById('pintuImpRoleWord');
+    const hintEl = document.getElementById('pintuImpHint');
     
     if(roleTitle) {
         roleTitle.innerText = data.role;
@@ -211,6 +235,14 @@ socket.on('pintuImpRole', (data) => {
     }
     if(roleWord) {
         roleWord.innerText = data.role === 'IMPOSTOR' ? 'Sin palabra' : data.word;
+    }
+    if(hintEl) {
+        if(data.hint) {
+            hintEl.style.display = 'block';
+            hintEl.innerText = `Pista: ${data.hint}`;
+        } else {
+            hintEl.style.display = 'none';
+        }
     }
 });
 
@@ -232,13 +264,11 @@ socket.on('pintuImpDrawOp', (op) => {
 });
 
 socket.on('pintuImpSummary', (data) => {
-    const modal = document.getElementById('pintuImpSummaryModal'); // ID actualizado
+    const modal = document.getElementById('pintuImpSummaryModal');
     if(modal) modal.classList.remove('hidden');
-    
-    const sumWord = document.getElementById('pintuImpSumWord'); // ID actualizado
+    const sumWord = document.getElementById('pintuImpSumWord');
     if(sumWord) sumWord.innerText = data.word;
-    
-    const sumImpostors = document.getElementById('pintuImpSumImpostors'); // ID actualizado
+    const sumImpostors = document.getElementById('pintuImpSumImpostors');
     if(sumImpostors) {
         sumImpostors.innerHTML = data.impostors.map(i => `<div>${i.name} ${i.isDead?'(💀)':''}</div>`).join('');
     }

@@ -3,12 +3,12 @@ const Utils = require('./utils');
 
 let players = [];
 let gameInProgress = false;
-let settings = { impostors: 1 };
-let turn = { currentDrawer: null, order: [] };
-let canvasHistory = []; // Array de trazos (cada trazo es array de puntos)
+let settings = { impostors: 1, rounds: 1, category: 'MIX', hints: false };
+let turn = { currentDrawer: null, order: [], currentLap: 1, turnIndex: 0 };
+let canvasHistory = [];
 let currentStroke = [];
-let phase = 'LOBBY'; // LOBBY, DRAW, VOTE
-let turnData = {}; // Roles y palabras
+let phase = 'LOBBY'; 
+let turnData = {}; 
 
 function broadcast(io) {
     const pub = players.map(p => ({
@@ -20,14 +20,12 @@ function broadcast(io) {
         votes: players.filter(v => v.votedFor === p.id).length,
         revealedRole: (p.isDead && turnData[p.id]) ? turnData[p.id].role : null
     }));
-    // Emitimos a la sala 'pinturilloImp' con el evento 'pintuImpUpdate'
     io.to('pinturilloImp').emit('pintuImpUpdate', {
         players: pub, gameInProgress, settings, turn, phase
     });
 }
 
 const gameModule = (io, socket) => {
-    // Escuchamos el evento 'pintuImp_action'
     socket.on('pintuImp_action', (action) => {
         const me = players.find(p => p.socketId === socket.id);
         if (!me) return;
@@ -35,33 +33,45 @@ const gameModule = (io, socket) => {
         if (action.type === 'start' && me.isAdmin) {
             if (players.length < 2) return;
             
+            // Recoger configuración
+            settings.rounds = parseInt(action.value.rounds) || 1;
+            settings.category = action.value.category || 'MIX';
+            settings.hints = !!action.value.hints;
+            
+            // Filtrar palabras
             let wordPool = [];
-            // Asumiendo que database tiene categorías como IMPOSIBLE, OBJETO, etc.
-            Object.keys(database).forEach(k => { if(k!=='MIX') wordPool = wordPool.concat(database[k].words); });
-            
-            // Fallback si no hay palabras
-            if(wordPool.length === 0) wordPool = [{word: "CASA"}, {word: "ARBOL"}];
-            
+            if (settings.category === 'MIX') {
+                Object.keys(database).forEach(k => { if(k!=='MIX') wordPool = wordPool.concat(database[k].words); });
+            } else if (database[settings.category]) {
+                wordPool = database[settings.category].words;
+            }
+
+            if(wordPool.length === 0) wordPool = [{word: "CASA", hint: "Vives en ella"}, {word: "SOL", hint: "Brilla"}];
             const sel = wordPool[Math.floor(Math.random() * wordPool.length)];
             
             // Roles
             const indices = players.map((_,i)=>i).sort(()=>Math.random()-0.5);
-            // Asegurar que no hay más impostores que jugadores - 1
             const numImpostors = Math.min(settings.impostors, players.length - 1);
             const impIdx = indices.slice(0, numImpostors);
             
             turnData = {};
-            turn.order = indices; // Orden de dibujo
+            turn.order = indices; 
+            turn.currentLap = 1;
+            turn.turnIndex = 0; // Índice global de turnos jugados
             
             players.forEach((p, i) => {
                 p.isDead = false;
                 p.votedFor = null;
                 const isImp = impIdx.includes(i);
-                turnData[p.id] = { role: isImp?'IMPOSTOR':'ARTISTA', word: sel.word };
+                
+                turnData[p.id] = { 
+                    role: isImp ? 'IMPOSTOR' : 'ARTISTA', 
+                    word: sel.word,
+                    hint: (settings.hints && !isImp) ? sel.hint : null
+                };
                 if(p.socketId) io.to(p.socketId).emit('pintuImpRole', turnData[p.id]);
             });
 
-            // Guardar info para resumen
             turnData.SUMMARY = { 
                 word: sel.word, 
                 impostors: players.filter((_,i) => impIdx.includes(i)).map(p=>p.id) 
@@ -72,7 +82,6 @@ const gameModule = (io, socket) => {
             canvasHistory = [];
             currentStroke = [];
             
-            // Primer turno
             turn.currentDrawer = players[turn.order[0]].id;
             broadcast(io);
             io.to('pinturilloImp').emit('pintuImpCanvasHistory', canvasHistory);
@@ -83,10 +92,9 @@ const gameModule = (io, socket) => {
             broadcast(io);
         }
 
-        // --- DRAWING LOGIC ---
+        // --- DRAWING ---
         if (action.type === 'draw_start' && phase === 'DRAW' && turn.currentDrawer === me.id) {
             currentStroke = [action.value];
-            // Broadcast a los demás en la sala
             socket.broadcast.to('pinturilloImp').emit('pintuImpDrawOp', { type: 'start', ...action.value });
         }
         if (action.type === 'draw_move' && phase === 'DRAW' && turn.currentDrawer === me.id) {
@@ -106,31 +114,33 @@ const gameModule = (io, socket) => {
         }
 
         if (action.type === 'pass' && phase === 'DRAW' && turn.currentDrawer === me.id) {
-            // Buscar índice actual en el orden de turno
-            const currentIdx = turn.order.findIndex(idx => players[idx].id === me.id);
+            turn.turnIndex++;
             
-            if (currentIdx !== -1 && currentIdx < turn.order.length - 1) {
-                // Siguiente jugador
-                turn.currentDrawer = players[turn.order[currentIdx + 1]].id;
-            } else {
-                // Fin de ronda de dibujo -> Votación
+            // Calcular límite total de turnos (Jugadores * Vueltas)
+            const totalTurns = players.length * settings.rounds;
+
+            if (turn.turnIndex >= totalTurns) {
                 phase = 'VOTE';
                 turn.currentDrawer = null;
+            } else {
+                // Siguiente dibujante (cíclico)
+                const nextIdx = turn.turnIndex % players.length;
+                // Actualizar número de vuelta actual
+                turn.currentLap = Math.floor(turn.turnIndex / players.length) + 1;
+                turn.currentDrawer = players[turn.order[nextIdx]].id;
             }
             broadcast(io);
         }
 
-        // --- VOTING ---
+        // --- VOTE ---
         if (action.type === 'vote' && phase === 'VOTE' && !me.isDead) {
             me.votedFor = (me.votedFor === action.value) ? null : action.value;
             broadcast(io);
         }
-        
         if (action.type === 'clearVotes' && me.isAdmin) {
             players.forEach(p => p.votedFor = null);
             broadcast(io);
         }
-
         if (action.type === 'kick' && me.isAdmin) {
             const target = players.find(p => p.id === action.value);
             if (target) {
@@ -141,13 +151,8 @@ const gameModule = (io, socket) => {
         }
         if (action.type === 'kill' && me.isAdmin) {
             const p = players.find(x => x.id === action.value);
-            if(p) { 
-                p.isDead = !p.isDead; 
-                if(!p.isDead) p.votedFor=null; 
-                broadcast(io); 
-            }
+            if(p) { p.isDead = !p.isDead; if(!p.isDead) p.votedFor=null; broadcast(io); }
         }
-
         if (action.type === 'revealResults' && me.isAdmin) {
             const sum = turnData.SUMMARY;
             if (sum) {
@@ -155,7 +160,6 @@ const gameModule = (io, socket) => {
                 io.to('pinturilloImp').emit('pintuImpSummary', { word: sum.word, impostors: imps });
             }
         }
-
         if (action.type === 'reset' && me.isAdmin) {
             gameInProgress = false;
             phase = 'LOBBY';
@@ -166,18 +170,9 @@ const gameModule = (io, socket) => {
 };
 
 const handleJoin = (socket, name) => {
-    // Buscar si ya existe
-    if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) {
-        // Podríamos intentar reconexión aquí si estuviéramos usando la lógica completa de los otros juegos
-        // Por simplicidad en este ejemplo nuevo:
-        return socket.emit('joinError', 'Nombre en uso.');
-    }
-    
+    if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) return socket.emit('joinError', 'Nombre en uso.');
     const p = Utils.createPlayer(socket.id, name);
-    // Campos específicos
-    p.isDead = false; 
-    p.votedFor = null;
-    
+    p.isDead = false; p.votedFor = null;
     players.push(p);
     socket.join('pinturilloImp');
     socket.emit('joinedSuccess', { playerId: p.id, room: 'pinturilloImp' });
@@ -187,51 +182,19 @@ const handleJoin = (socket, name) => {
 const handleRejoin = (socket, savedId) => {
     const p = players.find(x => x.id === savedId);
     if(p) {
-        p.socketId = socket.id; 
-        p.connected = true;
+        p.socketId = socket.id; p.connected = true;
         socket.join('pinturilloImp');
-        
         socket.emit('joinedSuccess', { playerId: p.id, room: 'pinturilloImp', isRejoin: true });
-        
-        // Restaurar estado si está en partida
-        if(gameInProgress) {
-            if(turnData[p.id]) socket.emit('pintuImpRole', turnData[p.id]);
-            if(phase === 'DRAW') socket.emit('pintuImpCanvasHistory', canvasHistory);
-        }
+        if(gameInProgress) socket.emit('pintuImpRole', turnData[p.id]);
+        if(phase === 'DRAW') socket.emit('pintuImpCanvasHistory', canvasHistory);
         broadcast(socket.server);
-    } else {
-        socket.emit('sessionExpired');
-    }
+    } else socket.emit('sessionExpired');
 };
 
-const handleLeave = (id) => { 
-    players = players.filter(p => p.id !== id); 
-};
-
-const handleDisconnect = (socket) => {
-    // Implementar si necesitas timeout de desconexión como en los otros juegos
-    const p = players.find(x => x.socketId === socket.id);
-    if(p) {
-        p.connected = false;
-        broadcast(socket.server);
-        // Timeout simple para limpiar
-        setTimeout(() => {
-            if(!p.connected) handleLeave(p.id);
-        }, 15 * 60000); // 15 min
-    }
-};
-
-// Reset para tests
-gameModule.resetInternalState = () => { 
-    players = []; 
-    gameInProgress = false; 
-    phase='LOBBY'; 
-    canvasHistory=[]; 
-};
-
+const handleLeave = (id) => { players = players.filter(p => p.id !== id); };
+gameModule.resetInternalState = () => { players = []; gameInProgress = false; phase='LOBBY'; canvasHistory=[]; };
 gameModule.handleJoin = handleJoin;
 gameModule.handleRejoin = handleRejoin;
 gameModule.handleLeave = handleLeave;
-gameModule.handleDisconnect = handleDisconnect; // No olvides exportar esto si lo usas en server.js
 
 module.exports = gameModule;

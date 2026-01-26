@@ -19,17 +19,17 @@
         <p style="color:#7f8fa6; margin-bottom: 25px;">Selecciona una sala:</p>
         
         <div class="hub-grid">
-            <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #ffa502;">
+            <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #fbff00;">
                 <div class="hub-icon">🕵️</div>
                 <div class="hub-info"><div class="hub-title">El Impostor</div><div class="hub-desc">Palabras ocultas y espías.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('pinturilloImp')" style="border-left-color: #e1b12c;">
+            <div class="hub-card" onclick="app.selectRoom('pinturilloImp')" style="border-left-color: #7830ff;">
                 <div class="hub-icon">🎨</div>
-                <div class="hub-info"><div class="hub-title">El Artista</div><div class="hub-desc">Dibuja, colabora y descubre al impostor.</div></div>
+                <div class="hub-info"><div class="hub-title">El Falso Artista</div><div class="hub-desc">Dibuja, colabora y descubre al impostor.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-left-color: #74b9ff;">
+            <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-left-color: #1cff2f;">
                 <div class="hub-icon">🐺</div>
                 <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
@@ -39,17 +39,17 @@
                 <div class="hub-info"><div class="hub-title">Anécdotas</div><div class="hub-desc">Historias verdaderas (o no).</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('elmas')" style="border-left-color: #ff9f43;">
+            <div class="hub-card" onclick="app.selectRoom('elmas')" style="border-left-color: #ff3a3a;">
                 <div class="hub-icon">🏆</div>
                 <div class="hub-info"><div class="hub-title">El MÁS...</div><div class="hub-desc">Vota quién encaja mejor.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-left-color: #00b894;">
+            <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-left-color: #2167ff;">
                 <div class="hub-icon">🚫</div>
                 <div class="hub-info"><div class="hub-title">Tabú</div><div class="hub-desc">Equipos y palabras prohibidas.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #a29bfe; margin-top: 15px;">
+            <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #416348; margin-top: 15px;">
                 <div class="hub-icon">💌</div>
                 <div class="hub-info"><div class="hub-title">Feedback</div><div class="hub-desc">Sugerencias y errores.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
@@ -383,14 +383,40 @@
 
     <div id="pinturilloImpLobby" class="hidden">
         <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
-        <h2 style="color:#e1b12c">🎨 El Artista</h2>
+        <h2 style="color:#7830ff">🎨 El Falso Artista</h2>
         
         <div id="pintuImpAdminControls" class="admin-panel hidden">
-            <div class="control-row">
-                <button onclick="app.pinturilloImp.changeImpostors(-1)">-</button>
-                <span>Impostores: <span id="pintuImpImpostorCount">1</span></span>
-                <button onclick="app.pinturilloImp.changeImpostors(1)">+</button>
+            <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #444;">
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Impostores:</span>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <button onclick="app.pinturilloImp.changeImpostors(-1)" style="width:30px; height:30px; padding:0;">-</button>
+                        <span id="pintuImpImpostorCount" style="font-weight:bold; width:20px; text-align:center">1</span>
+                        <button onclick="app.pinturilloImp.changeImpostors(1)" style="width:30px; height:30px; padding:0;">+</button>
+                    </div>
+                </div>
+                
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                    <span>Vueltas:</span>
+                    <input type="number" id="pintuRounds" value="1" min="1" max="5" style="width:50px; text-align:center; border-radius:5px;">
+                </div>
+
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                    <span>Categoría:</span>
+                    <select id="pintuCategory" style="width:100px; border-radius:5px;">
+                        <option value="MIX">Mezcla</option>
+                        <option value="OBJETO">Objetos</option>
+                        <option value="LUGAR">Lugares</option>
+                        <option value="ACCION">Acciones</option>
+                    </select>
+                </div>
+
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Pistas:</span>
+                    <input type="checkbox" id="pintuHints" style="width:20px; height:20px;">
+                </div>
             </div>
+
             <button class="start-btn" onclick="app.pinturilloImp.start()">▶️ EMPEZAR</button>
         </div>
 
@@ -400,15 +426,17 @@
     </div>
 
     <div id="pinturilloImpGame" class="hidden">
-        <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:5px;">
+        <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
             <button onclick="app.pinturilloImp.backToLobby()" style="background:#57606f; font-size:0.8em; padding:5px 10px;">🏠 Sala</button>
+            <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.9em; padding-top:5px;"></div>
         </div>
 
-        <div id="pintuImpRoleCard" class="blur-content" onclick="app.pinturilloImp.toggleRole()">
-            <h1 id="pintuImpRoleTitle">...</h1>
+        <div id="pintuImpRoleCard" class="blur-content" onclick="app.pinturilloImp.toggleRole()" style="margin-bottom: 20px;">
+            <h1 id="pintuImpRoleTitle" style="margin:0;">...</h1>
             <p id="pintuImpRoleWord" style="font-size:1.5em; color:#e1b12c; margin:5px 0;">...</p>
+            <p id="pintuImpHint" style="font-size:0.9em; color:#74b9ff; margin:0; display:none;">...</p>
         </div>
-        <div class="card-note">👆 Tu Rol</div>
+        <div class="card-note" style="margin-bottom:20px;">👆 Tu Rol (Toca para ver)</div>
 
         <div id="pintuImpDrawArea" class="hidden" style="width:100%">
             <div id="drawStatus" class="draw-status">...</div>
@@ -432,7 +460,7 @@
             </div>
             <div id="pintuImpVoteGrid" class="vote-grid"></div>
         </div>
-
+        
         <div id="pintuImpSummaryModal" class="hidden modal-overlay">
             <h1 style="color:#e17055; font-size:3em;">RESUMEN</h1>
             <h2 id="pintuImpSumWord" style="color:#ffeaa7; font-size:2.5em; margin:10px 0;"></h2>

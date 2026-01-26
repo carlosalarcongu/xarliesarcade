@@ -189,15 +189,25 @@ button:active { transform: scale(0.96); }
     opacity: 0.1;
 }
 
+/* Forzar que el texto "PULSAR PARA VER" aparezca arriba */
 .blur-content::after {
-    content: "🔒 PULSAR PARA VER";
+    content: "🔒 PULSAR PARA VER"; /* Aseguramos el texto */
     position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    color: #a4b0be;
+    
+    /* CAMBIO: En vez de 50%, lo ponemos fijo arriba */
+    top: 10% !important; 
+    left: 50%;
+    
+    /* CAMBIO: Solo centramos en horizontal (X), quitamos el centrado vertical */
+    transform: translateX(-50%) !important; 
+    
+    /* Estilos visuales (mantenemos los que sueles tener) */
+    color: white;
     font-weight: bold;
     font-size: 1.2em;
-    z-index: 10;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    white-space: nowrap;
 }
 
 /* Estado Visible */
