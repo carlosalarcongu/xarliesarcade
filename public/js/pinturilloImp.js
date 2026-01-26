@@ -14,7 +14,6 @@ app.pinturilloImp = {
         app.pinturilloImp.send('start', { rounds, category: cat, hints });
     },
     
-    // ... (reset, changeImpostors, undo, passTurn, vote... MANTENER IGUAL) ...
     reset: () => app.pinturilloImp.send('reset'),
     changeImpostors: (v) => app.pinturilloImp.send('changeImpostors', v),
     
@@ -126,20 +125,15 @@ app.pinturilloImp = {
     }
 };
 
-// --- NUEVO: ESCUCHAR CATEGORÍAS ---
 socket.on('pintuImpCategories', (cats) => {
     const sel = document.getElementById('pintuCategory');
     if(sel) {
-        // Rellena el selector con las categorías que vienen del servidor
         sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
-        // Seleccionar MIX por defecto si existe
         if(cats.find(c => c.id === 'MIX')) sel.value = 'MIX';
     }
 });
-// ----------------------------------
 
 socket.on('pintuImpUpdate', (data) => {
-    // ... (Contenido de pintuImpUpdate IGUAL que antes) ...
     const { players, gameInProgress, settings, turn, phase } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     app.pinturilloImp.iAmAdmin = me ? me.isAdmin : false;
@@ -195,7 +189,10 @@ socket.on('pintuImpUpdate', (data) => {
             document.getElementById('drawStatus').innerText = isMe ? "🖌️ TU TURNO: DIBUJA" : `Esperando a ${drawer ? drawer.name : '...'}`;
 
         } else {
-            document.getElementById('pintuImpDrawArea').classList.add('hidden');
+            document.getElementById('pintuImpDrawArea').classList.remove('hidden'); 
+            document.getElementById('myDrawControls').classList.add('hidden');     
+            document.getElementById('drawStatus').innerText = "🗳️ Analizad el dibujo y votad";
+            app.pinturilloImp.isMyTurn = false; 
             document.getElementById('pintuImpVoteSection').classList.remove('hidden');
             document.getElementById('pintuRoundIndicator').innerText = "Fase de Votación";
             
@@ -236,7 +233,6 @@ socket.on('pintuImpUpdate', (data) => {
     }
 });
 
-// ... (Resto de listeners role, history, drawOp, summary... IGUAL) ...
 socket.on('pintuImpRole', (data) => {
     const roleTitle = document.getElementById('pintuImpRoleTitle');
     const roleWord = document.getElementById('pintuImpRoleWord');
