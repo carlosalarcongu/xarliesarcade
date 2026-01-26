@@ -24,61 +24,86 @@ window.app = {
     myPlayerName: null, // <--- NUEVO: Variable para guardar el nombre
     categoriesCache: {},
 
-    // --- NUEVO: INICIALIZAR WIDGET FLOTANTE ---
     initFloatingWidget: () => {
         const widget = document.getElementById('floatingUserWidget');
         let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
+        let hasMoved = false; // Para diferenciar clic de arrastre
+        let offsetX, offsetY;
 
-        // Mouse Events
-        widget.addEventListener('mousedown', (e) => {
+        // Función unificada de inicio
+        const startDrag = (x, y) => {
             isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            initialLeft = widget.offsetLeft;
-            initialTop = widget.offsetTop;
+            hasMoved = false;
+            // Calcular dónde cogimos el widget respecto a su esquina
+            const rect = widget.getBoundingClientRect();
+            offsetX = x - rect.left;
+            offsetY = y - rect.top;
+            
             widget.style.cursor = 'grabbing';
-        });
+            widget.style.transition = 'none'; // Importante para rendimiento instantáneo
+        };
 
-        window.addEventListener('mousemove', (e) => {
+        // Función unificada de movimiento
+        const moveDrag = (x, y) => {
             if (!isDragging) return;
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            widget.style.left = `${initialLeft + dx}px`;
-            widget.style.top = `${initialTop + dy}px`;
-            widget.style.right = 'auto'; // Desactivar right para permitir mover libremente
-        });
+            hasMoved = true;
+            
+            // Nueva posición absoluta
+            let newX = x - offsetX;
+            let newY = y - offsetY;
 
-        window.addEventListener('mouseup', () => {
+            // Límites de pantalla (opcional, para que no se pierda)
+            newX = Math.max(0, Math.min(window.innerWidth - widget.offsetWidth, newX));
+            newY = Math.max(0, Math.min(window.innerHeight - widget.offsetHeight, newY));
+
+            widget.style.left = `${newX}px`;
+            widget.style.top = `${newY}px`;
+            widget.style.right = 'auto'; // Anular el right CSS
+        };
+
+        // Función unificada de fin
+        const endDrag = () => {
+            if (!isDragging) return;
             isDragging = false;
             widget.style.cursor = 'grab';
-        });
+            
+            // Si NO se ha movido (o muy poco), lo tratamos como CLIC
+            if (!hasMoved) {
+                app.goBackToHub(true);
+            }
+        };
 
-        // Touch Events (Móvil)
-        widget.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-            initialLeft = widget.offsetLeft;
-            initialTop = widget.offsetTop;
+        // --- MOUSE EVENTS ---
+        widget.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
+        
+        window.addEventListener('mousemove', e => {
+            if(isDragging) {
+                e.preventDefault(); // Evitar selección de texto
+                moveDrag(e.clientX, e.clientY);
+            }
         });
+        
+        window.addEventListener('mouseup', endDrag);
 
-        window.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault(); // Evitar scroll mientras arrastra
-            const touch = e.touches[0];
-            const dx = touch.clientX - startX;
-            const dy = touch.clientY - startY;
-            widget.style.left = `${initialLeft + dx}px`;
-            widget.style.top = `${initialTop + dy}px`;
-            widget.style.right = 'auto';
-        });
+        // --- TOUCH EVENTS (MÓVIL) ---
+        // passive: false es CRÍTICO para evitar scroll/recarga
+        widget.addEventListener('touchstart', e => {
+            const t = e.touches[0];
+            startDrag(t.clientX, t.clientY);
+        }, { passive: false });
 
-        window.addEventListener('touchend', () => { isDragging = false; });
+        window.addEventListener('touchmove', e => {
+            if (isDragging) {
+                e.preventDefault(); // ESTO BLOQUEA EL PULL-TO-REFRESH
+                const t = e.touches[0];
+                moveDrag(t.clientX, t.clientY);
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', endDrag);
     },
-    // -------------------------------------------
 
+    
     showScreen: (id) => {
         const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 'tabuLobby', 'tabuGame', 'pinturilloImpLobby', 'pinturilloImpGame'];
         screens.forEach(s => {
