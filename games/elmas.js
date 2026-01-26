@@ -1,6 +1,7 @@
 const crypto = require('crypto');
-const questionsDB = require('./preguntas_elmas'); // Asegúrate de que el nombre del archivo es correcto (a veces es questions_elmas o preguntas_elmas)
+const questionsDB = require('./preguntas_elmas'); 
 const Utils = require('./utils');
+const logger = require('../debug_logger');
 
 // --- 1. VARIABLES GLOBALES ---
 let players = [];
@@ -12,17 +13,15 @@ let roundStage = 'LOBBY'; // LOBBY, VOTING, REVEAL, PODIUM
 
 // --- 2. HELPERS ---
 function broadcast(io) {
-    // Calcular votos recibidos por cada jugador en ESTA ronda
     const playersPublic = players.map(p => {
         const votesReceivedCount = players.filter(voter => voter.votedFor === p.id).length;
-        
         return {
             id: p.id,
             name: p.name,
             isAdmin: p.isAdmin,
             score: p.score,
             connected: p.connected,
-            voted: !!p.votedFor, // Si ya ha votado
+            voted: !!p.votedFor, // Para saber si mostrar el icono de sobre 🗳️
             votesInThisRound: (roundStage === 'REVEAL') ? votesReceivedCount : null 
         };
     });
@@ -44,18 +43,17 @@ function broadcast(io) {
     });
 }
 
-// --- 3. FUNCIONES DE GESTIÓN (Join, Rejoin, Leave) ---
+// --- 3. GESTIÓN (Persistencia) ---
 
 const handleJoin = (socket, name) => {
-    // Verificar duplicados
-    if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) {
+    const existing = players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase());
+    if (existing) {
+        if(!existing.connected) return handleRejoin(socket, existing.id);
         return socket.emit('joinError', 'Nombre en uso.');
     }
 
     const basePlayer = Utils.createPlayer(socket.id, name);
-
-    // Específico de El Más
-    const newPlayer = { ...basePlayer, votedFor: null };
+    const newPlayer = { ...basePlayer, votedFor: null, timeout: null };
     
     players.push(newPlayer);
     socket.join('elmas');
@@ -67,6 +65,7 @@ const handleJoin = (socket, name) => {
 const handleRejoin = (socket, savedId) => {
     const p = players.find(x => x.id === savedId);
     if (p) {
+        if(p.timeout) { clearTimeout(p.timeout); p.timeout = null; }
         p.socketId = socket.id;
         p.connected = true;
         socket.join('elmas');
@@ -78,37 +77,48 @@ const handleRejoin = (socket, savedId) => {
 };
 
 const handleLeave = (id) => { 
-    players = players.filter(p => p.id !== id); 
+    const p = players.find(x => x.id === id);
+    if(p) {
+        if(p.timeout) clearTimeout(p.timeout);
+        players = players.filter(x => x.id !== id);
+        players.forEach(voter => { if(voter.votedFor === id) voter.votedFor = null; });
+    }
 };
 
 const handleDisconnect = (socket) => { 
     const p = players.find(x => x.socketId === socket.id);
-    if(p) { p.connected=false; broadcast(socket.server); }
+    if(p) { 
+        p.connected = false; 
+        if(socket.server) broadcast(socket.server); 
+        
+        if(p.timeout) clearTimeout(p.timeout);
+        p.timeout = setTimeout(() => {
+            players = players.filter(x => x.id !== p.id);
+        }, 15 * 60 * 1000);
+    }
 };
 
-// --- 4. EXPORTACIÓN PRINCIPAL (HÍBRIDA) ---
+// --- 4. LÓGICA DE JUEGO ---
 
 const gameModule = (io, socket) => {
-    
     socket.on('elmas_action', (action) => {
         const me = players.find(p => p.socketId === socket.id);
         if (!me) return;
 
-        // --- KICK (ECHAR JUGADOR) ---
-        if (action.type === 'kick') {
-            if (!me.isAdmin) return;
-            players = players.filter(p => p.id !== action.targetId);
-            broadcast(io);
+        if (action.type === 'kick' && me.isAdmin) {
+            const t = players.find(p => p.id === action.targetId);
+            if(t) {
+                if(t.socketId) io.to(t.socketId).emit('sessionExpired');
+                players = players.filter(p => p.id !== action.targetId);
+                broadcast(io);
+            }
         }
 
-        // --- START ---
-        if (action.type === 'start') {
-            if (!me.isAdmin) return;
+        if (action.type === 'start' && me.isAdmin) {
             maxRounds = parseInt(action.rounds) || 5;
-            
-            // Cargar preguntas (manejo de error si no hay DB)
-            let qData = questionsDB || ["¿Quién es más probable que gane?", "¿Quién liga más?"];
-            if(questionsDB && questionsDB.questions) qData = questionsDB.questions; // Por si la estructura es {questions:[]}
+            let qData = ["¿Quién es más probable que sobreviva a un apocalipsis?", "¿Quién liga más?"];
+            if(questionsDB && Array.isArray(questionsDB)) qData = questionsDB;
+            else if(questionsDB && questionsDB.questions) qData = questionsDB.questions;
             
             questionsQueue = [...qData].sort(() => Math.random() - 0.5).slice(0, maxRounds);
             
@@ -120,71 +130,58 @@ const gameModule = (io, socket) => {
             broadcast(io);
         }
 
-        // --- VOTAR ---
-        if (action.type === 'vote') {
-            if (!gameInProgress || roundStage !== 'VOTING') return;
+        if (action.type === 'vote' && gameInProgress && roundStage === 'VOTING') {
             me.votedFor = action.targetId;
             broadcast(io);
         }
 
-        // --- CALCULAR VOTOS (NEXT) ---
-        if (action.type === 'next') {
-            if (!me.isAdmin || !gameInProgress) return;
-
+        if (action.type === 'next' && me.isAdmin && gameInProgress) {
             // Calcular puntos
             players.forEach(voter => {
                 if (voter.votedFor) {
-                    const totalVotesForTarget = players.filter(p => p.votedFor === voter.votedFor).length;
-                    
-                    if (totalVotesForTarget === 1) {
-                        voter.score -= 1; // Voto único (solo o a sí mismo solo)
-                    } else {
-                        voter.score += totalVotesForTarget; // Consenso
-                    }
+                    const votes = players.filter(p => p.votedFor === voter.votedFor).length;
+                    if (votes === 1) voter.score = Math.max(0, voter.score - 1);
+                    else voter.score += votes;
                 }
             });
-
             roundStage = 'REVEAL';
             broadcast(io);
         }
 
-        // --- SIGUIENTE PREGUNTA (CONTINUE) ---
-        if (action.type === 'continue') {
-            if (!me.isAdmin) return;
-            
+        if (action.type === 'continue' && me.isAdmin) {
             currentRoundIndex++;
-            players.forEach(p => p.votedFor = null); // Limpiar votos
+            players.forEach(p => p.votedFor = null);
 
+            // Si hemos superado el índice, FIN DEL JUEGO
             if (currentRoundIndex >= questionsQueue.length) {
-                // FIN -> PODIO
                 roundStage = 'PODIUM';
                 
-                // Calcular Podio
+                // Ordenar ganadores
                 const sorted = [...players].sort((a,b) => b.score - a.score).slice(0, 3);
+                
+                // Emitir Podio
                 io.to('elmas').emit('showPodium', sorted);
+                
+                // Actualizar lista para que nadie se quede en pantalla de votación antigua
                 broadcast(io);
 
-                // Cerrar tras 10 segundos
+                // Esperar 10s y volver al lobby
                 setTimeout(() => {
                     gameInProgress = false;
                     roundStage = 'LOBBY';
-                    
-                    // Resetear puntos
                     players.forEach(p => p.score = 0);
-                    
                     io.to('elmas').emit('gameEnded');
                     broadcast(io);
                 }, 10000);
 
             } else {
+                // Siguiente ronda normal
                 roundStage = 'VOTING';
                 broadcast(io);
             }
         }
 
-        // --- RESET MANUAL ---
-        if (action.type === 'reset') {
-            if (!me.isAdmin) return;
+        if (action.type === 'reset' && me.isAdmin) {
             gameInProgress = false;
             roundStage = 'LOBBY';
             players.forEach(p => { p.score = 0; p.votedFor = null; });
@@ -192,15 +189,17 @@ const gameModule = (io, socket) => {
         }
     });
 
-    socket.on('disconnect', () => {
-        handleDisconnect(socket);
-    });
+    socket.on('disconnect', () => handleDisconnect(socket));
 };
 
-// --- 5. ADJUNTAR MÉTODOS ---
 gameModule.handleJoin = handleJoin;
 gameModule.handleRejoin = handleRejoin;
 gameModule.handleLeave = handleLeave;
 gameModule.handleDisconnect = handleDisconnect;
+gameModule.resetInternalState = () => {
+    players = [];
+    gameInProgress = false;
+    currentRoundIndex = 0;
+};
 
 module.exports = gameModule;

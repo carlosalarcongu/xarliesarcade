@@ -1,25 +1,26 @@
 const Utils = require('./utils');
-const questionsDB = require('./tabu_words');
+const questionsDB = require('./tabu_words'); 
 
 // ESTADO GLOBAL
 let players = [];
 let gameInProgress = false;
-let settings = { totalRounds: 3, turnDuration: 60 }; // 60 segundos por turno
+let settings = { totalRounds: 3, turnDuration: 60, skipsPerTurn: 3 }; 
 let turnData = {
-    currentTeam: 'BLUE', // 'BLUE' o 'RED'
+    currentTeam: 'BLUE', 
     roundNumber: 1,
-    describerId: null, // ID del jugador que explica
-    currentCard: null, // La carta actual
-    timer: 60, // Tiempo restante
-    teamIndex: { BLUE: 0, RED: 0 }, // Para rotar jugadores equitativamente
-    score: { BLUE: 0, RED: 0 }
+    describerId: null, 
+    currentCard: null, 
+    timer: 60, 
+    skipsRemaining: 3, // NUEVO
+    teamIndex: { BLUE: 0, RED: 0 }, 
+    score: { BLUE: 0, RED: 0 },
+    status: 'LOBBY' 
 };
 
 let turnInterval = null;
 
 // HELPERS
 function broadcast(io) {
-    // Info pública de jugadores (puntos individuales y equipo)
     const publicPlayers = players.map(p => ({
         id: p.id,
         name: p.name,
@@ -37,17 +38,8 @@ function broadcast(io) {
 }
 
 function nextTurn(io) {
-    // 1. Limpiar intervalo anterior
     if (turnInterval) clearInterval(turnInterval);
 
-    // 2. Verificar fin de juego
-    if (turnData.roundNumber > settings.totalRounds) {
-        endGame(io);
-        return;
-    }
-
-    // 3. Seleccionar siguiente equipo
-    // Si era BLUE, pasa a RED. Si era RED, pasa a BLUE y sube ronda.
     if (turnData.currentTeam === 'BLUE') {
         turnData.currentTeam = 'RED';
     } else {
@@ -59,31 +51,28 @@ function nextTurn(io) {
         }
     }
 
-    // 4. Seleccionar "Describer" (rotativo)
     const teamMembers = players.filter(p => p.team === turnData.currentTeam);
-    if (teamMembers.length === 0) return endGame(io); // No hay jugadores en el equipo
+    if (teamMembers.length === 0) return nextTurn(io); 
 
-    // Índice rotativo
     let idx = turnData.teamIndex[turnData.currentTeam] % teamMembers.length;
     turnData.describerId = teamMembers[idx].id;
-    
-    // Preparar siguiente índice para el futuro
     turnData.teamIndex[turnData.currentTeam]++;
 
-    // 5. Iniciar cuenta atrás de "Preparación" (5s) antes de empezar
+    // PRE_TURN
     turnData.status = 'PRE_TURN';
     turnData.timer = 5;
-    
-    // Limpiamos carta actual para que no se vea
     turnData.currentCard = null;
+    
+    // REINICIAR SALTOS PARA EL NUEVO TURNO
+    turnData.skipsRemaining = settings.skipsPerTurn;
+    
     broadcast(io);
 
-    // Cuenta atrás 5s
     let prepCounter = 5;
     const prepInterval = setInterval(() => {
         prepCounter--;
         turnData.timer = prepCounter;
-        broadcast(io);
+        io.to('tabu').emit('timerTick', prepCounter); 
 
         if (prepCounter <= 0) {
             clearInterval(prepInterval);
@@ -98,26 +87,29 @@ function startPlayingPhase(io) {
     pickNewCard();
     broadcast(io);
 
-    // CRONÓMETRO FÉRREO (Tick cada segundo)
+    if (turnInterval) clearInterval(turnInterval);
+
     turnInterval = setInterval(() => {
         turnData.timer--;
         
-        // Sincronización cada segundo
         if (turnData.timer <= 0) {
-            // Fin del tiempo del turno
             clearInterval(turnInterval);
-            // Sonido de tiempo agotado
             io.to('tabu').emit('playSound', 'timeout');
             nextTurn(io);
         } else {
-            // Optimización: Solo emitimos el tiempo, no todo el estado pesado
             io.to('tabu').emit('timerTick', turnData.timer);
         }
     }, 1000);
 }
 
 function pickNewCard() {
-    const random = questionsDB[Math.floor(Math.random() * questionsDB.length)];
+    const fallbackDB = [
+        { word: "MANZANA", forbidden: ["FRUTA", "ROJA", "COMER", "BLANCANIEVES"] },
+        { word: "COCHE", forbidden: ["RUEDAS", "VOLANTE", "MOTOR", "CONDUCIR"] },
+        { word: "FUTBOL", forbidden: ["PELOTA", "GOL", "PORTERIA", "DEPORTE"] }
+    ];
+    const db = (questionsDB && questionsDB.length > 0) ? questionsDB : fallbackDB;
+    const random = db[Math.floor(Math.random() * db.length)];
     turnData.currentCard = random;
 }
 
@@ -125,7 +117,6 @@ function endGame(io) {
     gameInProgress = false;
     if (turnInterval) clearInterval(turnInterval);
     
-    // Determinar ganador
     let winner = 'DRAW';
     if (turnData.score.BLUE > turnData.score.RED) winner = 'BLUE';
     if (turnData.score.RED > turnData.score.BLUE) winner = 'RED';
@@ -133,41 +124,39 @@ function endGame(io) {
     io.to('tabu').emit('gameOver', { 
         winner, 
         finalScores: turnData.score,
-        mvp: [...players].sort((a,b) => b.individualScore - a.individualScore)
+        mvp: players.sort((a,b) => b.individualScore - a.individualScore).slice(0, 5)
     });
+    broadcast(io); 
 }
 
-// MÓDULO HÍBRIDO
 const gameModule = (io, socket) => {
-    
     socket.on('tabu_action', (action) => {
         const me = players.find(p => p.socketId === socket.id);
         if (!me) return;
 
-        // --- LOBBY: ELEGIR EQUIPO ---
         if (action.type === 'joinTeam') {
             if (gameInProgress) return;
-            me.team = action.team; // 'BLUE' o 'RED'
+            me.team = action.team; 
             broadcast(io);
         }
 
-        // --- START (ADMIN) ---
+        // START (CONFIGURABLE)
         if (action.type === 'start') {
             if (!me.isAdmin) return;
-            // Validar equipos
             const blues = players.filter(p => p.team === 'BLUE').length;
             const reds = players.filter(p => p.team === 'RED').length;
-            
             if (blues === 0 || reds === 0) {
-                return socket.emit('errorMsg', 'Ambos equipos necesitan jugadores.');
+                socket.emit('tabu_error', '⚠ Faltan jugadores.\nDebe haber al menos 1 persona en cada equipo.');
+                return;
             }
 
             settings.totalRounds = parseInt(action.rounds) || 3;
-            
-            // Resetear estado
+            settings.turnDuration = parseInt(action.duration) || 60; // NUEVO
+            settings.skipsPerTurn = parseInt(action.skips) || 3;    // NUEVO
+
             turnData.score = { BLUE: 0, RED: 0 };
-            turnData.roundNumber = 0; // Se incrementará a 1 en nextTurn
-            turnData.currentTeam = 'RED'; // Truco: Ponemos RED para que nextTurn cambie a BLUE al empezar
+            turnData.roundNumber = 0; 
+            turnData.currentTeam = 'RED'; 
             turnData.teamIndex = { BLUE: 0, RED: 0 };
             players.forEach(p => p.individualScore = 0);
 
@@ -175,59 +164,56 @@ const gameModule = (io, socket) => {
             nextTurn(io);
         }
 
-        // --- JUEGO: ACIERTO ---
         if (action.type === 'correct') {
             if (!gameInProgress || turnData.status !== 'PLAYING') return;
-            
-            // Sumar punto al equipo actual
             turnData.score[turnData.currentTeam]++;
-            
-            // Sumar punto individual al describer
             const describer = players.find(p => p.id === turnData.describerId);
             if (describer) describer.individualScore++;
-
-            io.to('tabu').emit('playSound', 'correct'); // Sonido ding
+            io.to('tabu').emit('playSound', 'correct');
             pickNewCard();
             broadcast(io);
         }
 
-        // --- JUEGO: TABÚ (ERROR) ---
+        // ACCIÓN DE SALTAR (SKIP)
+        if (action.type === 'skip') {
+            if (!gameInProgress || turnData.status !== 'PLAYING') return;
+            
+            if (turnData.skipsRemaining > 0) {
+                turnData.skipsRemaining--;
+                io.to('tabu').emit('playSound', 'skip'); // Opcional: añadir sonido si quieres
+                pickNewCard();
+                broadcast(io);
+            }
+        }
+
         if (action.type === 'taboo') {
             if (!gameInProgress || turnData.status !== 'PLAYING') return;
-
-            // REGLA DEL PROMPT: "Se termina la ronda del equipo"
-            io.to('tabu').emit('playSound', 'wrong'); // Sonido error
-            
-            // Pasamos turno inmediatamente
-            nextTurn(io);
+            io.to('tabu').emit('playSound', 'wrong');
+            nextTurn(io); 
         }
         
-        // --- KICK ---
-        if (action.type === 'kick') {
-            if (!me.isAdmin) return;
+        if (action.type === 'kick' && me.isAdmin) {
+            const t = players.find(p => p.id === action.targetId);
+            if(t && t.socketId) io.to(t.socketId).emit('sessionExpired');
             players = players.filter(p => p.id !== action.targetId);
             broadcast(io);
         }
         
-        // --- RESET ---
-        if (action.type === 'reset') {
-            if (!me.isAdmin) return;
-            endGame(io); // Fuerza fin
+        if (action.type === 'reset' && me.isAdmin) {
+            gameInProgress = false;
+            if (turnInterval) clearInterval(turnInterval);
+            turnData.score = { BLUE: 0, RED: 0 };
             broadcast(io);
         }
     });
 
-    socket.on('disconnect', () => {
-        handleDisconnect(socket);
-    });
+    socket.on('disconnect', () => handleDisconnect(socket));
 };
 
-// GESTIÓN DE SALA
 const handleJoin = (socket, name) => {
     if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) return socket.emit('joinError', 'Nombre en uso.');
     const basePlayer = Utils.createPlayer(socket.id, name);
-    // Por defecto sin equipo
-    const newPlayer = { ...basePlayer, team: null, individualScore: 0 };
+    const newPlayer = { ...basePlayer, team: null, individualScore: 0, timeout: null };
     players.push(newPlayer);
     socket.join('tabu');
     socket.emit('joinedSuccess', { playerId: newPlayer.id, room: 'tabu' });
@@ -237,6 +223,7 @@ const handleJoin = (socket, name) => {
 const handleRejoin = (socket, savedId) => {
     const p = players.find(x => x.id === savedId);
     if (p) {
+        if(p.timeout) { clearTimeout(p.timeout); p.timeout = null; }
         p.socketId = socket.id;
         p.connected = true;
         socket.join('tabu');
@@ -245,10 +232,29 @@ const handleRejoin = (socket, savedId) => {
     } else socket.emit('sessionExpired');
 };
 
-const handleLeave = (id) => { players = players.filter(p => p.id !== id); };
+const handleLeave = (id) => { 
+    const p = players.find(x => x.id === id);
+    if(p) {
+        if(p.timeout) clearTimeout(p.timeout);
+        players = players.filter(x => x.id !== id);
+    }
+};
+
 const handleDisconnect = (socket) => { 
     const p = players.find(x => x.socketId === socket.id);
-    if (p) { p.connected = false; broadcast(socket.server); }
+    if (p) { 
+        p.connected = false; 
+        broadcast(socket.server); 
+        if(p.timeout) clearTimeout(p.timeout);
+        p.timeout = setTimeout(() => { players = players.filter(x => x.id !== p.id); }, 15*60*1000);
+    }
+};
+
+gameModule.resetInternalState = () => {
+    players = [];
+    gameInProgress = false;
+    if (turnInterval) clearInterval(turnInterval);
+    turnData = { currentTeam: 'BLUE', roundNumber: 1, score: { BLUE: 0, RED: 0 } };
 };
 
 gameModule.handleJoin = handleJoin;

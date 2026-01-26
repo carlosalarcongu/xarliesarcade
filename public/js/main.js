@@ -1,12 +1,22 @@
 const socket = io();
 
-// REGLAS DE LOS JUEGOS (Sin cambios, las mantengo para contexto)
+// REGLAS DE LOS JUEGOS
 const GAME_RULES = {
     impostor: "🕵️ FLUJO: 1) Lobby → 2) Roles → 3) Describir → 4) Votar.\nREGLA: Todos ven palabra menos el Impostor.",
     lobo: "🐺 FLUJO: 1) Roles → 2) Noche → 3) Día.\nREGLA: Pueblo vs Lobos. Roles especiales.",
     anecdotas: "📜 Escribe anécdota → Adivina autor → Puntos.",
     elmas: "🏆 Preguntas '¿Quién es más...?'. Vota al que más encaje.",
     tabu: "🚫 Describe palabra sin decir las prohibidas. Equipos."
+};
+
+// Mapeo de Emojis para el título
+const ROOM_EMOJIS = {
+    impostor: "🕵️",
+    lobo: "🐺",
+    anecdotas: "📜",
+    elmas: "🏆",
+    tabu: "🚫",
+    feedback: "💌"
 };
 
 // Namespace Global
@@ -62,7 +72,13 @@ window.app = {
         } else {
             // PANTALLA LOGIN
             const titleEl = document.getElementById('loginTitle');
-            if(titleEl) titleEl.innerText = room.toUpperCase();
+            
+            // --- CAMBIO: Título personalizado con emoji ---
+            const emoji = ROOM_EMOJIS[room] || "🎮";
+            // Capitalizar primera letra (ej: impostor -> Impostor)
+            const roomName = room.charAt(0).toUpperCase() + room.slice(1);
+            if(titleEl) titleEl.innerText = `Entrada a sala de ${roomName} ${emoji}`;
+            // ----------------------------------------------
             
             const rulesDiv = document.getElementById('loginRulesArea');
             const rulesText = document.getElementById('loginRulesText');

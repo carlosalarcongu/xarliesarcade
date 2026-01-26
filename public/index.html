@@ -243,23 +243,36 @@
     </div>
 
     <div id="elmasGame" class="hidden">
-        <div id="elmasPodiumModal" class="hidden modal-overlay">
-            <h1 style="color:#ff9f43; margin-bottom:30px">🏆 RESULTADOS</h1>
-            <div class="podium-container">
-                <div class="podium-bar p-silver"><span class="p-name" id="podium2">...</span>🥈</div>
-                <div class="podium-bar p-gold"><span class="p-name" id="podium1">...</span>🥇</div>
-                <div class="podium-bar p-bronze"><span class="p-name" id="podium3">...</span>🥉</div>
-            </div>
-            <button onclick="app.elmas.reset()" class="main-btn" style="margin-top:30px">Salir</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
+            <h2 style="margin:0">Partida</h2>
+            <button onclick="app.elmas.reset()" style="background:#57606f; width:auto; font-size:0.8em; padding:5px 10px;">🏠 Salir</button>
         </div>
 
-        <h3 id="elmasCounter" style="color:#aaa">Pregunta 1</h3>
-        <div class="card" style="background:#ff9f43; color:#2d3436; border:none;">
-            <p id="elmasQuestionText" style="font-size:1.3em; font-weight:bold;">...</p>
+        <h4 id="elmasRoundCount" style="color:#aaa">Ronda 1/5</h4>
+        
+        <div class="card" style="background:#ff9f43; color:#2d3436; border:none; margin-bottom: 20px;">
+            <p id="elmasQuestionText" style="font-size:1.5em; font-weight:900; margin: 10px 0;">...</p>
         </div>
+        
         <div id="elmasVotingGrid" class="vote-grid"></div>
-        <button id="elmasNextBtn" class="main-btn hidden" onclick="app.elmas.next()">Ver Votos ➡</button>
-        <button id="elmasContinueBtn" class="main-btn hidden" onclick="app.elmas.continue()">Siguiente ➡</button>
+        
+        <br>
+        
+        <button id="elmasNextBtn" class="main-btn hidden" onclick="app.elmas.next()">📊 Ver Votos</button>
+        <button id="elmasContinueBtn" class="main-btn hidden" onclick="app.elmas.continue()">➡️ Siguiente Pregunta</button>
+        
+        <button onclick="app.elmas.reset()" class="kick-btn hidden" style="margin-top:30px">Reset Total (Admin)</button>
+    </div>
+
+    <div id="elmasPodiumModal" class="hidden modal-overlay">
+        <h1 style="color:#ff9f43; margin-bottom:30px">🏆 RESULTADOS 🏆</h1>
+        
+        <div class="podium-container">
+            <div class="podium-bar p-silver"><span class="p-name" id="podium2">...</span>🥈</div>
+            <div class="podium-bar p-gold"><span class="p-name" id="podium1">...</span>🥇</div>
+            <div class="podium-bar p-bronze"><span class="p-name" id="podium3">...</span>🥉</div>
+        </div>
+        <p style="color:#aaa; margin-top:30px">Cerrando en 10 segundos...</p>
     </div>
 
     <div id="tabuLobby" class="hidden">
@@ -268,11 +281,11 @@
         
         <div style="display:flex; gap:10px; margin-bottom:20px; width:100%">
             <div style="flex:1">
-                <button class="team-btn team-blue" onclick="app.tabu.joinTeam('BLUE')" style="width:100%">AZUL 🔵</button>
+                <button id="btnTeamBLUE" class="team-btn team-blue" onclick="app.tabu.joinTeam('BLUE')" style="width:100%">AZUL 🔵</button>
                 <ul id="listBlue" style="margin-top:5px; min-height:50px; background:rgba(9, 132, 227, 0.2)"></ul>
             </div>
             <div style="flex:1">
-                <button class="team-btn team-red" onclick="app.tabu.joinTeam('RED')" style="width:100%">ROJO 🔴</button>
+                <button id="btnTeamRED" class="team-btn team-red" onclick="app.tabu.joinTeam('RED')" style="width:100%">ROJO 🔴</button>
                 <ul id="listRed" style="margin-top:5px; min-height:50px; background:rgba(214, 48, 49, 0.2)"></ul>
             </div>
         </div>
@@ -281,8 +294,25 @@
         <ul id="listSpectators"></ul>
 
         <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
+            <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:10px;">
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px;">
+                    <span>Rondas:</span>
+                    <input type="number" id="tabuRounds" value="3" min="1" style="width:50px; text-align:center; color:#000;">
+                </div>
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px;">
+                    <span>Tiempo (seg):</span>
+                    <input type="number" id="tabuDuration" value="60" step="10" min="10" style="width:50px; text-align:center; color:#000;">
+                </div>
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px;">
+                    <span>Saltos/Turno:</span>
+                    <input type="number" id="tabuSkips" value="3" min="0" style="width:50px; text-align:center; color:#000;">
+                </div>
+            </div>
+            
             <button class="start-btn" onclick="app.tabu.start()">▶️ EMPEZAR</button>
         </div>
+        
+        <p id="tabuWaitMsg" style="color:#aaa">Esperando al admin...</p>
     </div>
 
     <div id="tabuGame" class="hidden">
@@ -297,8 +327,11 @@
 
         <div id="tabuCardArea" style="width:100%"></div>
 
-        <div id="tabuActionButtons" class="hidden" style="position:fixed; bottom:20px; left:0; width:100%; padding:20px; display:flex; gap:15px;">
+        <div id="tabuActionButtons" class="hidden" style="position:fixed; bottom:20px; left:0; width:100%; padding:20px; display:flex; gap:10px;">
             <button onclick="app.tabu.taboo()" style="background:#ff4757; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #c0392b">🚫 MAL</button>
+            
+            <button id="btnSkip" onclick="app.tabu.skip()" style="background:#ffa502; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #e67e22; color:#000;">⏭️ SALTAR</button>
+            
             <button onclick="app.tabu.correct()" style="background:#2ed573; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #218c74">✅ BIEN</button>
         </div>
         
@@ -312,7 +345,7 @@
             <p id="tabuWaitingMsg" class="waiting-text hidden">Esperando al admin...</p>
         </div>
     </div>
-
+    
     <div id="feedbackScreen" class="hidden">
         <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
         <h2 style="color:#a29bfe">💌 Feedback</h2>
@@ -338,7 +371,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/main.js?v=2"></script>
     <script src="js/impostor.js"></script>
     <script src="js/lobo.js"></script>
     <script src="js/anecdotas.js"></script>
