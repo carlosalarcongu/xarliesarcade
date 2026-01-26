@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xarlie's Arcade</title>
-    <link rel="stylesheet" href="css/style.css" ?v=3>
+    <link rel="stylesheet" href="css/style.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -73,7 +73,10 @@
     </div>
 
     <div id="impostorLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button><button onclick="app.changeName()">✏️ Nombre</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
         <h2 style="color:#ffa502">🕵️ Impostor Lobby</h2>
         
         <div id="adminControls" class="admin-panel hidden">
@@ -97,9 +100,12 @@
     </div>
 
     <div id="impostorGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>    
         <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
             <h2 style="margin:0">En Curso</h2>
-            <button onclick="app.impostor.backToLobby()" style="background:#57606f; width:auto; padding:5px 15px; font-size:0.8em;">🏠 Sala</button>
         </div>
 
         <div id="roleCard" class="blur-content" onclick="app.impostor.toggleRole()">
@@ -126,9 +132,9 @@
             <div id="voteGrid" class="vote-grid"></div>
         </div>
         
-    <div id="countdownOverlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; display:flex; justify-content:center; align-items:center;">
-        <div id="countdownNumber" style="font-size:10em; color:#ff4757; font-weight:900;">3</div>
-    </div>
+        <div id="countdownOverlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; display:flex; justify-content:center; align-items:center;">
+            <div id="countdownNumber" style="font-size:10em; color:#ff4757; font-weight:900;">3</div>
+        </div>
         
         <div id="summaryModal" class="hidden modal-overlay">
             <h1 style="color:#e17055; font-size:3em;">RESUMEN</h1>
@@ -143,7 +149,10 @@
     </div>
 
     <div id="loboLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
         <h2 style="color:#74b9ff">🐺 Sala El Lobo</h2>
         
         <div id="loboAdminPanel" class="admin-panel hidden">
@@ -167,9 +176,9 @@
     </div>
 
     <div id="loboGame" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:15px; width:100%">
-            <h2 style="margin:0">Partida</h2>
-            <button onclick="app.lobo.backToLobby()" style="background:#57606f; width:auto; font-size:0.8em; padding:5px 10px;">🏠 Sala</button>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>
         
         <div id="loboCard" class="blur-content" onclick="app.lobo.toggleRole()">
@@ -195,7 +204,10 @@
     </div>
 
     <div id="anecdotasLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
         <h2 style="color:#ff9ff3">📜 Anécdotas</h2>
         <div class="card" style="background:#dfe6e9; border:none;">
             <h3 style="color:#2d3436">Tu historia:</h3>
@@ -207,6 +219,11 @@
     </div>
 
     <div id="anecdotasGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
+
         <div id="anecdotasRevealModal" class="hidden modal-overlay">
             <h2 style="color:#ccc">El autor era...</h2>
             <h1 style="color:#2ed573; font-size:3.5em; margin:20px 0;" id="revealAuthor">...</h1>
@@ -235,7 +252,10 @@
     </div>
 
     <div id="elmasLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
         <h2 style="color:#ff9f43">🏆 El MÁS...</h2>
         <div id="elmasAdminPanel" class="admin-panel hidden">
             <div class="control-row">
@@ -248,9 +268,9 @@
     </div>
 
     <div id="elmasGame" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:15px;">
-            <h2 style="margin:0">Partida</h2>
-            <button onclick="app.elmas.reset()" style="background:#57606f; width:auto; font-size:0.8em; padding:5px 10px;">🏠 Salir</button>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>
 
         <h4 id="elmasRoundCount" style="color:#aaa">Ronda 1/5</h4>
@@ -281,7 +301,10 @@
     </div>
 
     <div id="tabuLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
         <h2 style="color:#00b894">🚫 Sala Tabú</h2>
         
         <div style="display:flex; gap:10px; margin-bottom:20px; width:100%">
@@ -298,7 +321,7 @@
         <h4 style="color:#aaa">Espectadores:</h4>
         <ul id="listSpectators"></ul>
 
-    <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
+        <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
             <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px; border: 1px solid #444;">
                 
                 <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
@@ -327,6 +350,11 @@
     </div>
 
     <div id="tabuGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
+
         <div style="display:flex; justify-content:space-between; background:#2f3542; padding:10px; border-radius:10px; border:2px solid #57606f; margin-bottom:20px;">
             <div style="color:#0984e3; font-weight:bold; font-size:1.5em">🔵 <span id="scoreBlue">0</span></div>
             <div style="text-align:center">
@@ -382,7 +410,10 @@
     </div>
 
     <div id="pinturilloImpLobby" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Salir</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
         <h2 style="color:#7830ff">🎨 El Falso Artista</h2>
         
         <div id="pintuImpAdminControls" class="admin-panel hidden">
@@ -426,17 +457,19 @@
     </div>
 
     <div id="pinturilloImpGame" class="hidden">
-        <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
-            <button onclick="app.pinturilloImp.backToLobby()" style="background:#57606f; font-size:0.8em; padding:5px 10px;">🏠 Sala</button>
-            <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.9em; padding-top:5px;"></div>
+        <div class="back-nav" style="display:flex; gap:5px; margin-bottom:10px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>
+        
+        <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.9em; text-align:center; margin-bottom:5px;"></div>
 
+        <div class="card-note" style="margin-bottom:5px;">👆 Tu Rol (Toca para ver)</div>
         <div id="pintuImpRoleCard" class="blur-content" onclick="app.pinturilloImp.toggleRole()" style="margin-bottom: 20px;">
             <h1 id="pintuImpRoleTitle" style="margin:0;">...</h1>
             <p id="pintuImpRoleWord" style="font-size:1.5em; color:#e1b12c; margin:5px 0;">...</p>
             <p id="pintuImpHint" style="font-size:0.9em; color:#74b9ff; margin:0; display:none;">...</p>
         </div>
-        <div class="card-note" style="margin-bottom:20px;">👆 Tu Rol (Toca para ver)</div>
 
         <div id="pintuImpDrawArea" class="hidden" style="width:100%">
             <div id="drawStatus" class="draw-status">...</div>
@@ -471,6 +504,11 @@
             <button onclick="document.getElementById('pintuImpSummaryModal').classList.add('hidden')" class="main-btn">Cerrar</button>
         </div>
     </div>
+    
+    <div id="floatingUserWidget" onclick="app.goBackToHub(true)" class="hidden" 
+         style="position:fixed; top:10px; right:10px; z-index:99999; background:rgba(44, 62, 80, 0.9); padding:8px 15px; border-radius:25px; border:1px solid #ffffff55; color:#fff; cursor:grab; box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align:right; font-size:0.85em; user-select:none; backdrop-filter:blur(5px); min-width:120px;">
+        <div id="floatingUserText">Cargando...</div>
+    </div>
 
 
     <script src="/socket.io/socket.io.js"></script>
@@ -481,6 +519,7 @@
     <script src="js/elmas.js"></script>
     <script src="js/tabu.js"></script>
     <script src="js/pinturilloImp.js"></script>
+    <script src="js/feedback.js"></script>
     
     <script>
         // Funcionalidad extra para el toggle de carta

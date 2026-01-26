@@ -187,7 +187,7 @@ const handleJoin = (socket, name) => {
     
     // CAMBIO: ENVIAR CATEGORIAS AL ENTRAR
     socket.emit('pintuImpCategories', getPublicCategories());
-    socket.emit('joinedSuccess', { playerId: p.id, room: 'pinturilloImp' });
+    socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'pinturilloImp' });
     
     broadcast(socket.server);
 };
@@ -200,8 +200,7 @@ const handleRejoin = (socket, savedId) => {
         
         // CAMBIO: ENVIAR CATEGORIAS AL RECONECTAR
         socket.emit('pintuImpCategories', getPublicCategories());
-        socket.emit('joinedSuccess', { playerId: p.id, room: 'pinturilloImp', isRejoin: true });
-        
+        socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'pinturilloImp', isRejoin: true });       
         if(gameInProgress) {
             if(turnData[p.id]) socket.emit('pintuImpRole', turnData[p.id]);
             if(phase === 'DRAW') socket.emit('pintuImpCanvasHistory', canvasHistory);
