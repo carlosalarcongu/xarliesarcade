@@ -342,3 +342,9 @@ li {
 .p-name { font-size: 0.8em; margin-bottom: 5px; color:white; text-shadow: 1px 1px 0 #000; }
 
 @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+/* Corrección para inputs pequeños de configuración */
+.admin-panel input[type="number"] {
+    font-size: 1.2em; /* Número más grande */
+    height: 40px;     /* Altura fija cómoda */
+}

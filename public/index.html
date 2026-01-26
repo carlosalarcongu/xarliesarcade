@@ -293,19 +293,25 @@
         <h4 style="color:#aaa">Espectadores:</h4>
         <ul id="listSpectators"></ul>
 
-        <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
-            <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:10px;">
-                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px;">
+    <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
+            <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px; border: 1px solid #444;">
+                
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
                     <span>Rondas:</span>
-                    <input type="number" id="tabuRounds" value="3" min="1" style="width:50px; text-align:center; color:#000;">
+                    <input type="number" id="tabuRounds" value="3" min="1" 
+                           style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
                 </div>
-                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px;">
-                    <span>Tiempo (seg):</span>
-                    <input type="number" id="tabuDuration" value="60" step="10" min="10" style="width:50px; text-align:center; color:#000;">
+                
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
+                    <span>Tiempo (s):</span>
+                    <input type="number" id="tabuDuration" value="60" step="10" min="10" 
+                           style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
                 </div>
-                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px;">
-                    <span>Saltos/Turno:</span>
-                    <input type="number" id="tabuSkips" value="3" min="0" style="width:50px; text-align:center; color:#000;">
+                
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
+                    <span>Saltos:</span>
+                    <input type="number" id="tabuSkips" value="3" min="0" 
+                           style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
                 </div>
             </div>
             
