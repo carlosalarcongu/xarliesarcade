@@ -3,7 +3,7 @@ app.pinturilloImp = {
     ctx: null,
     isMyTurn: false,
     hasDrawn: false,
-    myStrokesThisTurn: 0, // Nuevo: Contador para lógica de deshacer/pasar
+    myStrokesThisTurn: 0,
     
     send: (type, val) => socket.emit('pintuImp_action', { type, value: val }),
     
@@ -14,6 +14,7 @@ app.pinturilloImp = {
         app.pinturilloImp.send('start', { rounds, category: cat, hints });
     },
     
+    // ... (reset, changeImpostors, undo, passTurn, vote... MANTENER IGUAL) ...
     reset: () => app.pinturilloImp.send('reset'),
     changeImpostors: (v) => app.pinturilloImp.send('changeImpostors', v),
     
@@ -68,7 +69,7 @@ app.pinturilloImp = {
             if(!app.pinturilloImp.isMyTurn) return;
             drawing = true;
             app.pinturilloImp.hasDrawn = true;
-            app.pinturilloImp.myStrokesThisTurn++; // Sumamos trazo
+            app.pinturilloImp.myStrokesThisTurn++; 
             
             document.getElementById('btnPassTurn').disabled = false;
             
@@ -125,7 +126,20 @@ app.pinturilloImp = {
     }
 };
 
+// --- NUEVO: ESCUCHAR CATEGORÍAS ---
+socket.on('pintuImpCategories', (cats) => {
+    const sel = document.getElementById('pintuCategory');
+    if(sel) {
+        // Rellena el selector con las categorías que vienen del servidor
+        sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+        // Seleccionar MIX por defecto si existe
+        if(cats.find(c => c.id === 'MIX')) sel.value = 'MIX';
+    }
+});
+// ----------------------------------
+
 socket.on('pintuImpUpdate', (data) => {
+    // ... (Contenido de pintuImpUpdate IGUAL que antes) ...
     const { players, gameInProgress, settings, turn, phase } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     app.pinturilloImp.iAmAdmin = me ? me.isAdmin : false;
@@ -134,7 +148,7 @@ socket.on('pintuImpUpdate', (data) => {
         app.showScreen('pinturilloImpLobby');
         document.getElementById('pintuImpCount').innerText = players.length;
         document.getElementById('pintuImpImpostorCount').innerText = settings.impostors;
-        document.getElementById('pintuImpSummaryModal').classList.add('hidden'); // Cierre automático al volver a lobby
+        document.getElementById('pintuImpSummaryModal').classList.add('hidden'); 
         
         const list = document.getElementById('pintuImpList');
         list.innerHTML = players.map(p => `<li>${p.name} ${p.isAdmin?'👑':''} ${app.pinturilloImp.iAmAdmin && !p.isAdmin ? `<button class="kick-btn" style="width:auto; padding:2px 8px;" onclick="app.pinturilloImp.kick('${p.id}')">❌</button>`:''}</li>`).join('');
@@ -156,7 +170,6 @@ socket.on('pintuImpUpdate', (data) => {
         app.showScreen('pinturilloImpGame');
         if(!app.pinturilloImp.ctx) app.pinturilloImp.initCanvas();
 
-        // Cerrar modal de resultados anterior si estaba abierto al empezar nueva partida
         document.getElementById('pintuImpSummaryModal').classList.add('hidden');
 
         if (phase === 'DRAW') {
@@ -167,7 +180,6 @@ socket.on('pintuImpUpdate', (data) => {
             const drawer = players.find(p => p.id === turn.currentDrawer);
             const isMe = drawer && drawer.id === me.id;
             
-            // Si cambia el turno y ahora soy yo, reseteo mis contadores locales
             if (isMe && !app.pinturilloImp.isMyTurn) {
                 app.pinturilloImp.myStrokesThisTurn = 0;
                 app.pinturilloImp.hasDrawn = false;
@@ -224,6 +236,7 @@ socket.on('pintuImpUpdate', (data) => {
     }
 });
 
+// ... (Resto de listeners role, history, drawOp, summary... IGUAL) ...
 socket.on('pintuImpRole', (data) => {
     const roleTitle = document.getElementById('pintuImpRoleTitle');
     const roleWord = document.getElementById('pintuImpRoleWord');

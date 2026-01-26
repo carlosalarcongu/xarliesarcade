@@ -10,6 +10,15 @@ let currentStroke = [];
 let phase = 'LOBBY'; 
 let turnData = {}; 
 
+// --- HELPER: Obtener categorías para el frontend ---
+const getPublicCategories = () => {
+    return Object.keys(database).map(k => ({
+        id: k,
+        label: database[k].label || k
+    }));
+};
+// --------------------------------------------------
+
 function broadcast(io) {
     const pub = players.map(p => ({
         id: p.id,
@@ -33,20 +42,26 @@ const gameModule = (io, socket) => {
         if (action.type === 'start' && me.isAdmin) {
             if (players.length < 2) return;
             
-            // Recoger configuración
             settings.rounds = parseInt(action.value.rounds) || 1;
             settings.category = action.value.category || 'MIX';
             settings.hints = !!action.value.hints;
             
-            // Filtrar palabras
+            // LÓGICA DATABASE ACTUALIZADA
             let wordPool = [];
             if (settings.category === 'MIX') {
-                Object.keys(database).forEach(k => { if(k!=='MIX') wordPool = wordPool.concat(database[k].words); });
+                // Cogemos todas menos MIX
+                Object.keys(database).forEach(k => { 
+                    if(k!=='MIX' && database[k].words) {
+                        wordPool = wordPool.concat(database[k].words); 
+                    }
+                });
             } else if (database[settings.category]) {
-                wordPool = database[settings.category].words;
+                wordPool = database[settings.category].words || [];
             }
 
-            if(wordPool.length === 0) wordPool = [{word: "CASA", hint: "Vives en ella"}, {word: "SOL", hint: "Brilla"}];
+            // Fallback
+            if(!wordPool || wordPool.length === 0) wordPool = [{word: "CASA", hint: "Vivienda"}, {word: "SOL", hint: "Astro"}];
+            
             const sel = wordPool[Math.floor(Math.random() * wordPool.length)];
             
             // Roles
@@ -57,7 +72,7 @@ const gameModule = (io, socket) => {
             turnData = {};
             turn.order = indices; 
             turn.currentLap = 1;
-            turn.turnIndex = 0; // Índice global de turnos jugados
+            turn.turnIndex = 0; 
             
             players.forEach((p, i) => {
                 p.isDead = false;
@@ -67,7 +82,8 @@ const gameModule = (io, socket) => {
                 turnData[p.id] = { 
                     role: isImp ? 'IMPOSTOR' : 'ARTISTA', 
                     word: sel.word,
-                    hint: (settings.hints && !isImp) ? sel.hint : null
+                    // Soporte para estructura {word, hint}
+                    hint: (settings.hints && !isImp) ? (sel.hint || "Sin pista") : null
                 };
                 if(p.socketId) io.to(p.socketId).emit('pintuImpRole', turnData[p.id]);
             });
@@ -81,18 +97,20 @@ const gameModule = (io, socket) => {
             phase = 'DRAW';
             canvasHistory = [];
             currentStroke = [];
-            
             turn.currentDrawer = players[turn.order[0]].id;
+            
             broadcast(io);
             io.to('pinturilloImp').emit('pintuImpCanvasHistory', canvasHistory);
         }
 
+        // ... (Resto de acciones: changeImpostors, draw_*, undo, pass, vote... IGUALES) ...
+        // Simplemente copia el bloque de acciones anterior, no ha cambiado la lógica interna
+        // Solo asegúrate de copiar todo el bloque de ifs que tenías antes.
+        
         if (action.type === 'changeImpostors' && me.isAdmin) {
             settings.impostors = Math.max(1, Math.min(players.length-1, settings.impostors + action.value));
             broadcast(io);
         }
-
-        // --- DRAWING ---
         if (action.type === 'draw_start' && phase === 'DRAW' && turn.currentDrawer === me.id) {
             currentStroke = [action.value];
             socket.broadcast.to('pinturilloImp').emit('pintuImpDrawOp', { type: 'start', ...action.value });
@@ -105,34 +123,25 @@ const gameModule = (io, socket) => {
             if(currentStroke.length > 0) canvasHistory.push(currentStroke);
             currentStroke = [];
         }
-
         if (action.type === 'undo' && phase === 'DRAW' && turn.currentDrawer === me.id) {
             if (canvasHistory.length > 0) {
                 canvasHistory.pop();
                 io.to('pinturilloImp').emit('pintuImpCanvasHistory', canvasHistory);
             }
         }
-
         if (action.type === 'pass' && phase === 'DRAW' && turn.currentDrawer === me.id) {
             turn.turnIndex++;
-            
-            // Calcular límite total de turnos (Jugadores * Vueltas)
             const totalTurns = players.length * settings.rounds;
-
             if (turn.turnIndex >= totalTurns) {
                 phase = 'VOTE';
                 turn.currentDrawer = null;
             } else {
-                // Siguiente dibujante (cíclico)
                 const nextIdx = turn.turnIndex % players.length;
-                // Actualizar número de vuelta actual
                 turn.currentLap = Math.floor(turn.turnIndex / players.length) + 1;
                 turn.currentDrawer = players[turn.order[nextIdx]].id;
             }
             broadcast(io);
         }
-
-        // --- VOTE ---
         if (action.type === 'vote' && phase === 'VOTE' && !me.isDead) {
             me.votedFor = (me.votedFor === action.value) ? null : action.value;
             broadcast(io);
@@ -175,7 +184,11 @@ const handleJoin = (socket, name) => {
     p.isDead = false; p.votedFor = null;
     players.push(p);
     socket.join('pinturilloImp');
+    
+    // CAMBIO: ENVIAR CATEGORIAS AL ENTRAR
+    socket.emit('pintuImpCategories', getPublicCategories());
     socket.emit('joinedSuccess', { playerId: p.id, room: 'pinturilloImp' });
+    
     broadcast(socket.server);
 };
 
@@ -184,17 +197,29 @@ const handleRejoin = (socket, savedId) => {
     if(p) {
         p.socketId = socket.id; p.connected = true;
         socket.join('pinturilloImp');
+        
+        // CAMBIO: ENVIAR CATEGORIAS AL RECONECTAR
+        socket.emit('pintuImpCategories', getPublicCategories());
         socket.emit('joinedSuccess', { playerId: p.id, room: 'pinturilloImp', isRejoin: true });
-        if(gameInProgress) socket.emit('pintuImpRole', turnData[p.id]);
-        if(phase === 'DRAW') socket.emit('pintuImpCanvasHistory', canvasHistory);
+        
+        if(gameInProgress) {
+            if(turnData[p.id]) socket.emit('pintuImpRole', turnData[p.id]);
+            if(phase === 'DRAW') socket.emit('pintuImpCanvasHistory', canvasHistory);
+        }
         broadcast(socket.server);
     } else socket.emit('sessionExpired');
 };
 
 const handleLeave = (id) => { players = players.filter(p => p.id !== id); };
+const handleDisconnect = (socket) => {
+    const p = players.find(x => x.socketId === socket.id);
+    if(p) { p.connected = false; broadcast(socket.server); setTimeout(() => { if(!p.connected) handleLeave(p.id); }, 900000); }
+};
+
 gameModule.resetInternalState = () => { players = []; gameInProgress = false; phase='LOBBY'; canvasHistory=[]; };
 gameModule.handleJoin = handleJoin;
 gameModule.handleRejoin = handleRejoin;
 gameModule.handleLeave = handleLeave;
+gameModule.handleDisconnect = handleDisconnect;
 
 module.exports = gameModule;
