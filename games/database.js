@@ -476,43 +476,32 @@ module.exports = {
     { word: "Puyol", hint: "Muralla" },
     { word: "Mascherano", hint: "Sacrificio" },
 
-    // Compañeros Cristiano
     { word: "Modric", hint: "Bóveda" },
     { word: "Benzema", hint: "Metamorfosis" },
     { word: "Ramos", hint: "Catarsis" },
-    { word: "Xavi Alonso", hint: "Cartografía" },
-    { word: "Van der Sar", hint: "Envergadura" },
-    { word: "Evra", hint: "Elasticidad" },
-    { word: "Vidic", hint: "Colisión" },
+    { word: "Xabi Alonso", hint: "Cartografía" },
     { word: "Buffon", hint: "Longevità" },
     { word: "Chiellini", hint: "Cemento" },
-
-    // Ganadores Champions League
-    { word: "Van Basten", hint: "Acróbata" },
+    { word: "Pirlo", hint: "Visión" },
+    { word: "Totti", hint: "Eterno" },
+    { word: "Del Piero", hint: "Clasicismo" },
     { word: "Gullit", hint: "Ecléctico" },
-    { word: "Rijkaard", hint: "Equilibrio" },
     { word: "Giggs", hint: "Persistencia" },
     { word: "Scholes", hint: "Precisión" },
     { word: "Gerrard", hint: "Pulmón" },
     { word: "Lampard", hint: "Llegada" },
     { word: "Vieira", hint: "Autoridad" },
     { word: "Henry", hint: "Elegancia" },
-    { word: "Bergkamp", hint: "Control" },
     { word: "Cannavaro", hint: "Anticipación" },
     { word: "Chiellini", hint: "Trinchera" },
     { word: "Bonucci", hint: "Salida" },
     { word: "Cafu", hint: "Autopista" },
     { word: "Roberto Carlos", hint: "Balística" },
-    { word: "Canavaro", hint: "Lectura" },
-    { word: "Stam", hint: "Intimidación" },
-    { word: "Nesta", hint: "Pulcritud" },
     { word: "Thuram", hint: "Resistencia" },
     { word: "Pepe", hint: "Belicosidad" },
     { word: "Lahm", hint: "Polivalencia" },
     { word: "Alves", hint: "Hipercinesia" },
     { word: "Carvalho", hint: "Sobriedad" },
-    { word: "Heinze", hint: "Aspereza" },
-    { word: "Silvestre", hint: "Transición" },
 
     // Liga Española e Inglesa actuales
     { word: "Mbappé", hint: "Explosión" },
@@ -537,9 +526,6 @@ module.exports = {
     { word: "Agüero", hint: "Finalización" },
     { word: "Hazard", hint: "Intermitencia" },
     { word: "Panenka", hint: "Atrevimiento" },
-    { word: "Kempes", hint: "Melena" },
-    { word: "Simonsen", hint: "Equilibrio" },
-    { word: "Van der Sar", hint: "Altura" },
     { word: "Yashin", hint: "Araña" },
     { word: "Gianluigi Buffon", hint: "Eternidad" },
     { word: "Cech", hint: "Casco" },
@@ -557,9 +543,10 @@ module.exports = {
     { word: "Simeone", hint: "Fervor" },
     { word: "Flick", hint: "Verticalidad" },
     { word: "Ten Hag", hint: "Estructura" },
-    { word: "Arteta", hint: "Laboratorio" },
     { word: "Pochettino", hint: "Intensidad" },
-    { word: "Nagelsmann", hint: "Juventud" }
+    { word: "Klopp", hint: "Presión" },
+    { word: "Conte", hint: "Disciplina" },
+
   ]
 },
 
@@ -575,52 +562,51 @@ module.exports = {
             { word: "Luis Cruz", hint: "Volante" }, // Por conducir mal
 
             // --- NACHO ---
-            { word: "La Chunga", hint: "Fiesta" },
-            { word: "Carnicero del Lupa", hint: "Filetes" },
+            { word: "Chungar habitualmente", hint: "Fiesta" },
+            { word: "Carnicero", hint: "Filetes" },
             { word: "Amor italiano", hint: "Erasmus" },
             { word: "Nacho", hint: "Charcutería" },
             { word: "Nacho", hint: "Entradas" },
 
             // --- ALBA CADELO ---
-            { word: "Pinchar ruedas", hint: "Venganza" },
-            { word: "Racing Genuine", hint: "Novio" },
+            { word: "Pinchar ruedas", hint: "Dos" },
+            { word: "Racing de Santander", hint: "Sitio" },
+            { word: "Racista", hint: "Alba Cadelo" },
             { word: "Las Cagigas", hint: "Ubicación" },
             { word: "Alba Cadelo", hint: "Fisioterapia" },
             { word: "Alba Cadelo", hint: "Rural" },
 
             // --- ALEJANDRA SILIÓ ---
-            { word: "Tiene una correa", hint: "Mascota" },
-            { word: "Odia el garito", hint: "Antro" },
-            { word: "Ex adicta", hint: "Humo" },
+            { word: "Poner correa", hint: "Mascota" },
+            { word: "Odiar el garito", hint: "Antro" },
             { word: "Alejandra Silió", hint: "Embaucadora" },
             { word: "Alejandra Silió", hint: "Relaciones" },
 
             // --- BEA PRADO ---
-            { word: "Perro Killo", hint: "Limones" },
+            { word: "Killo", hint: "Limones" },
             { word: "Caras de asco", hint: "Expresión" },
             { word: "Zumba y Pilates", hint: "Gimnasio" },
             { word: "Bea Prado", hint: "Psicología" },
-            { word: "Bea Prado", hint: "Militar" }, // Por el novio
+            { word: "Bea Prado", hint: "Militar" }, 
 
             // --- CARLOS (TÚ) ---
             { word: "Coche Autobús", hint: "Dimensiones" },
             { word: "Novio de Silvia", hint: "Cuñado" },
-            { word: "Farolero al Mus", hint: "Engaño" },
+            { word: "Bluffer de Mus", hint: "Engaño" },
             { word: "Ex mujeriego", hint: "Pasado" },
             { word: "Carlos", hint: "Informático" },
             { word: "Carlos", hint: "Máster" },
 
             // --- DIEGO ACEBO (DAC) ---
-            { word: "No tiene bachiller", hint: "Estudios" },
+            { word: "No tener bachiller", hint: "Estudios" },
             { word: "Paja táctica", hint: "Llegada" },
-            { word: "Fake fan", hint: "Bernabéu" },
             { word: "Diego Acebo", hint: "Ron-cola" },
             { word: "Diego Acebo", hint: "Derrochador" },
 
             // --- JAPA ---
             { word: "Siete dioptrías", hint: "Ceguera" },
-            { word: "Delincuente en periódico", hint: "Prensa" },
-            { word: "Conectar el HDMI", hint: "Ingeniero" },
+            { word: "Delincuente sale en el periódico", hint: "Prensa" },
+            { word: "Cenicero de Potes", hint: "Tonto" },
             { word: "Villano de Setién", hint: "Antagonista" },
             { word: "Japa", hint: "Barba" },
             { word: "Japa", hint: "Leyenda" },
@@ -628,33 +614,33 @@ module.exports = {
             // --- IKER ---
             { word: "Maestro del Poper", hint: "Nariz" },
             { word: "Queso de Potes", hint: "Olor" },
-            { word: "Reality en el garito", hint: "Show" },
             { word: "Iker", hint: "Mecatrónico" },
             { word: "Iker", hint: "After" },
 
             // --- JAVIER MALIAÑO ---
-            { word: "Falso alemán", hint: "Idioma" },
+            { word: "B1 de alemán", hint: "Idioma" },
             { word: "Jugador de pitos", hint: "Naipes" },
-            { word: "Futuro McDonald's", hint: "Ironía" },
+            { word: "Futuro trabajador de McDonald's", hint: "Ironía" },
             { word: "Javier Maliaño", hint: "Doble-Grado" },
             { word: "Javier Maliaño", hint: "Hamburguesa" },
 
             // --- LAURA ---
-            { word: "La Chonda", hint: "Apodo" },
+            { word: "La Chonda", hint: "Promiscua" },
             { word: "Fuera de juego", hint: "Reglamento" },
             { word: "Laura", hint: "Enfermería" },
             { word: "Laura", hint: "Gimnasio" },
+            { word: "Laura Quintanal", hint: "Calentorra" },
+            { word: "Laura", hint: "Salida" },
+            { word: "Marián", hint: "Ombligo" },
 
             // --- LUCAS FERNÁNDEZ ---
-            { word: "Tiene pistola", hint: "Licencia" },
             { word: "El Militar", hint: "Uniforme" },
             { word: "Lucas Fernández", hint: "Arma" },
             { word: "Lucas Fernández", hint: "Setién" },
 
             // --- LUCAS GONZÁLEZ ---
             { word: "Iceman", hint: "Sentimientos" },
-            { word: "Apagar y encender", hint: "Soporte" },
-            { word: "Novia andaluza", hint: "Sur" },
+            { word: "Tener Novia Andaluza", hint: "Sur" },
             { word: "Lucas González", hint: "Informático" },
             { word: "Lucas González", hint: "Hielo" },
 
@@ -671,40 +657,34 @@ module.exports = {
             { word: "Marcos Fernández", hint: "Grado" },
 
             // --- MARIO GÁNDARA ---
-            { word: "Sofá en el Audi", hint: "Tetris" },
+            { word: "Meter un Sofá en el Audi", hint: "Tetris" },
             { word: "Habla ininteligible", hint: "Alcohol" },
-            { word: "Mario Gándara", hint: "Correa" }, // Por Alejandra
-            { word: "Mario Gándara", hint: "Mecatrónico" },
+            { word: "Mario Gándara", hint: "Correa" },
+            { word: "Mario Gándara", hint: "Meca" },
 
             // --- MATEO VILLA ---
-            { word: "Dejó la ingeniería", hint: "Abandono" },
-            { word: "Intervención puntual", hint: "Conversación" },
+            { word: "Dejar la carrera", hint: "Alumno de Llados" },
+            { word: "La única manera de evitar algo", hint: "Conversación" },
             { word: "Mateo Villa", hint: "Magisterio" },
             { word: "Mateo Villa", hint: "Mujeriego" },
 
             // --- PALOMA CADELO ---
-            { word: "Turno de guardia", hint: "Hospital" },
-            { word: "Volkswagen Polo", hint: "Vehículo" },
+            { word: "Polo", hint: "Vehículo" },
             { word: "Paloma Cadelo", hint: "Enfermera" },
             { word: "Paloma Cadelo", hint: "Trabajo" },
 
             // --- SILVIA ---
             { word: "Kai y Atos", hint: "Manada" },
-            { word: "Ya ha madurado", hint: "Cambio" },
             { word: "Silvia", hint: "Audi" },
             { word: "Silvia", hint: "Enfermería" },
 
             // --- TANIA GALLEGO ---
             { word: "Metro cincuenta", hint: "Estatura" },
-            { word: "Hermano gallo", hint: "Corral" },
-            { word: "Disociando", hint: "Mente" },
             { word: "Tania Gallego", hint: "Psicología" },
             { word: "Tania Gallego", hint: "Hippie" },
 
             // --- TITO ---
-            { word: "Mandíbula rota", hint: "Puño" },
-            { word: "Conduce un Mercedes", hint: "Lujo" },
-            { word: "Desaparecido", hint: "Ausencia" },
+            { word: "Mercedes", hint: "Merche" },
             { word: "Tito", hint: "Trabajo" },
             { word: "Tito", hint: "Coche" },
 
@@ -730,7 +710,9 @@ module.exports = {
             { word: "Ana López", hint: "Vecina" },
             { word: "El Rompe-Cazoletas", hint: "Tren" },
             { word: "Fordfi", hint: "faro" },
-            // Sin revisar:
+            // Sin revisar
+            { word: "Lupa", hint: "Investigación"},
+            
           ]
     }
 };
