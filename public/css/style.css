@@ -348,3 +348,39 @@ li {
     font-size: 1.2em; /* Número más grande */
     height: 40px;     /* Altura fija cómoda */
 }
+
+/* ... AL FINAL DEL ARCHIVO ... */
+
+.canvas-container {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    touch-action: none;
+    margin: 10px auto;
+    border: 4px solid #57606f;
+    position: relative;
+    width: 300px; 
+    height: 300px;
+}
+
+canvas {
+    display: block;
+    cursor: crosshair;
+}
+
+.canvas-controls {
+    display: flex;
+    justify-content: space-between;
+    width: 300px;
+    margin: 0 auto;
+}
+
+.draw-status {
+    background: #2f3542;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #74b9ff;
+    color: #74b9ff;
+    font-weight: bold;
+}

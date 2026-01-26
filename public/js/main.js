@@ -11,11 +11,12 @@ const GAME_RULES = {
 
 // Mapeo de Emojis para el título
 const ROOM_EMOJIS = {
-    impostor: "🕵️",
+    impostor: "🕵️🕵️",
     lobo: "🐺",
     anecdotas: "📜",
     elmas: "🏆",
     tabu: "🚫",
+    pinturilloImp: "🕵️🎨",
     feedback: "💌"
 };
 
@@ -27,7 +28,10 @@ window.app = {
 
     // UI Helper
     showScreen: (id) => {
-        const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 'tabuLobby', 'tabuGame'];
+        const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 
+            'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 
+            'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 
+            'tabuLobby', 'tabuGame', 'pinturilloImpLobby', 'pinturilloImpGame'];
         screens.forEach(s => {
             const el = document.getElementById(s);
             if(el) el.classList.add('hidden');
@@ -38,7 +42,7 @@ window.app = {
 
     // PERSISTENCIA: Buscar sesión activa
     findActiveSession: () => {
-        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu'];
+        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp'];
         for (let r of rooms) {
             if (localStorage.getItem(r + '_playerId')) return r;
         }
@@ -131,7 +135,7 @@ window.app = {
     },
     
     // Placeholders para módulos
-    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {} 
+    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}
 };
 
 // --- EVENTOS GLOBALES DE SOCKET ---
@@ -148,6 +152,7 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'anecdotas') app.showScreen('anecdotasLobby'); 
     else if (data.room === 'elmas') app.showScreen('elmasLobby');
     else if (data.room === 'tabu') app.showScreen('tabuLobby');
+    else if (data.room === 'pinturilloImp') app.showScreen('pinturilloImpLobby');
 });
 
 socket.on('joinError', (msg) => { alert("⛔ " + msg); });

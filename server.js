@@ -22,6 +22,7 @@ io.on('connection', (socket) => {
     require('./games/elmas')(io, socket);
     require('./games/feedback')(io, socket);
     require('./games/tabu')(io, socket);
+    require('./games/pinturilloImp')(io, socket);
 
     // --- UNIRSE A SALA (JOIN) ---
     socket.on('joinRoom', ({ name, room }) => {
@@ -37,6 +38,7 @@ io.on('connection', (socket) => {
             case 'anecdotas': require('./games/anecdotas').handleJoin(socket, name); break;
             case 'elmas': require('./games/elmas').handleJoin(socket, name); break;
             case 'tabu': require('./games/tabu').handleJoin(socket, name); break;
+            case 'pinturilloImp': require('./games/pinturilloImp').handleJoin(socket, name); break;
         }
     });
 
@@ -70,6 +72,13 @@ io.on('connection', (socket) => {
                 if(require('./games/tabu').handleRejoin) 
                     require('./games/tabu').handleRejoin(socket, savedId); 
                 break;
+            case 'pinturilloImp': 
+                if(require('./games/pinturilloImp').handleRejoin) 
+                    require('./games/pinturilloImp').handleRejoin(socket, savedId); 
+                break;
+            default:
+                console.log(`[REJOIN] Sala desconocida: ${savedRoom}`);
+                console.log(`[REJOIN] Socket ID: ${socket.id}, visto hace ${new Date().toISOString()}`); 
         }
     });
 
@@ -85,6 +94,7 @@ io.on('connection', (socket) => {
             case 'anecdotas': require('./games/anecdotas').handleLeave(playerId); break;
             case 'elmas': require('./games/elmas').handleLeave(playerId); break;
             case 'tabu': require('./games/tabu').handleLeave(playerId); break;
+            case 'pinturilloImp': require('./games/pinturilloImp').handleLeave(playerId); break;
         }
     });
 
@@ -97,6 +107,7 @@ io.on('connection', (socket) => {
             if(require('./games/anecdotas').resetInternalState) require('./games/anecdotas').resetInternalState();
             if(require('./games/elmas').resetInternalState) require('./games/elmas').resetInternalState();
             if(require('./games/tabu').resetInternalState) require('./games/tabu').resetInternalState();
+            if(require('./games/pinturilloImp').resetInternalState) require('./games/pinturilloImp').resetInternalState();
             
             socket.emit('debug_reset_ok');
         } catch (e) {
@@ -107,6 +118,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         // La desconexión se maneja en cada módulo de juego individualmente
         // para aplicar los timeouts de seguridad.
+
     });
 });
 
