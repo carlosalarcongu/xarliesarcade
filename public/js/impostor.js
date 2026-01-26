@@ -2,9 +2,6 @@ app.impostor = {
     iAmAdmin: false,
     send: (type, val) => socket.emit('impostor_action', { type, value: val }),
     vote: (id) => {
-        document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
-        const btn = document.getElementById(`vote_${id}`);
-        if(btn) btn.classList.add('selected');
         socket.emit('impostor_action', { type: 'vote', targetId: id });
     },
     clearVotes: () => socket.emit('impostor_action', { type: 'clearVotes' }),

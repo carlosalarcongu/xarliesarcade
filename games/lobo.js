@@ -130,7 +130,9 @@ const gameModule = (io, socket) => {
         const me = players.find(p => p.socketId === socket.id);
         if (!me) return;
         if (action.type === 'vote') {
-            if (!me.isDead) {
+            const me = players.find(p => p.socketId === socket.id);
+            if (me && !me.isDead) {
+                // Toggle: Votar / Desvotar
                 me.votedFor = (me.votedFor === action.targetId) ? null : action.targetId;
                 broadcast(io);
             }

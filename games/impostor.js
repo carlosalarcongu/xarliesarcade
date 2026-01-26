@@ -180,8 +180,9 @@ const gameModule = (io, socket) => {
         }
         // --- ACCIONES DE JUGADOR ---
         if (action.type === 'vote') {
-            if (!me.isDead) { // Solo votan los vivos
-                // Toggle voto: si ya voté a este, lo quito. Si no, lo pongo.
+            const me = players.find(p => p.socketId === socket.id);
+            if (me && !me.isDead) { // Solo votan los vivos
+                // Si ya le votaba a este target, lo quito (null). Si no, lo pongo.
                 me.votedFor = (me.votedFor === action.targetId) ? null : action.targetId;
                 broadcast(io);
             }

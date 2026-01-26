@@ -18,9 +18,6 @@ app.lobo = {
     
     // Acciones Juego
     vote: (id) => {
-        document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
-        const btn = document.getElementById(`lobo_vote_${id}`);
-        if(btn) btn.classList.add('selected');
         socket.emit('lobo_action', { type: 'vote', targetId: id });
     },
     clearVotes: () => socket.emit('lobo_action', { type: 'clearVotes' }),
@@ -104,7 +101,7 @@ socket.on('updateLoboList', (data) => {
                     }
                 }
 
-                if(app.lobo.iAmAdmin) {
+                if(app.lobo.iAmAdmin) { // Eliminada restricción de autovoto para admin
                     html += `<div style="margin-top:5px; display:flex; gap:5px; z-index:5;">
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.lobo.kill(event, '${p.id}')">💀</button>
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="socket.emit('lobo_action', {type:'kick', targetId:'${p.id}'})">❌</button>
@@ -123,6 +120,8 @@ socket.on('updateLoboList', (data) => {
         app.showScreen('loboLobby');
     }
 });
+
+
 
 socket.on('loboRoleAssigned', (data) => {
     app.showScreen('loboGame');

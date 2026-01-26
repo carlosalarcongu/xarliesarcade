@@ -76,16 +76,37 @@ socket.on('updateTabuState', (data) => {
         
         if (turnData.status === 'PRE_TURN') {
             const teamName = turnData.currentTeam === 'BLUE' ? 'AZUL' : 'ROJO';
+            const teamColor = turnData.currentTeam === 'BLUE' ? '#54a0ff' : '#ff6b6b';
+            
+            // 1. Identificar al que describe
             const describerObj = players.find(p => p.id === turnData.describerId);
             const describerName = describerObj ? describerObj.name : '...';
             
+            // 2. Identificar a los que adivinan (resto del equipo)
+            const guessers = players.filter(p => p.team === turnData.currentTeam && p.id !== turnData.describerId);
+            const guessersNames = guessers.length > 0 ? guessers.map(g => g.name).join(', ') : 'Nadie (Modo Solo)';
+            
+            // 3. Renderizar Info de Roles (Sin cuenta atrás central)
             cardArea.innerHTML = `
-                <div style="font-size:2em; margin-top:50px;">
-                    TURNO EQUIPO ${teamName}<br>
-                    <span style="color:#fff; font-weight:bold">${describerName}</span> explica.
-                    <br><br>
-                    <span style="font-size:3em; color:#ffeaa7">${turnData.timer}</span>
+                <div style="margin-top:40px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                    <h2 style="margin:0; font-size:2em; color:white;">TURNO EQUIPO <span style="color:${teamColor}">${teamName}</span></h2>
+                    <hr style="border-color:#555; margin: 20px auto; width: 50%;">
+                    
+                    <div style="margin-bottom: 20px;">
+                        <span style="display:block; font-size:0.9em; color:#aaa; margin-bottom:5px;">🗣️ EL QUE DEFINE</span>
+                        <span style="font-size:1.6em; font-weight:bold; color:#fff;">${describerName}</span>
+                    </div>
+                    
+                    <div>
+                        <span style="display:block; font-size:0.9em; color:#aaa; margin-bottom:5px;">🤔 EL QUE ADIVINA</span>
+                        <span style="font-size:1.3em; color:#ddd;">${guessersNames}</span>
+                    </div>
+
+                    <div style="margin-top: 30px; color: ${teamColor}; font-style: italic; font-size: 0.9em;">
+                        ¡Preparaos!
+                    </div>
                 </div>`;
+            
             actionButtons.classList.add('hidden');
         }
         
