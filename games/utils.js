@@ -22,7 +22,8 @@ module.exports = {
         return {
             id: stableId,
             socketId: socketId,
-            name: cleanName + " " + emoji, // Nombre final con emoji
+            // name: cleanName + " " + emoji, // Nombre final con emoji
+            name: cleanName, // Nombre final con emoji
             rawName: cleanName,            // Nombre limpio por si acaso
             isAdmin: isAdmin,
             connected: true,
