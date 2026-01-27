@@ -30,6 +30,17 @@ window.app = {
         let hasMoved = false; // Para diferenciar clic de arrastre
         let offsetX, offsetY;
 
+        //Si ya hay nombre asignado:
+        if(app.myPlayerName) {
+            //Si no es admin añadir silueta:
+            if(!app.myPlayerName.toLowerCase().includes("admin")) {
+                app.myPlayerName += " 👤";
+            } // Si es admin añadir corona: 
+            else {
+                app.myPlayerName += " 👑";
+            }
+        }
+
         // Función unificada de inicio
         const startDrag = (x, y) => {
             isDragging = true;
@@ -217,7 +228,7 @@ window.app = {
 
         // --- CORRECCIÓN: LIMPIEZA DE NOMBRE ---
         // Eliminamos emojis del nombre
-        name = name.replace(/👑|👤/g, '').trim();
+        // name = name.replace(/👑|👤/g, '').trim();
         // --------------------------------------
         
         localStorage.setItem('global_username', name);

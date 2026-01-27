@@ -7,7 +7,7 @@ const EMOJIS = ["😈","👽","🐸","🦊","🐵","🐼","🐯","🦄","🔥","
 function checkIsAdmin(name) {
     const lower = name.toLowerCase();
     // Aquí defines quién es admin para TODOS los juegos
-    return lower.endsWith(" admin") || ["xarliebarber", "admin", "dios"].includes(lower);
+    return lower.endsWith(" admin") || ["xarliebarber", "admin", "dios", "carlos"].includes(lower);
 }
 
 module.exports = {
@@ -22,7 +22,8 @@ module.exports = {
         return {
             id: stableId,
             socketId: socketId,
-            // name: cleanName + " " + emoji, // Nombre final con emoji
+            //Corona si es admin, silueta si no:
+            
             name: cleanName, // Nombre final con emoji
             rawName: cleanName,            // Nombre limpio por si acaso
             isAdmin: isAdmin,

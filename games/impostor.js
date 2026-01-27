@@ -54,8 +54,7 @@ const handleJoin = (socket, nameRaw) => {
 
     const p = Utils.createPlayer(socket.id, cleanName);
     
-    // 2. Asignar Admin: Si tiene corona O es el primero
-    p.isAdmin = hasCrown || players.length === 0;
+    // p.isAdmin = hasCrown;
     p.isDead = false;
     p.votedFor = null;
     
