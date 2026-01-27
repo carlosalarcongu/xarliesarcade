@@ -149,6 +149,12 @@ window.app = {
             return app.showScreen('feedbackScreen');
         }
         
+        if (room === 'mus') {
+            app.showScreen('musScreen');
+            if (app.mus && app.mus.init) app.mus.init();
+            return;
+        }
+        
         const active = app.findActiveSession();
         if (active && active !== room) {
             if(confirm(`⚠️ Ya estás en "${active.toUpperCase()}". ¿Ir allí (a ${active.toUpperCase()})?`)) {
@@ -205,18 +211,21 @@ window.app = {
     // FUNCIÓN CRÍTICA: GESTIÓN DE ENTRADA / GUARDADO DE NOMBRE
     joinGame: () => {
         const nameInput = document.getElementById('username');
-        const name = nameInput.value.trim();
+        let name = nameInput.value.trim();
         
         if (!name) return alert('¡Ponte un nombre!');
+
+        // --- CORRECCIÓN: LIMPIEZA DE NOMBRE ---
+        // Eliminamos emojis del nombre
+        name = name.replace(/👑|👤/g, '').trim();
+        // --------------------------------------
         
-        // GUARDAMOS EN MEMORIA LOCAL PARA SIEMPRE (hasta que decida cambiarlo)
         localStorage.setItem('global_username', name);
         app.myPlayerName = name; 
 
         if (app.currentRoom) {
             socket.emit('joinRoom', { name, room: app.currentRoom });
         } else {
-            // Si solo estaba cambiando nombre desde el hub, volvemos al hub
             app.showScreen('hubScreen');
         }
     },

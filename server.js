@@ -23,6 +23,7 @@ io.on('connection', (socket) => {
     require('./games/feedback')(io, socket);
     require('./games/tabu')(io, socket);
     require('./games/pinturilloImp')(io, socket);
+    require('./games/mus')(io, socket);
 
     // --- UNIRSE A SALA (JOIN) ---
     socket.on('joinRoom', ({ name, room }) => {

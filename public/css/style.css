@@ -405,3 +405,126 @@ canvas {
     color: #74b9ff;
     font-weight: bold;
 }
+
+/* =========================================
+   ESTILOS EXCLUSIVOS PARA LA SALA DE MUS
+   (Tipografía Clásica y Botones 3D)
+   ========================================= */
+
+/* 1. Tipografía Global del Mus */
+#musScreen {
+    font-family: 'Times New Roman', Times, serif;
+    letter-spacing: 0.5px;
+}
+
+#musScreen h1, #musScreen h2, #musScreen h3, #musScreen h4 {
+    font-family: 'Times New Roman', Times, serif;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.6); /* Sombra dura para efecto retro */
+    margin-bottom: 15px;
+}
+
+/* 2. Botones "Táctiles" 3D (Solo en Mus) */
+#musScreen button {
+    font-family: 'Times New Roman', Times, serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 15px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.05s ease;
+    outline: none;
+    position: relative;
+    top: 0;
+    
+    /* El truco del 3D: Sombra sólida abajo */
+    box-shadow: 0 5px 0 rgba(0,0,0,0.4), 0 5px 10px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1); /* Brillo superior */
+}
+
+/* Efecto al pulsar (se hunde) */
+#musScreen button:active {
+    top: 5px; /* Se mueve lo mismo que medía la sombra */
+    box-shadow: 0 0 0 rgba(0,0,0,0.4), inset 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* 3. Inputs y Selectores (Estilo Pergamino Oscuro) */
+#musScreen select, #musScreen input {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 1.1em;
+    background-color: #353b48; /* Fondo oscuro pero distinto */
+    color: #f5f6fa;
+    border: 1px solid #718093;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); /* Hundidos */
+}
+
+#musScreen select:focus, #musScreen input:focus {
+    border-color: #e1b12c;
+    background-color: #2f3640;
+}
+
+/* 4. Tablas de Estadísticas (Elegantes) */
+.mus-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Separación entre filas */
+    margin-top: 10px;
+}
+
+.mus-table th {
+    font-family: 'Times New Roman', Times, serif;
+    color: #e1b12c; /* Dorado */
+    font-size: 1.1em;
+    text-align: left;
+    padding: 10px;
+    border-bottom: 2px solid #718093;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.mus-table td {
+    background: rgba(0,0,0,0.3);
+    padding: 12px;
+    font-size: 1.2em;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.mus-table tr:hover td {
+    background: rgba(255,255,255,0.05); /* Brillo al pasar ratón */
+}
+
+/* Bordes redondeados para las filas de la tabla */
+.mus-table td:first-child { border-radius: 6px 0 0 6px; border-left: 2px solid rgba(255,255,255,0.1); }
+.mus-table td:last-child { border-radius: 0 6px 6px 0; }
+
+/* Columna de victorias destacada */
+.mus-table td.win-col {
+    color: #4cd137;
+    font-weight: bold;
+    font-size: 1.3em;
+    text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+}
+
+/* 5. Cajas de Estadísticas Grandes */
+.stat-big-box {
+    background: linear-gradient(to bottom, #353b48, #2f3640);
+    border: 2px solid #487eb0; /* Borde azulado elegante */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    margin-top: 20px;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.stat-big-box div:first-child {
+    font-size: 5em !important; /* Número gigante */
+    text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+}
+
+#musScreen input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); /* Poner icono blanco */
+    cursor: pointer;
+}

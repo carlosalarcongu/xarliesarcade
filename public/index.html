@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xarlie's Arcade</title>
-    <link rel="stylesheet" href="css/style.css?v=4">
+    <link rel="stylesheet" href="css/style.css?v=5">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -49,6 +49,11 @@
                 <div class="hub-info"><div class="hub-title">Tabú</div><div class="hub-desc">Equipos y palabras prohibidas.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
+            <div class="hub-card" onclick="app.selectRoom('mus')" style="border-left-color: #2f3542;">
+                <div class="hub-icon">🐄</div>
+                <div class="hub-info"><div class="hub-title">Registro Mus</div><div class="hub-desc">Estadísticas y resultados.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
             <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #416348; margin-top: 15px;">
                 <div class="hub-icon">💌</div>
                 <div class="hub-info"><div class="hub-title">Feedback</div><div class="hub-desc">Sugerencias y errores.</div></div>
@@ -79,17 +84,30 @@
         </div>        
         <h2 style="color:#ffa502">🕵️ Impostor Lobby</h2>
         
-        <div id="adminControls" class="admin-panel hidden">
-            <div class="control-row">
-                <button onclick="app.impostor.changeImpostors(-1)">-</button>
-                <span>Impostores: <span id="impostorCountDisp">1</span></span>
-                <button onclick="app.impostor.changeImpostors(1)">+</button>
+        <div id="impostorAdminPanel" class="admin-panel hidden">
+            <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #444;">
+                
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Impostores:</span>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <button onclick="app.impostor.changeImpostors(-1)" style="width:30px; height:30px; padding:0;">-</button>
+                        <span id="impostorCountDisp" style="font-weight:bold; width:20px; text-align:center">1</span>
+                        <button onclick="app.impostor.changeImpostors(1)" style="width:30px; height:30px; padding:0;">+</button>
+                    </div>
+                </div>
+
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                    <span>Categoría:</span>
+                    <select id="impostorCategory" style="width:120px; border-radius:5px; padding:2px;">
+                        </select>
+                </div>
+                
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Pistas:</span>
+                    <input type="checkbox" id="impostorHints" style="width:20px; height:20px;">
+                </div>
             </div>
-            <div class="control-row">
-                <span style="flex-grow:1; text-align:left; padding-left:10px;">Pistas:</span>
-                <button onclick="app.impostor.toggleHints()" id="btnToggleHints" style="width:auto; height:auto; border-radius:5px; padding:5px 15px; font-size:0.8em; background:rgba(0,0,0,0.3);">SI</button>
-            </div>
-            <div id="catButtons" class="category-grid"></div>
+
             <button class="start-btn" onclick="app.impostor.startGame()">▶️ EMPEZAR PARTIDA</button>
         </div>
 
@@ -511,6 +529,122 @@
         <div id="floatingUserText">Cargando...</div>
     </div>
 
+    <div id="musScreen" class="hidden">
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
+        <h2 style="color:#e1b12c; margin-bottom:5px;">🐄 Registro de Mus</h2>
+        
+        <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
+            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#44bd32" onclick="app.mus.addPlayer()">+ Jugador</button>
+            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#0984e3" onclick="app.mus.showAddMatchModal()">+ Partida</button>
+            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#57606f" onclick="app.mus.refresh()">🔄</button>
+            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#d63031" onclick="app.mus.backup()">💾 Backup</button>
+        </div>
+
+        <div class="card" style="padding:10px; margin-bottom:15px; background:#222;">
+            <label style="color:#aaa; font-size:0.8em;">Modo de Visualización:</label>
+            <select id="musViewMode" onchange="app.mus.changeView()" style="width:100%; padding:8px; border-radius:5px; margin-top:5px;">
+                <option value="ranking">🏆 Ranking (Rondas Ganadas)</option>
+                <option value="vic_pareja">Total Rondas de 1 Pareja</option>
+                <option value="vic_persona">Total Rondas de 1 Persona</option>
+                <option value="porc_pareja">Promedio Rondas de 1 Pareja</option>
+                <option value="porc_persona">Promedio Rondas de 1 Persona</option>
+                <option value="examinar_persona">🔬 Examinar Persona (Avanzado)</option>
+                <option value="examinar_pareja">🔬 Examinar Pareja (Avanzado)</option>
+            </select>
+
+            <div id="musFilterControls" class="hidden" style="margin-top:10px;">
+                <div id="divFilterPair" class="hidden">
+                    <label>Pareja:</label>
+                    <select id="musFilterPair" onchange="app.mus.changeView()" style="width:100%"></select>
+                </div>
+                <div id="divFilterPlayer" class="hidden">
+                    <label>Jugador:</label>
+                    <select id="musFilterPlayer" onchange="app.mus.changeView()" style="width:100%"></select>
+                </div>
+            </div>
+
+            <div id="musAnalysisContainer" class="hidden" style="margin-top:10px; border-top:1px solid #444; padding-top:10px;">
+                <div id="divExamPlayer">
+                    <label>Persona:</label>
+                    <select id="musExamPlayer" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
+                    <label>Analizar:</label>
+                    <select id="musExamTypeP" onchange="app.mus.runAnalysis()" style="width:100%">
+                        <option value="with_partner">Promedio junto a...</option>
+                        <option value="vs_win">Promedio victorias frente a...</option>
+                        <option value="vs_loss">Promedio derrotas frente a...</option>
+                    </select>
+                </div>
+                <div id="divExamPair" class="hidden">
+                    <label>Pareja:</label>
+                    <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
+                    <label>Analizar:</label>
+                    <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width:100%">
+                        <option value="vs_pair_win">Promedio victorias frente a pareja...</option>
+                        <option value="vs_pair_loss">Promedio derrotas frente a pareja...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="musStatsContainer" style="text-align:center;"></div>
+
+        <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:50px; overflow-y:auto;">
+            <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:400px; border:2px solid #57606f;">
+                <h3 style="margin-top:0;">Nueva Partida</h3>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="flex:1; text-align:center; background:rgba(9, 132, 227, 0.2); padding:5px; border-radius:5px;">
+                        <h4 style="margin:0; color:#74b9ff">Pareja 1</h4>
+                        <select id="musP1" style="width:90%; margin:5px 0;"></select>
+                        <select id="musP2" style="width:90%; margin:5px 0;"></select>
+                        <input type="number" id="musS1" placeholder="Rondas" style="width:50px; text-align:center;">
+                    </div>
+                    <div style="font-weight:bold; padding:0 5px;">VS</div>
+                    <div style="flex:1; text-align:center; background:rgba(214, 48, 49, 0.2); padding:5px; border-radius:5px;">
+                        <h4 style="margin:0; color:#ff7675">Pareja 2</h4>
+                        <select id="musP3" style="width:90%; margin:5px 0;"></select>
+                        <select id="musP4" style="width:90%; margin:5px 0;"></select>
+                        <input type="number" id="musS2" placeholder="Rondas" style="width:50px; text-align:center;">
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" style="background:#555; flex:1;">Cancelar</button>
+                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1;">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
+            </div>
+
+        <div class="card" style="padding:10px; margin-bottom:15px; background:#222; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <label style="color:#e1b12c;">📅 Desde:</label>
+            <input type="date" id="musDateStart" onchange="app.mus.changeView()" style="flex:1; min-width:120px;">
+            <label style="color:#e1b12c;">Hasta:</label>
+            <input type="date" id="musDateEnd" onchange="app.mus.changeView()" style="flex:1; min-width:120px;">
+        </div>
+
+        <div id="musAnalysisContainer" class="hidden" style="margin-top:10px; border-top:1px solid #444; padding-top:10px;">
+                <div style="margin-top:15px; border-top:1px dashed #555; padding-top:10px;">
+                    <label>📈 Gráfico:</label>
+                    <select id="musChartInterval" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:10px;">
+                        <option value="day">Por Días</option>
+                        <option value="month">Por Meses</option>
+                        <option value="year">Por Años</option>
+                    </select>
+                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+                        <canvas id="musChartCanvas" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="musStatsContainer" style="text-align:center;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/main.js?v=2"></script>
@@ -521,19 +655,6 @@
     <script src="js/tabu.js"></script>
     <script src="js/pinturilloImp.js"></script>
     <script src="js/feedback.js"></script>
-    
-    <script>
-        // Funcionalidad extra para el toggle de carta
-        app.impostor.toggleRole = function() {
-            const card = document.getElementById('roleCard');
-            if (card.classList.contains('blur-content')) {
-                card.classList.remove('blur-content');
-                card.classList.add('reveal-content');
-            } else {
-                card.classList.add('blur-content');
-                card.classList.remove('reveal-content');
-            }
-        };
-    </script>
+    <script src="js/mus.js"></script>
 </body>
 </html>

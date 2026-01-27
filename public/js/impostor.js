@@ -1,21 +1,34 @@
 app.impostor = {
     iAmAdmin: false,
+    
     send: (type, val) => socket.emit('impostor_action', { type, value: val }),
+    
+    // Acción de Votar
     vote: (id) => {
         socket.emit('impostor_action', { type: 'vote', targetId: id });
     },
-    clearVotes: () => socket.emit('impostor_action', { type: 'clearVotes' }),
-    kick: (id) => { if(confirm("¿Echar?")) socket.emit('impostor_action', { type: 'kick', targetId: id }); },
-    kill: (e, id) => { e.stopPropagation(); if(confirm("¿Matar/Revivir?")) socket.emit('impostor_action', { type: 'kill', targetId: id }); },
     
-    startGame: () => socket.emit('impostor_action', { type: 'start' }),
+    // Limpiar votos (Admin)
+    clearVotes: () => socket.emit('impostor_action', { type: 'clearVotes' }),
+    
+    // Iniciar juego (Leyendo configuración del DOM)
+    startGame: () => {
+        const cat = document.getElementById('impostorCategory').value;
+        const hints = document.getElementById('impostorHints').checked;
+        app.impostor.send('startGame', { value: { category: cat, hints } });
+    },
+    
+    // Acciones Admin
+    kick: (id) => { if(confirm("¿Echar de la sala?")) socket.emit('impostor_action', { type: 'kick', targetId: id }); },
+    kill: (e, id) => { e.stopPropagation(); if(confirm("¿Matar/Revivir?")) socket.emit('impostor_action', { type: 'kill', targetId: id }); },
     resetGame: () => socket.emit('impostor_action', { type: 'reset' }),
-    changeImpostors: (v) => socket.emit('impostor_action', { type: 'changeImpostorCount', value: v }),
-    toggleCategory: (cat) => socket.emit('impostor_action', { type: 'toggleCategory', value: cat }),
-    toggleHints: () => socket.emit('impostor_action', { type: 'toggleHints' }),
+    changeImpostors: (v) => socket.emit('impostor_action', { type: 'changeImpostors', value: v }),
     revealResults: () => socket.emit('impostor_action', { type: 'revealResults' }),
     
-    backToLobby: () => { if(confirm("¿Volver?")) app.showScreen('hubScreen'); },
+    // Navegación
+    backToLobby: () => { if(confirm("¿Volver al Hub?")) app.goBackToHub(false); },
+    
+    // Efecto visual carta
     toggleRole: () => {
         const c = document.getElementById('roleCard');
         if(c.classList.contains('blur-content')) { c.classList.remove('blur-content'); c.classList.add('reveal-content'); }
@@ -23,60 +36,69 @@ app.impostor = {
     }
 };
 
-socket.on('initSetup', (data) => {
-    app.impostor.iAmAdmin = data.isAdmin;
-    app.categoriesCache = data.categories;
+// --- LISTENERS DEL SOCKET ---
 
-    const grid = document.getElementById('catButtons');
-    grid.innerHTML = "";
-    Object.keys(data.categories).forEach(k => {
-        if(k === 'MIX') return;
-        const btn = document.createElement('div');
-        btn.className = "cat-btn";
-        btn.id = "cat_" + k;
-        btn.innerText = data.categories[k].label;
-        btn.onclick = () => app.impostor.send('toggleCategory', k);
-        grid.appendChild(btn);
-    });
-
-    document.getElementById('adminControls').classList.toggle('hidden', !data.isAdmin);
-    document.getElementById('waitMsg').classList.toggle('hidden', data.isAdmin);
+socket.on('impostorCategories', (cats) => {
+    const sel = document.getElementById('impostorCategory');
+    if(sel) {
+        sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+        if(cats.find(c => c.id === 'MIX')) sel.value = 'MIX';
+    }
 });
 
-socket.on('updateSettings', (s) => {
-    document.getElementById('impostorCountDisp').innerText = s.impostorCount;
-    document.getElementById('btnToggleHints').innerText = s.hintsEnabled ? "SI" : "NO";
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
-    s.selectedCategories.forEach(c => document.getElementById('cat_'+c)?.classList.add('selected'));
-});
-
-socket.on('updateList', (data) => {
-    const { players, gameInProgress } = data;
+socket.on('updateState', (data) => {
+    const { players, gameInProgress, settings } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     if(me) app.impostor.iAmAdmin = me.isAdmin;
 
-    document.getElementById('playerCount').innerText = players.length;
-
-    const btnResults = document.getElementById('btnShowResults');
-    if(btnResults) {
-        btnResults.classList.toggle('hidden', !app.impostor.iAmAdmin);
-    }
+    // Actualizar contadores (texto)
+    const countDisp = document.getElementById('impostorCountDisp');
+    if(countDisp) countDisp.innerText = settings.impostors;
     
-    // Controles Admin
-    document.getElementById('adminControls').classList.toggle('hidden', !app.impostor.iAmAdmin);
-    document.getElementById('waitMsg').classList.toggle('hidden', app.impostor.iAmAdmin);
-    document.getElementById('btnEndVoting').classList.toggle('hidden', !app.impostor.iAmAdmin);
-    document.getElementById('btnClearVotes').classList.toggle('hidden', !app.impostor.iAmAdmin);
+    const pCount = document.getElementById('playerCount');
+    if(pCount) pCount.innerText = players.length;
 
-    // 1. RENDERIZAR LISTA DE LOBBY (Siempre)
+    // --- CONTROLES ADMIN (VISIBILIDAD) ---
+    // CAMBIO AQUÍ: Buscamos 'impostorAdminPanel'
+    const adminPanel = document.getElementById('impostorAdminPanel');
+    const waitMsg = document.getElementById('waitMsg');
+    
+    // Botones de juego
+    const btnEnd = document.getElementById('btnEndVoting');
+    const btnClear = document.getElementById('btnClearVotes');
+    const btnRes = document.getElementById('btnShowResults');
+
+    if(app.impostor.iAmAdmin) {
+        // SI SOY ADMIN: Muestro panel, oculto mensaje de espera
+        if(adminPanel) adminPanel.classList.remove('hidden');
+        if(waitMsg) waitMsg.classList.add('hidden');
+        
+        if(btnEnd) btnEnd.classList.remove('hidden');
+        if(btnClear) btnClear.classList.remove('hidden');
+        if(btnRes) btnRes.classList.remove('hidden');
+    } else {
+        // SI NO SOY ADMIN: Oculto panel, muestro mensaje de espera
+        if(adminPanel) adminPanel.classList.add('hidden');
+        if(waitMsg) waitMsg.classList.remove('hidden');
+        
+        if(btnEnd) btnEnd.classList.add('hidden');
+        if(btnClear) btnClear.classList.add('hidden');
+        if(btnRes) btnRes.classList.add('hidden');
+    }
+
+    // 1. RENDERIZAR LISTA DE LOBBY (Siempre visible en pantalla lobby)
     const list = document.getElementById('playerList');
     if(list) {
         list.innerHTML = "";
         players.forEach(p => {
+            // CAMBIO: Solo corona para admin, nada más.
+            const badge = p.isAdmin ? '👑' : '';
             const li = document.createElement('li');
-            li.innerHTML = `<span>${p.name} ${p.isAdmin?'👑':''}</span>`;
+            li.innerHTML = `<span>${p.name} ${badge}</span>`;
+            
+            // Botón Kick solo para admin y no a sí mismo
             if(app.impostor.iAmAdmin && !p.isAdmin) {
-                li.innerHTML += `<button class="kick-btn" style="padding:5px; width:auto; margin:0;" onclick="app.impostor.kick('${p.id}')">❌</button>`;
+                li.innerHTML += `<button class="kick-btn" style="padding:2px 6px; width:auto; margin-left:10px;" onclick="app.impostor.kick('${p.id}')">❌</button>`;
             }
             list.appendChild(li);
         });
@@ -108,8 +130,8 @@ socket.on('updateList', (data) => {
                     }
                 }
 
-                if(app.impostor.iAmAdmin) {
-                    html += `<div style="margin-top:5px; display:flex; gap:5px; z-index:5;">
+                if(app.impostor.iAmAdmin && p.id !== me.id) { // Admin no se puede matar a sí mismo aquí
+                    html += `<div style="margin-top:5px; display:flex; justify-content:center; gap:5px; z-index:5;">
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kill(event, '${p.id}')">💀</button>
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kick('${p.id}')">❌</button>
                     </div>`;
@@ -128,11 +150,10 @@ socket.on('updateList', (data) => {
     }
 });
 
-// --- LISTENER DE CUENTA ATRÁS RECUPERADO ---
+// --- CUENTA ATRÁS ---
 socket.on('preGameCountdown', (count) => {
-    // Ocultar sala actual visualmente
     app.showScreen('impostorGame'); 
-    document.getElementById('roleCard').classList.add('hidden'); // Ocultar carta momentáneamente
+    document.getElementById('roleCard').classList.add('hidden'); 
     document.getElementById('voteSection').classList.add('hidden');
 
     const overlay = document.getElementById('countdownOverlay');
@@ -141,7 +162,6 @@ socket.on('preGameCountdown', (count) => {
     overlay.classList.remove('hidden');
     let current = count;
     
-    // Función para reproducir y animar
     const tick = () => {
         numEl.innerText = current;
         numEl.style.transform = "scale(1.5)";
@@ -154,7 +174,7 @@ socket.on('preGameCountdown', (count) => {
         }
     };
 
-    tick(); // Primer tick
+    tick(); 
 
     const interval = setInterval(() => {
         current--;
@@ -163,45 +183,52 @@ socket.on('preGameCountdown', (count) => {
         } else {
             clearInterval(interval);
             overlay.classList.add('hidden');
-            // La carta se muestra cuando llega el evento 'roleAssigned'
         }
     }, 1000);
 });
 
-socket.on('roleAssigned', (data) => {
+// --- ASIGNACIÓN DE ROL ---
+socket.on('privateRole', (data) => {
     const card = document.getElementById('roleCard');
+    card.classList.remove('hidden');
     card.className = "blur-content"; // Reset a oculto
-    card.style.borderColor = "#57606f";
     
-    document.getElementById('myRoleTitle').innerText = data.role;
-    document.getElementById('myRoleTitle').style.color = "white";
-    document.getElementById('myRoleWord').innerText = data.text;
-    
-    if (data.role === 'IMPOSTOR') document.getElementById('myRoleInfo').innerText = "Engaña a todos.";
-    else document.getElementById('myRoleInfo').innerText = "Encuentra al impostor.";
+    // Actualizar Textos
+    const title = document.getElementById('myRoleTitle');
+    const word = document.getElementById('myRoleWord');
+    const info = document.getElementById('myRoleInfo');
 
-    document.getElementById('starterName').innerText = data.starter;
-    document.getElementById('catsPlayed').innerText = data.categoriesPlayed;
+    title.innerText = data.role;
+    title.style.color = data.role === 'IMPOSTOR' ? '#ff4757' : '#2ed573';
+    
+    word.innerText = data.word;
+    
+    if (data.role === 'IMPOSTOR') info.innerText = "Engaña a todos.";
+    else info.innerText = data.hint ? `Pista: ${data.hint}` : "Encuentra al impostor.";
+
+    // Datos extra
+    const starter = document.getElementById('starterName');
+    if(starter && data.starter) starter.innerText = data.starter;
+    
+    const cats = document.getElementById('catsPlayed');
+    if(cats && data.categoriesPlayed) cats.innerText = data.categoriesPlayed;
     
     document.getElementById('voteSection').classList.remove('hidden');
     app.showScreen('impostorGame');
 });
 
-// --- LISTENER DE RESUMEN MEJORADO ---
+// --- RESUMEN ---
 socket.on('gameSummary', (data) => {
     if(!data) return;
-    
-    // Mostrar modal
     document.getElementById('summaryModal').classList.remove('hidden');
     
-    // Rellenar datos
     document.getElementById('sumWord').innerText = data.word;
     document.getElementById('sumHint').innerText = data.hintsWasEnabled ? `Pista: ${data.hint}` : "Sin pistas";
     
     const list = document.getElementById('sumImpostors');
     list.innerHTML = "";
 
-    // Ordenar: Vivos primero, Muertos al final
+    // Ordenar: Vivos primero
     const sorted = data.impostorsData.sort((a, b) => (a.isDead === b.isDead) ? 0 : a.isDead ? 1 : -1);
 
     sorted.forEach(imp => {
@@ -210,10 +237,8 @@ socket.on('gameSummary', (data) => {
         div.style.margin = "5px 0";
         
         if (imp.isDead) {
-            // Impostor muerto (tachado)
             div.innerHTML = `<span style="text-decoration:line-through; color:#7f8fa6;">😈 ${imp.name}</span> <span style="font-size:0.8em; color:#ff4757;">(ELIMINADO)</span>`;
         } else {
-            // Impostor vivo - CAMBIA EL COLOR AQUÍ (ej. #ffeaa7 para amarillo claro)
             div.innerHTML = `<span style="color:#ffeaa7; font-weight:bold;">😈 ${imp.name}</span>`;
         }
         list.appendChild(div);
@@ -227,6 +252,7 @@ socket.on('resetGame', () => {
 });
 
 socket.on('youDied', () => {
-    document.getElementById('youDiedSound').play().catch(()=>{});
+    const sound = document.getElementById('youDiedSound');
+    if(sound) sound.play().catch(()=>{});
     if(navigator.vibrate) navigator.vibrate(500);
 });
