@@ -1,7 +1,6 @@
 app.mus = {
     data: null,
     chartInstance: null,
-    // Estado de Ordenación { columna: 'rWon', asc: false }
     sortState: { col: 'rWon', asc: false }, 
 
     init: () => {
@@ -47,32 +46,13 @@ app.mus = {
         }
     },
 
-    // --- DATOS (FILTRADO POR FECHA) ---
-    getFilteredMatches: () => {
-        if (!app.mus.data) return [];
-        
-        const start = document.getElementById('musDateStart').value;
-        const end = document.getElementById('musDateEnd').value;
-        
-        const startDate = start ? new Date(start) : null;
-        const endDate = end ? new Date(end) : null;
-        if(endDate) endDate.setHours(23,59,59);
-
-        return app.mus.data.matches.filter(m => {
-            const mDate = new Date(m.date);
-            if (startDate && mDate < startDate) return false;
-            if (endDate && mDate > endDate) return false;
-            return true;
-        });
-    },
-
     // --- ORDENACIÓN ---
     toggleSort: (col) => {
         if (app.mus.sortState.col === col) {
             app.mus.sortState.asc = !app.mus.sortState.asc; 
         } else {
             app.mus.sortState.col = col;
-            app.mus.sortState.asc = false; // Por defecto descendente (Mayor a menor)
+            app.mus.sortState.asc = false; 
         }
         app.mus.changeView(); 
     },
@@ -82,7 +62,7 @@ app.mus = {
         return app.mus.sortState.asc ? '🔼' : '🔽';
     },
 
-    // --- RENDERIZADO UI ---
+    // --- RENDER UI ---
     renderPlayerSelects: () => {
         if (!app.mus.data) return;
         const opts = app.mus.data.players.map(p => `<option value="${p}">${p}</option>`).join('');
@@ -108,7 +88,6 @@ app.mus = {
         analysis.classList.add('hidden');
         container.innerHTML = "";
 
-        // MODOS DE RANKING (Parejas o Individual)
         if (mode === 'ranking_pair' || mode === 'ranking_player') {
             app.mus.renderRanking(container, mode);
         } 
@@ -124,9 +103,8 @@ app.mus = {
         }
     },
 
-    // --- RANKING UNIFICADO ---
+    // --- RANKING ---
     renderRanking: (container, mode) => {
-        // Elegir fuente de datos según el modo
         const stats = (mode === 'ranking_pair') ? app.mus.calcPairStats() : app.mus.calcPlayerStats();
         const label = (mode === 'ranking_pair') ? 'Pareja' : 'Jugador';
 
@@ -138,26 +116,24 @@ app.mus = {
                 rLost: s.rLost,
                 diff: s.rWon - s.rLost,
                 total: s.total,
-                pct: s.pct // Porcentaje de rondas
+                pct: s.pct
             };
         });
 
-        // Ordenar
         const { col, asc } = app.mus.sortState;
         rows.sort((a, b) => {
             let valA = a[col];
             let valB = b[col];
-            // Ordenar texto
             if (typeof valA === 'string') return asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-            // Ordenar números
             return asc ? valA - valB : valB - valA;
         });
 
-        let html = `<table class="mus-table">
+        // WRAPPER RESPONSIVE PARA MÓVIL
+        let html = `<div class="mus-table-wrapper"><table class="mus-table">
             <tr>
                 <th onclick="app.mus.toggleSort('name')" style="cursor:pointer">${label} ${app.mus.getSortIcon('name')}</th>
-                <th onclick="app.mus.toggleSort('rWon')" style="cursor:pointer" title="Rondas Ganadas">Ganadas ${app.mus.getSortIcon('rWon')}</th>
-                <th onclick="app.mus.toggleSort('rLost')" style="cursor:pointer" title="Rondas Perdidas">Perdidas ${app.mus.getSortIcon('rLost')}</th>
+                <th onclick="app.mus.toggleSort('rWon')" style="cursor:pointer">Ganadas ${app.mus.getSortIcon('rWon')}</th>
+                <th onclick="app.mus.toggleSort('rLost')" style="cursor:pointer">Perdidas ${app.mus.getSortIcon('rLost')}</th>
                 <th onclick="app.mus.toggleSort('diff')" style="cursor:pointer">Dif ${app.mus.getSortIcon('diff')}</th>
                 <th onclick="app.mus.toggleSort('pct')" style="cursor:pointer">% Efec. ${app.mus.getSortIcon('pct')}</th>
                 <th onclick="app.mus.toggleSort('total')" style="cursor:pointer">Jugadas ${app.mus.getSortIcon('total')}</th>
@@ -165,11 +141,10 @@ app.mus = {
             
         rows.forEach(r => {
             const diffColor = r.diff > 0 ? '#2ed573' : (r.diff < 0 ? '#ff4757' : '#aaa');
-            // Colores semáforo para el porcentaje
             const pctColor = r.pct >= 55 ? '#2ed573' : (r.pct < 45 ? '#ff4757' : '#ffa502');
 
             html += `<tr>
-                <td>${r.name}</td>
+                <td style="white-space:nowrap; font-weight:bold;">${r.name}</td>
                 <td class="win-col">${r.rWon}</td>
                 <td style="color:#aaa">${r.rLost}</td>
                 <td style="color:${diffColor}; font-weight:bold">${r.diff > 0 ? '+' : ''}${r.diff}</td>
@@ -177,7 +152,7 @@ app.mus = {
                 <td>${r.total}</td>
             </tr>`;
         });
-        html += `</table>`;
+        html += `</table></div>`;
         container.innerHTML = html;
     },
 
@@ -228,7 +203,7 @@ app.mus = {
             </div>`;
     },
 
-    // --- ANÁLISIS DETALLADO ---
+    // --- ANÁLISIS ---
     runAnalysis: () => {
         const mode = document.getElementById('musViewMode').value;
         const container = document.getElementById('musStatsContainer');
@@ -266,7 +241,8 @@ app.mus = {
         const ctx = document.getElementById('musChartCanvas').getContext('2d');
         if (app.mus.chartInstance) app.mus.chartInstance.destroy();
 
-        const matches = app.mus.getFilteredMatches();
+        // USAMOS TODOS LOS DATOS (Sin filtro fecha)
+        const matches = app.mus.data.matches;
         const dataMap = {}; 
 
         matches.forEach(m => {
@@ -336,7 +312,7 @@ app.mus = {
 
     analyzePerson: (player, type) => {
         const results = {}; 
-        app.mus.getFilteredMatches().forEach(m => {
+        app.mus.data.matches.forEach(m => {
             const myTeam = (m.p1 === player || m.p2 === player) ? 1 : (m.p3 === player || m.p4 === player) ? 2 : 0;
             if (myTeam === 0) return; 
 
@@ -366,7 +342,7 @@ app.mus = {
     analyzePair: (pairStr, type) => {
         const [pA, pB] = pairStr.split(' y ');
         const results = {};
-        app.mus.getFilteredMatches().forEach(m => {
+        app.mus.data.matches.forEach(m => {
             const t1Ok = (m.p1 === pA && m.p2 === pB) || (m.p1 === pB && m.p2 === pA);
             const t2Ok = (m.p3 === pA && m.p4 === pB) || (m.p3 === pB && m.p4 === pA);
             if (!t1Ok && !t2Ok) return;
@@ -388,10 +364,8 @@ app.mus = {
     },
 
     renderAnalysisTable: (container, results, type) => {
-        // Calcular porcentaje en función de Rondas (no victorias)
         let rows = Object.keys(results).map(k => {
             const r = results[k];
-            // Si el análisis es "Derrotas frente a...", nos interesa cuántas rondas nos han hecho
             const focusRounds = type.includes('loss') ? r.roundsAgainst : r.roundsFor;
             const totalRounds = r.roundsFor + r.roundsAgainst;
             const pct = totalRounds > 0 ? ((focusRounds / totalRounds) * 100).toFixed(1) : 0;
@@ -405,7 +379,6 @@ app.mus = {
             };
         });
 
-        // Ordenar
         const { col, asc } = app.mus.sortState;
         const sortKey = ['name', 'focusRounds', 'pct', 'count'].includes(col) ? col : 'pct';
         
@@ -418,7 +391,8 @@ app.mus = {
 
         let col2 = type.includes('loss') ? 'Rondas Encajadas' : 'Rondas Ganadas';
         
-        let html = `<table class="mus-table">
+        // WRAPPER RESPONSIVE
+        let html = `<div class="mus-table-wrapper"><table class="mus-table">
             <tr>
                 <th onclick="app.mus.toggleSort('name')" style="cursor:pointer">Nombre ${app.mus.getSortIcon('name')}</th>
                 <th onclick="app.mus.toggleSort('focusRounds')" style="cursor:pointer">${col2} ${app.mus.getSortIcon('focusRounds')}</th>
@@ -427,24 +401,21 @@ app.mus = {
             </tr>`;
         
         rows.forEach(r => {
-            // Colorear %
             const color = r.pct >= 55 ? '#2ed573' : (r.pct < 45 ? '#ff4757' : '#ffa502');
-            
             html += `<tr>
-                <td>${r.name}</td>
+                <td style="white-space:nowrap; font-weight:bold;">${r.name}</td>
                 <td>${r.focusRounds}</td>
                 <td style="color:${color}; font-weight:bold">${r.pct}%</td>
                 <td>${r.count}</td>
             </tr>`;
         });
-        html += `</table>`;
+        html += `</table></div>`;
         container.innerHTML = html;
     },
 
-    // --- CÁLCULOS BASE ---
     calcPairStats: () => {
         const stats = {}; 
-        app.mus.getFilteredMatches().forEach(m => {
+        app.mus.data.matches.forEach(m => {
             const pair1 = [m.p1, m.p2].sort().join(' y ');
             const pair2 = [m.p3, m.p4].sort().join(' y ');
             
@@ -459,20 +430,17 @@ app.mus = {
             stats[pair2].rLost += m.s1;
         });
         
-        // Calcular % de rondas
         Object.keys(stats).forEach(k => {
             const s = stats[k];
-            const totalRounds = s.rWon + s.rLost;
-            s.pct = totalRounds > 0 ? ((s.rWon / totalRounds) * 100).toFixed(1) : 0;
-            s.pct = parseFloat(s.pct);
+            const total = s.rWon + s.rLost;
+            s.pct = total > 0 ? parseFloat(((s.rWon / total) * 100).toFixed(1)) : 0;
         });
-        
         return stats;
     },
 
     calcPlayerStats: () => {
         const stats = {};
-        app.mus.getFilteredMatches().forEach(m => {
+        app.mus.data.matches.forEach(m => {
             [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
                 if(!stats[p]) stats[p] = {total:0, rWon:0, rLost:0};
                 stats[p].total++;
@@ -487,14 +455,11 @@ app.mus = {
             });
         });
 
-        // Calcular % de rondas
         Object.keys(stats).forEach(k => {
             const s = stats[k];
-            const totalRounds = s.rWon + s.rLost;
-            s.pct = totalRounds > 0 ? ((s.rWon / totalRounds) * 100).toFixed(1) : 0;
-            s.pct = parseFloat(s.pct);
+            const total = s.rWon + s.rLost;
+            s.pct = total > 0 ? parseFloat(((s.rWon / total) * 100).toFixed(1)) : 0;
         });
-
         return stats;
     },
 

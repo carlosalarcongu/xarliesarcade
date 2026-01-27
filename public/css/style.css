@@ -479,7 +479,7 @@ canvas {
     font-family: 'Times New Roman', Times, serif;
     color: #e1b12c; /* Dorado */
     font-size: 1.1em;
-    text-align: left;
+    text-align: center;
     padding: 10px;
     border-bottom: 2px solid #718093;
     text-shadow: 1px 1px 0 #000;
@@ -527,4 +527,24 @@ canvas {
 #musScreen input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1); /* Poner icono blanco */
     cursor: pointer;
+}
+
+/* Añadir al final de public/css/style.css */
+
+/* Wrapper para hacer scroll horizontal en tablas Mus si no caben */
+.mus-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 1px solid #57606f;
+}
+
+/* Ajustes para celdas en móvil */
+@media (max-width: 600px) {
+    .mus-table th, .mus-table td {
+        padding: 8px 2px; /* Menos padding lateral */
+        font-size: 0.8em;
+    }
 }
