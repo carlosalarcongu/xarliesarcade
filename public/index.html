@@ -31,7 +31,7 @@
             </div>
             <div class="hub-card" onclick="app.selectRoom('pinturilloImp')" style="border-left-color: #7830ff;">
                 <div class="hub-icon">🎨</div>
-                <div class="hub-info"><div class="hub-title">El Falso Artista</div><div class="hub-desc">Dibuja, colabora y descubre al impostor.</div></div>
+                <div class="hub-info"><div class="hub-title">El Falso Artista</div><div class="hub-desc">Dibuja y descubre al impostor.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
             <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-left-color: #1cff2f;">
@@ -72,7 +72,11 @@
     </div>
 
     <div id="loginScreen" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
         <h1 style="color:#ffa502">Juego</h1>
         <div class="card">
             <p style="margin-bottom:10px;">Nombre:</p>
@@ -88,8 +92,10 @@
     <div id="impostorLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
+        
         <h2 style="color:#ffa502">🕵️ Impostor Lobby</h2>
         
         <div id="impostorAdminPanel" class="hidden admin-panel">
@@ -128,8 +134,10 @@
     <div id="impostorGame" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>    
+        </div>        
+        
         <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
             <h2 style="margin:0">En Curso</h2>
         </div>
@@ -181,8 +189,10 @@
     <div id="loboLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
+        
         <h2 style="color:#74b9ff">🐺 Sala El Lobo</h2>
         
         <div id="loboAdminPanel" class="admin-panel hidden">
@@ -208,8 +218,10 @@
     <div id="loboGame" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
+        
         
         <div id="loboCard" class="blur-content" onclick="app.lobo.toggleRole()">
             <h1>Tu Rol</h1>
@@ -236,8 +248,10 @@
     <div id="anecdotasLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
+        
         <h2 style="color:#ff9ff3">📜 Anécdotas</h2>
         <div class="card" style="background:#dfe6e9; border:none;">
             <h3 style="color:#2d3436">Tu historia:</h3>
@@ -251,8 +265,10 @@
     <div id="anecdotasGame" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
+        
 
         <div id="anecdotasRevealModal" class="hidden modal-overlay">
             <h2 style="color:#ccc">El autor era...</h2>
@@ -284,8 +300,10 @@
     <div id="elmasLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
+        
         <h2 style="color:#ff9f43">🏆 El MÁS...</h2>
         <div id="elmasAdminPanel" class="admin-panel hidden">
             <div class="control-row">
@@ -300,8 +318,10 @@
     <div id="elmasGame" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
+        
 
         <h4 id="elmasRoundCount" style="color:#aaa">Ronda 1/5</h4>
         
@@ -333,8 +353,9 @@
     <div id="tabuLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
         <h2 style="color:#00b894">🚫 Sala Tabú</h2>
         
         <div style="display:flex; gap:10px; margin-bottom:20px; width:100%">
@@ -382,9 +403,10 @@
     <div id="tabuGame" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
-
+        </div>        
+        
         <div style="display:flex; justify-content:space-between; background:#2f3542; padding:10px; border-radius:10px; border:2px solid #57606f; margin-bottom:20px;">
             <div style="color:#0984e3; font-weight:bold; font-size:1.5em">🔵 <span id="scoreBlue">0</span></div>
             <div style="text-align:center">
@@ -416,7 +438,11 @@
     </div>
     
     <div id="feedbackScreen" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
         <h2 style="color:#a29bfe">💌 Feedback</h2>
         <div class="card">
             <select id="fbType" onchange="app.feedback.renderForm()" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px;">
@@ -442,8 +468,10 @@
     <div id="pinturilloImpLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
+        
         <h2 style="color:#7830ff">🎨 El Falso Artista</h2>
         
         <div id="pintuImpAdminControls" class="admin-panel hidden">
@@ -487,10 +515,11 @@
     </div>
 
     <div id="pinturilloImpGame" class="hidden">
-        <div class="back-nav" style="display:flex; gap:5px; margin-bottom:10px;">
+        <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>
+        </div>        
         
         <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.9em; text-align:center; margin-bottom:5px;"></div>
 
@@ -542,7 +571,11 @@
     </div>
 
     <div id="musScreen" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
         <h2 style="color:#e1b12c; margin-bottom:5px;">🐄 Registro de Mus</h2>
         
         <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
@@ -655,6 +688,18 @@
                     <button onclick="app.mus.generatePairs()" class="main-btn" style="flex:1">Barajar</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="globalRulesModal" class="hidden modal-overlay" style="align-items: center; justify-content: center; z-index: 1000;">
+        <div class="card" style="max-height: 80vh; overflow-y: auto; text-align: left; position: relative; border: 2px solid #ffa502;">
+            <button onclick="document.getElementById('globalRulesModal').classList.add('hidden')" 
+                    style="position: absolute; top: 10px; right: 10px; background: transparent; color: #ff4757; font-size: 1.5em; padding: 0; width: auto; box-shadow: none;">✖</button>
+            <h2 style="color: #ffa502; text-align: center; margin-top: 0;">📖 REGLAS</h2>
+            <div id="globalRulesText" style="white-space: pre-wrap; font-family: monospace; line-height: 1.5; color: #dfe6e9;">
+                ...
+            </div>
+            <button onclick="document.getElementById('globalRulesModal').classList.add('hidden')" class="main-btn" style="margin-top: 20px;">Entendido</button>
         </div>
     </div>
 

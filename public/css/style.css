@@ -582,3 +582,20 @@ canvas {
         font-size: 0.8em;
     }
 }
+
+/* Añadir al final del archivo */
+
+#globalRulesText {
+    white-space: pre-wrap;       /* Respetar saltos de línea del JS */
+    font-family: 'Poppins', sans-serif; /* O la que uses */
+    font-size: 0.95em;
+    color: #e0e0e0;
+    line-height: 1.6;
+}
+
+#globalRulesModal .card {
+    max-width: 600px;
+    width: 95%;
+    background: #2f3542;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}

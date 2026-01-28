@@ -1,12 +1,167 @@
 const socket = io();
 
 const GAME_RULES = {
-    impostor: "🕵️ FLUJO: 1) Lobby → 2) Roles → 3) Describir → 4) Votar.\nREGLA: Todos ven palabra menos el Impostor.",
-    lobo: "🐺 FLUJO: 1) Roles → 2) Noche → 3) Día.\nREGLA: Pueblo vs Lobos. Roles especiales.",
-    anecdotas: "📜 Escribe anécdota → Adivina autor → Puntos.",
-    elmas: "🏆 Preguntas '¿Quién es más...?'. Vota al que más encaje.",
-    tabu: "🚫 Describe palabra sin decir las prohibidas. Equipos."
+    impostor: `🕵️ EL IMPOSTOR
+--------------------------------
+🎯 OBJETIVO
+- Civiles: Descubrir quién es el impostor.
+- Impostor: Descubrir la palabra secreta o sobrevivir sin ser detectado.
+
+🕹️ DINÁMICA
+1. Configuración: El admin elige número de impostores, categoría (ej. Comida) y si hay Pistas o no.
+
+2. Roles:
+   - Toca tu tarjeta para ver tu rol.
+   - Civiles ven la "Palabra Secreta" (ej. "Pizza").
+   - El Impostor ve "IMPOSTOR" (y una pista vaga si están activas).
+
+3. Descripción:
+   - Por turnos, cada jugador dice UNA sola palabra relacionada con la secreta.
+   - Civiles: Sed vagos para que el impostor no sepa la palabra, pero claros para que sepan que sois ciudadanos.
+   - Impostor: Escucha, deduce y miente para encajar.
+   
+4. Votación:
+   - Pulsad los nombres en la pantalla para votar al sospechoso.
+
+5. Resolución:
+   - Si se expulsa a todos los impostores: Ganan Civiles.
+   - Si el número de impostores es el mismo al de ciudadanos: Gana los Impostores.
+   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
+
+    lobo: `🐺 EL LOBO (Werewolf)
+--------------------------------
+🎯 OBJETIVO
+- Pueblo: Eliminar a todos los Lobos.
+- Lobos: Eliminar al Pueblo hasta igualarlos en número.
+
+🕹️ DINÁMICA
+(Una persona que no esté en la sala actúa como Narrador y guía las fases de viva voz)
+(En el futuro se desarrollará un modo en el que cada jugador interactúe con la pantalla)
+
+1. Roles Especiales:
+   - 🔮 Vidente: Ve el rol de un jugador cada noche.
+   - 👧 Niña: Puede abrir los ojos con cuidado (si la pillan, muere).
+   - 💘 Cupido: Enamora a dos (si uno muere, el otro también).
+   - 🔫 Cazador: Si muere, mata a otro inmediatamente.
+
+2. La Noche (Ojos cerrados):
+   - El Admin despierta a los Lobos. Ellos miran su móvil (ven a sus compañeros) y eligen víctima en silencio.
+   - El Admin despierta a los roles especiales para sus acciones secuencialmente.
+
+3. El Día (Ojos abiertos):
+   - Se anuncia quién murió. Debate y acusaciones.
+   - Votación: Usad la interfaz para linchar a un sospechoso.
+   - El más votado muere y revela rol.`,
+
+    anecdotas: `📜 ANÉCDOTAS
+--------------------------------
+🎯 OBJETIVO
+Adivinar de quién es la anécdota leída y ganar puntos.
+
+🕹️ DINÁMICA
+1. Escritura:
+   - Escribe una anécdota breve, secreto o historia (real o inventada).
+   - Pulsa "Listo".
+
+2. Lectura:
+   - El juego muestra una anécdota anónima en pantalla grande.
+   - Alguien la lee en voz alta.
+
+3. Votación:
+   - Vota en tu móvil quién crees que es el autor.
+   - No puedes votarte a ti mismo.
+
+4. Puntos:
+   - Ganas puntos si adivinas el autor.
+   - El autor gana puntos sial menos una persona acierta y al menos otra persona falla .`,
+
+    elmas: `🏆 EL MÁS...
+--------------------------------
+🎯 OBJETIVO
+Juego social de votación. Sin ganadores, solo opiniones.
+
+🕹️ DINÁMICA
+1. La Pregunta:
+   - Aparece una pregunta tipo: "¿Quién es más probable que acabe en la cárcel?" o "¿Quién liga más?".
+
+2. Votación:
+   - Vota al jugador que mejor encaje con la descripción.
+
+3. Resultados:
+   - Se muestran gráficas con los votos.
+   - Los puntos son proporcionales a la opinión popular`,
+
+    tabu: `🚫 TABÚ
+--------------------------------
+🎯 OBJETIVO
+Que tu equipo adivine la palabra clave sin decir las prohibidas.
+
+🕹️ DINÁMICA
+1. Equipos:
+   - Uníos al Equipo Azul o Rojo en el lobby.
+
+2. El Turno:
+   - Un jugador sale al frente con su móvil.
+   - Tarjeta: Muestra la PALABRA CLAVE (Grande) y las PROHIBIDAS (Pequeñas).
+
+3. Controles (Quien describe):
+   - ✅ BIEN: Tu equipo acierta (+1 punto).
+   - ⏭️ SALTAR: Pasas palabra (Saltos limitados).
+   - 🚫 MAL: Has dicho una prohibida (Rival vigila y pulsa). Anula tarjeta.
+
+4. Tiempo:
+   - Al llegar a 0, cambio de turno.`,
+
+    pinturilloImp: `🎨 EL FALSO ARTISTA
+--------------------------------
+🎯 OBJETIVO
+Todos dibujan algo sobre la misma palabra secreta. El impostor debe hacerse pasar por artista sin saber qué es.
+
+🕹️ DINÁMICA
+1. Roles:
+   - Artistas: Ven la palabra (ej. "Gato").
+   - Impostor: Ve "X" (no sabe qué dibujar) + la pista.
+
+2. Dibujo:
+   - Por turnos, cada uno dibuja UN solo trazo (una línea) en el lienzo común.
+   - El trazo debe ser suficiente para demostrar que sabes la palabra, pero no tan claro para regalársela al impostor.
+
+3. Votación:
+   - Tras X vueltas, se vota quién es el Falso Artista.
+   
+4. Desenlace:
+   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
+
+    mus: `🐄 REGISTRO DE MUS
+--------------------------------
+Herramienta de seguimiento estadístico.
+
+🕹️ USO
+- + Jugador: Registra un nuevo nombre en la base de datos.
+- + Partida: Registra un resultado (Pareja 1 vs Pareja 2).
+- Estadísticas: Consulta Rankings, porcentajes de victoria y evolución histórica.`,
+
+    tecnico: `🛠️ AYUDA TÉCNICA
+================================
+
+🔑 ADMINISTRADOR (Admin)
+No hay contraseñas.
+1. Primer Llegado: Si entras a una sala vacía, eres Admin (👑).
+2. Nombres Clave: Entra como "Admin" para ser Administrador de una sala.
+3. Poderes: Configurar partida, Kick (Echar), Kill (Matar en juego) y Reset.
+
+♻️ SISTEMA
+- Sala Vacía: Si todos salen, la sala se reinicia (Soft Reset).
+- Reconexión: Si cierras y vuelves, el sistema te recuerda. Para cambiar de nombre o sala, pulsa "❌ Salir"(botón ROJO) arriba.
+- Observador: Si entras a una partida empezada, podrás mirar pero no votar.
+
+⚠️ SOLUCIÓN DE PROBLEMAS
+1. ¿No hay botón empezar?: No eres admin. Que el admin salga y entre, o entra tú con nombre "Admin".
+2. Pantalla pillada: Refresca el navegador. Si no funciona: Pide al Administrador que pulse "Reset" o "Finalizar".
+3. Tarjeta cortada: Gira el móvil o sal del modo escritorio (tres puntitos: "Vista" (o "Versión") para ordenador).
+4. Lag: Recarga la página (F5). No perderás tu puesto.`
 };
+
 
 const ROOM_EMOJIS = {
     impostor: "🕵️",
@@ -260,13 +415,13 @@ window.app = {
     },
 
     goBackToHub: (forceLogout = false) => {
-        // --- LIMPIEZA DE MUS ---
+        // 1. Limpieza visual de módulos específicos (como Mus)
         if (app.mus && app.mus.resetUI) {
             app.mus.resetUI();
         }
-        // -----------------------
 
         if (forceLogout) {
+            // --- MODO SALIR (Logout real) ---
              const r = app.currentRoom;
              if (r) {
                  const id = localStorage.getItem(r + '_playerId');
@@ -278,9 +433,47 @@ window.app = {
              app.myPlayerId = null;
              
              app.showScreen('hubScreen');
+             
         } else {
+            // --- MODO NAVEGACIÓN (Minimizar / Volver al Hub) ---
+            
+            // 1. Detectamos si hay una sala activa antes de irnos
+            // (Si currentRoom es null, buscamos en localStorage por si acaso)
+            const activeRoom = app.currentRoom || app.findActiveSession();
+
+            // 2. Ponemos currentRoom a null para que el sistema sepa que estamos visualmente en el Hub
             app.currentRoom = null; 
             app.showScreen('hubScreen');
+
+            // 3. IMPLEMENTACIÓN DEL COMENTARIO: Notificar en el widget
+            // Sobrescribimos lo que puso showScreen para indicar que seguimos vinculados a una sala
+            if (activeRoom) {
+                const widgetText = document.getElementById('floatingUserText');
+                const name = app.myPlayerName || "Sin Nombre";
+                const emoji = ROOM_EMOJIS[activeRoom] || "🎮";
+                const roomLabel = activeRoom.toUpperCase();
+
+                if (widgetText) {
+                    // Formato: 🏠 Hub (🐺 LOBO)
+                    widgetText.innerHTML = `
+                        <span style="opacity:0.7">🏠 Hub <small>(${emoji} ${roomLabel})</small></span><br>
+                        <strong>👤 ${name}</strong>
+                    `;
+                }
+            }
+        }
+    },
+
+    showRules: () => {
+        const room = app.currentRoom;
+        const text = GAME_RULES[room] || "No hay reglas definidas para esta sala.";
+        
+        const modal = document.getElementById('globalRulesModal');
+        const content = document.getElementById('globalRulesText');
+        
+        if (modal && content) {
+            content.innerText = text;
+            modal.classList.remove('hidden');
         }
     },
     
