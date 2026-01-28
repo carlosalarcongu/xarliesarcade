@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xarlie's Arcade</title>
-    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -19,6 +19,11 @@
         <p style="color:#7f8fa6; margin-bottom: 25px;">Selecciona una sala:</p>
         
         <div class="hub-grid">
+            <div class="hub-card" onclick="app.selectRoom('mus')" style="border-left-color: #ffa502;">
+                <div class="hub-icon">🐄</div>
+                <div class="hub-info"><div class="hub-title">Registro Mus</div><div class="hub-desc">Estadísticas y resultados.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
             <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #fbff00;">
                 <div class="hub-icon">🕵️</div>
                 <div class="hub-info"><div class="hub-title">El Impostor</div><div class="hub-desc">Palabras ocultas y espías.</div></div>
@@ -47,11 +52,6 @@
             <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-left-color: #2167ff;">
                 <div class="hub-icon">🚫</div>
                 <div class="hub-info"><div class="hub-title">Tabú</div><div class="hub-desc">Equipos y palabras prohibidas.</div></div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
-            </div>
-            <div class="hub-card" onclick="app.selectRoom('mus')" style="border-left-color: #2f3542;">
-                <div class="hub-icon">🐄</div>
-                <div class="hub-info"><div class="hub-title">Registro Mus</div><div class="hub-desc">Estadísticas y resultados.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
             <div class="hub-card" onclick="window.location.href='https://skill-fruits-troops-corresponding.trycloudflare.com/'" style="border-left-color: #e74c3c;">
@@ -549,8 +549,7 @@
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#44bd32" onclick="app.mus.addPlayer()">+ Jugador</button>
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#0984e3" onclick="app.mus.showAddMatchModal()">+ Partida</button>
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#8e44ad" onclick="app.mus.showPairGenerator()">🎲 Parejas</button>
-            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#57606f" onclick="app.mus.refresh()">🔄</button>
-            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#d63031" onclick="app.mus.backup()">💾 Backup</button>
+            <button class="kick-btn" style="width:auto; font-size:1.2em; background:#d63031; padding: 5px 15px;" onclick="app.mus.backup()">💾</button>
         </div>
 
         <div class="card" style="padding:10px; margin-bottom:15px; background:#222;">
@@ -558,7 +557,7 @@
                 <div style="flex:1">
                     <label style="color:#aaa; font-size:0.8em;">Periodo:</label>
                     <select id="musPeriodFilter" onchange="app.mus.changeView()" style="width:100%; font-size:0.9em;">
-                        <option value="all">Siempre</option>
+                        <option value="all" selected>Siempre</option>
                         <option value="7days">Últimos 7 días</option>
                         <option value="30days">Últimos 30 días</option>
                         <option value="year">Este año</option>
@@ -567,7 +566,7 @@
                 <div style="flex:2">
                     <label style="color:#aaa; font-size:0.8em;">Vista:</label>
                     <select id="musViewMode" onchange="app.mus.changeView()" style="width:100%; font-size:0.9em;">
-                        <option value="ranking_pair">🏆 Ranking Parejas</option>
+                        <option value="ranking_pair" selected>🏆 Ranking Parejas</option>
                         <option value="ranking_player">👤 Ranking Individual</option>
                         <option value="top_improvement">🚀 Mayor Mejora WinRate</option>
                         <option value="recent_log">📝 Últimos Registros</option>
@@ -578,16 +577,25 @@
             </div>
 
             <div id="musFilterControls" class="hidden" style="margin-top:10px;">
-                 </div>
+                <div id="divFilterPair" class="hidden">
+                    <label>Pareja:</label>
+                    <select id="musFilterPair" onchange="app.mus.changeView()" style="width:100%"></select>
+                </div>
+                <div id="divFilterPlayer" class="hidden">
+                    <label>Jugador:</label>
+                    <select id="musFilterPlayer" onchange="app.mus.changeView()" style="width:100%"></select>
+                </div>
+            </div>
 
             <div id="musAnalysisContainer" class="hidden" style="margin-top:10px; border-top:1px solid #444; padding-top:10px;">
-                <div id="divExamPlayer">
+                <div id="divExamPlayer" class="hidden">
                     <label>Persona:</label>
                     <select id="musExamPlayer" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
                     <label>Analizar:</label>
                     <select id="musExamTypeP" onchange="app.mus.runAnalysis()" style="width:100%">
-                        <option value="vs_win">Promedio Victorias</option>
-                        <option value="vs_loss">Promedio Derrotas</option>
+                        <option value="vs_win">Evolución % Victorias (Gráfico)</option>
+                        <option value="best_partner">🤝 Mejor Compañero</option>
+                        <option value="best_rival">⚔️ Mejor Rival (Más ganado)</option>
                     </select>
                 </div>
                 <div id="divExamPair" class="hidden">
@@ -595,7 +603,8 @@
                     <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
                     <label>Analizar:</label>
                     <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width:100%">
-                        <option value="vs_pair_win">Victorias vs Pareja</option>
+                        <option value="vs_pair_win">Evolución % Victorias (Gráfico)</option>
+                        <option value="vs_pair_performance">🆚 Desempeño vs Rivales</option>
                     </select>
                 </div>
             </div>
@@ -607,18 +616,40 @@
 
         <div id="musStatsContainer" style="text-align:center;"></div>
         <div id="musLogContainer" class="hidden"></div>
+        
+        </div>
 
-        <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:50px; overflow-y:auto;">
-             </div>
+        <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:center; padding-top:50px; overflow-y:auto;">
+            <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:400px; border:2px solid #57606f;">
+                <h3 style="margin-top:0;">Nueva Partida</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="flex:1; text-align:center; background:rgba(9, 132, 227, 0.2); padding:5px; border-radius:5px;">
+                        <h4 style="margin:0; color:#74b9ff">Pareja 1</h4>
+                        <select id="musP1" style="width:90%; margin:5px 0;"></select>
+                        <select id="musP2" style="width:90%; margin:5px 0;"></select>
+                        <input type="number" id="musS1" placeholder="Rondas" style="width:50px; text-align:center;">
+                    </div>
+                    <div style="font-weight:bold; padding:0 5px;">VS</div>
+                    <div style="flex:1; text-align:center; background:rgba(214, 48, 49, 0.2); padding:5px; border-radius:5px;">
+                        <h4 style="margin:0; color:#ff7675">Pareja 2</h4>
+                        <select id="musP3" style="width:90%; margin:5px 0;"></select>
+                        <select id="musP4" style="width:90%; margin:5px 0;"></select>
+                        <input type="number" id="musS2" placeholder="Rondas" style="width:50px; text-align:center;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" style="background:#555; flex:1;">Cancelar</button>
+                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1;">Guardar</button>
+                </div>
+            </div>
+        </div>
         
         <div id="musPairGenModal" class="hidden modal-overlay">
             <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:350px; border:2px solid #e1b12c;">
                 <h3 style="color:#e1b12c">🎲 Generar Parejas</h3>
                 <p style="color:#aaa; font-size:0.9em">Selecciona jugadores presentes:</p>
                 <div id="genPlayerList" style="text-align:left; max-height:200px; overflow-y:auto; background:#222; padding:10px; border-radius:5px; margin-bottom:15px;"></div>
-                
                 <div id="genResults" style="margin-bottom:15px; font-weight:bold;"></div>
-                
                 <div style="display:flex; gap:10px;">
                     <button onclick="document.getElementById('musPairGenModal').classList.add('hidden')" style="background:#555; flex:1">Cerrar</button>
                     <button onclick="app.mus.generatePairs()" class="main-btn" style="flex:1">Barajar</button>
@@ -627,36 +658,7 @@
         </div>
     </div>
 
-    <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
-            </div>
-
-        <!-- <div class="card" style="padding:10px; margin-bottom:15px; background:#222; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <label style="color:#e1b12c;">📅 Desde:</label>
-            <input type="date" id="musDateStart" onchange="app.mus.changeView()" style="flex:1; min-width:120px;">
-            <label style="color:#e1b12c;">Hasta:</label>
-            <input type="date" id="musDateEnd" onchange="app.mus.changeView()" style="flex:1; min-width:120px;">
-        </div>
-
-        <div id="musAnalysisContainer" class="hidden" style="margin-top:10px; border-top:1px solid #444; padding-top:10px;">
-                <div style="margin-top:15px; border-top:1px dashed #555; padding-top:10px;">
-                    <label>📈 Gráfico:</label>
-                    <select id="musChartInterval" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:10px;">
-                        <option value="day">Por Días</option>
-                        <option value="month">Por Meses</option>
-                        <option value="year">Por Años</option>
-                    </select>
-                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
-                        <canvas id="musChartCanvas" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div> -->
-
-        <div id="musStatsContainer" style="text-align:center;"></div>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/main.js?v=2"></script>
     <script src="js/impostor.js"></script>

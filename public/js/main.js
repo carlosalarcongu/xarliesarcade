@@ -247,6 +247,9 @@ window.app = {
              if (!confirm('Para cambiar de nombre debes salir de la sala actual. ¿Continuar?')) return;
              app.goBackToHub(true); 
         }
+        if (app.mus && app.mus.resetUI) {
+            app.mus.resetUI();
+        }
         
         // AQUÍ SÍ BORRAMOS EL NOMBRE GLOBAL
         localStorage.removeItem('global_username');
@@ -257,8 +260,13 @@ window.app = {
     },
 
     goBackToHub: (forceLogout = false) => {
+        // --- LIMPIEZA DE MUS ---
+        if (app.mus && app.mus.resetUI) {
+            app.mus.resetUI();
+        }
+        // -----------------------
+
         if (forceLogout) {
-             // "Salir": Borra la sesión de la sala, PERO MANTIENE EL NOMBRE
              const r = app.currentRoom;
              if (r) {
                  const id = localStorage.getItem(r + '_playerId');
@@ -268,11 +276,9 @@ window.app = {
              
              app.currentRoom = null;
              app.myPlayerId = null;
-             // NO borramos app.myPlayerName ni localStorage('global_username')
              
              app.showScreen('hubScreen');
         } else {
-            // "Sala": Solo minimiza
             app.currentRoom = null; 
             app.showScreen('hubScreen');
         }
