@@ -153,10 +153,11 @@ button:active { transform: scale(0.96); }
 #roleCard, #loboCard {
     position: relative;
     cursor: pointer;
-    background: #2f3542; /* Azul oscuro siempre */
-    border: 3px dashed #57606f; /* Borde neutro */
+    background: #2f3542; /* Color neutro para todos */
+    border: 3px dashed #57606f;
     overflow: hidden;
-    min-height: 200px;
+    min-height: 250px; /* Más altura */
+    width: 100%; /* Todo el ancho */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -165,13 +166,17 @@ button:active { transform: scale(0.96); }
     margin-bottom: 5px;
 }
 
-/* Estilo específico para la palabra dentro de la tarjeta */
+/* Forzamos que lo de dentro se vea grande y ocupe espacio */
+#roleCard h1 { font-size: 2.5em; margin-bottom: 10px; }
+#roleCard p { font-size: 1.2em; }
+
+/* El texto de la palabra grande */
 #myRoleWord {
-    font-size: 1.4em !important; /* Más pequeño (antes era 2em o 2.5em) */
-    text-align: center !important;  /* Alineado a la izquierda */
-    width: 100%;                  /* Ocupar todo el ancho para poder alinearse */
-    padding-left: 15px;           /* Un poco de margen izquierdo para que no pegue al borde */
-    margin: 5px 0 !important;     /* Reducir margen vertical */
+    font-size: 3em !important; 
+    text-align: center !important;
+    width: 100%;
+    margin: 20px 0 !important;
+    line-height: 1.1;
 }
 
 /* Opcional: Ajustar también el título (IMPOSTOR/CIUDADANO) si quieres que todo vaya a la izquierda */
@@ -196,33 +201,29 @@ button:active { transform: scale(0.96); }
     cursor: pointer;
 }
 
-/* Estado Oculto (Blur) */
+/* --- CLASES DE ESTADO VISIBLE/OCULTO --- */
 .blur-content > * {
-    filter: blur(15px);
+    filter: blur(20px);
+    opacity: 0.3;
     pointer-events: none;
 }
 
-/* Ajuste del texto "CANDADO" */
 .blur-content::after {
-    content: "🔒 PULSAR PARA VER";
+    content: "🔒 TOCA PARA VER";
     position: absolute;
-    top: 50%;           /* Centrado vertical */
-    left: 50%;          /* Centrado horizontal */
-    transform: translate(-50%, -50%); /* Ajuste fino */
-    
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
     color: white;
-    font-weight: bold;
-    font-size: 1.2em;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.9);
-    pointer-events: none; /* CLAVE: El clic pasa a través del texto al div padre */
-    white-space: nowrap;
+    font-weight: 900;
+    font-size: 1.5em;
+    text-shadow: 0 4px 10px rgba(0,0,0,1);
+    pointer-events: none;
     z-index: 10;
 }
 
-/* Estado Visible */
 .reveal-content {
-    background: #2f3542;
-    border: 3px solid #a4b0be; /* Borde gris claro al revelar */
+    background: #2f3542; /* Mismo fondo al revelar */
+    border: 3px solid #74b9ff; /* Borde sólido al revelar */
 }
 .reveal-content > * {
     filter: none;

@@ -23,17 +23,17 @@ function broadcast(io) {
         name: p.name,
         isAdmin: p.isAdmin,
         isDead: p.isDead,
+        isObserver: !!p.isObserver, // Nueva propiedad para cliente
         hasVoted: !!p.votedFor,
         votesReceived: players.filter(v => v.votedFor === p.id).length,
-        // CORRECCIÓN VISUAL: Añadimos role revelado si está muerto o acabó partida
         revealedRole: (p.isDead && turnData[p.id]) ? turnData[p.id].role : null
     }));
 
     io.to('impostor').emit('updateState', {
         players: publicPlayers,
         gameInProgress,
-        settings,
-        turnData // Cuidado con enviar info sensible aquí, filtra si es necesario
+        settings, // Enviamos settings actuales para sincronizar selects
+        turnData 
     });
 }
 
@@ -41,7 +41,6 @@ function broadcast(io) {
 
 const handleJoin = (socket, nameRaw) => {
     // 1. Limpieza y Detección de Corona
-    const hasCrown = nameRaw.includes('👑');
     const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
 
     if (players.find(p => p.name.toLowerCase() === cleanName.toLowerCase())) {
@@ -54,10 +53,23 @@ const handleJoin = (socket, nameRaw) => {
 
     const p = Utils.createPlayer(socket.id, cleanName);
     
-    // p.isAdmin = hasCrown;
+    // Si la sala estaba vacía, es admin
+    if (players.length === 0) p.isAdmin = true;
+
     p.isDead = false;
     p.votedFor = null;
     
+    // LÓGICA OBSERVADOR: Si el juego ya empezó, entra como observador
+    if (gameInProgress) {
+        p.isObserver = true;
+        socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'impostor' });
+        socket.emit('impostorCategories', getPublicCategories());
+        
+        players.push(p);
+        broadcast(socket.server);
+        return; 
+    }
+
     players.push(p);
     socket.join('impostor');
     
@@ -78,7 +90,7 @@ const handleRejoin = (socket, savedId) => {
         socket.emit('impostorCategories', getPublicCategories());
         socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'impostor', isRejoin: true });
         
-        // Recuperar Rol si partida en curso
+        // Recuperar Rol si partida en curso y no es observador
         if(gameInProgress && turnData[p.id]) {
             socket.emit('privateRole', turnData[p.id]);
         }
@@ -86,23 +98,41 @@ const handleRejoin = (socket, savedId) => {
     } else socket.emit('sessionExpired');
 };
 
-const handleLeave = (playerId) => {
+const handleLeave = (playerId, io) => {
+    // Eliminación inmediata
+    const wasAdmin = players.find(p => p.id === playerId)?.isAdmin;
     players = players.filter(p => p.id !== playerId);
-    // Limpiar votos que apuntaban a este jugador o que él hizo
+    
+    // Limpiar votos
     players.forEach(p => { if(p.votedFor === playerId) p.votedFor = null; });
+
+    // Reasignar admin si hace falta
+    if (wasAdmin && players.length > 0) {
+        players[0].isAdmin = true;
+    }
+    
+    // Reset si vacío
+    if (players.length === 0) {
+        gameInProgress = false;
+        turnData = {};
+        settings = { impostors: 1, category: 'MIX', hints: false };
+    }
+
+    // Actualización inmediata a todos
+    if (io) broadcast(io);
 };
 
 const handleDisconnect = (socket) => {
-    const p = players.find(pl => pl.socketId === socket.id);
-    if (p) { 
-        p.connected = false; 
-        if(socket.server) broadcast(socket.server); 
-        
-        setTimeout(() => {
-            if(!p.connected) {
-                players = players.filter(pl => pl.id !== p.id);
-            }
-        }, 15 * 60 * 1000); 
+    // Usamos Utils para gestión centralizada y RESET si vacío
+    const changed = Utils.handleDisconnect(socket.id, players, () => {
+        console.log("[IMPOSTOR] Sala vacía. Reseteando...");
+        gameInProgress = false;
+        turnData = {};
+        settings = { impostors: 1, category: 'MIX', hints: false };
+    });
+
+    if (changed && socket.server) {
+        broadcast(socket.server);
     }
 };
 
@@ -113,13 +143,18 @@ const gameModule = (io, socket) => {
         const me = players.find(p => p.socketId === socket.id);
         if (!me) return;
 
+        // ACCIÓN: ACTUALIZAR CONFIGURACIÓN (Sincronización en tiempo real)
+        if (action.type === 'updateSettings' && me.isAdmin) {
+            if (action.value.category) settings.category = action.value.category;
+            if (typeof action.value.hints !== 'undefined') settings.hints = action.value.hints;
+            if (action.value.impostors) settings.impostors = action.value.impostors;
+            
+            broadcast(io);
+        }
+
         // INICIAR PARTIDA
         if (action.type === 'startGame' && me.isAdmin) {
             if (players.length < 3) return; 
-
-            // Configuración
-            settings.category = action.value.category || 'MIX';
-            settings.hints = !!action.value.hints;
 
             // 1. Emitir Cuenta Atrás
             io.to('impostor').emit('preGameCountdown', 3);
@@ -140,8 +175,13 @@ const gameModule = (io, socket) => {
             const numImpostors = Math.min(settings.impostors, Math.floor(players.length / 2)); 
             const impIdx = indices.slice(0, numImpostors);
             
-            // Reinicio variables
-            players.forEach(p => { p.isDead = false; p.votedFor = null; });
+            // Reinicio variables de jugadores
+            players.forEach(p => { 
+                p.isDead = false; 
+                p.votedFor = null; 
+                p.isObserver = false;
+            });
+            
             gameInProgress = true;
             turnData = {};
             turnData['SUMMARY'] = {
@@ -159,9 +199,11 @@ const gameModule = (io, socket) => {
 
                 turnData[p.id] = {
                     role: isImp ? 'IMPOSTOR' : 'CIVIL',
-                    word: isImp ? 'Eres el IMPOSTOR' : sel.word,
-                    hint: (settings.hints && !isImp) ? sel.hint : null,
-                    starter: me.name, // Nombre del admin que inició
+                    // MODIFICACIÓN: Impostor ve "Impostor", Ciudadano ve la palabra real
+                    word: isImp ? 'Impostor' : sel.word,
+                    // MODIFICACIÓN: SOLO el impostor ve la pista si está activada
+                    hint: (settings.hints && isImp) ? sel.hint : null,
+                    starter: me.name, 
                     categoriesPlayed: database[settings.category] ? database[settings.category].label : "Mezcla"
                 };
             });
@@ -178,11 +220,12 @@ const gameModule = (io, socket) => {
         }
 
         if (action.type === 'changeImpostors' && me.isAdmin) {
-            settings.impostors = Math.max(1, Math.min(Math.floor(players.length/2), settings.impostors + action.value));
+            const newVal = Math.max(1, Math.min(Math.floor(players.length/2), settings.impostors + action.value));
+            settings.impostors = newVal;
             broadcast(io);
         }
 
-        if (action.type === 'vote' && gameInProgress && !me.isDead) {
+        if (action.type === 'vote' && gameInProgress && !me.isDead && !me.isObserver) {
             me.votedFor = (me.votedFor === action.targetId) ? null : action.targetId;
             broadcast(io);
         }
@@ -193,7 +236,7 @@ const gameModule = (io, socket) => {
                 const target = players.find(p => p.id === action.targetId);
                 if (target) {
                     if (target.socketId) io.to(target.socketId).emit('sessionExpired');
-                    handleLeave(target.id);
+                    handleLeave(target.id, io); 
                     broadcast(io);
                 }
             }
@@ -202,7 +245,7 @@ const gameModule = (io, socket) => {
                 if (p) { 
                     p.isDead = !p.isDead; 
                     if (!p.isDead) p.votedFor = null;
-                    else io.to(p.socketId).emit('youDied'); // Sonido muerte 
+                    else io.to(p.socketId).emit('youDied'); 
                     broadcast(io); 
                 }
             }
@@ -213,7 +256,6 @@ const gameModule = (io, socket) => {
             
             if (action.type === 'revealResults') {
                 if (turnData['SUMMARY']) {
-                    // Recalcular estado muertos/vivos
                     turnData['SUMMARY'].impostorsData = players
                         .filter(p => turnData['SUMMARY'].originalImpostorIds.includes(p.id))
                         .map(p => ({ name: p.name, isDead: p.isDead }));
@@ -224,7 +266,11 @@ const gameModule = (io, socket) => {
 
             if (action.type === 'reset') {
                 gameInProgress = false;
-                players.forEach(p => { p.isDead=false; p.votedFor=null; });
+                players.forEach(p => { 
+                    p.isDead=false; 
+                    p.votedFor=null; 
+                    p.isObserver=false; 
+                });
                 io.to('impostor').emit('resetGame');
                 broadcast(io);
             }

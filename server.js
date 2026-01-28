@@ -44,7 +44,6 @@ io.on('connection', (socket) => {
     });
 
     // --- RECONEXIÓN (REJOIN) ---
-    // ESTA ES LA CLAVE DE LA PERSISTENCIA
     socket.on('rejoin', ({ savedId, savedRoom }) => {
         if (!savedId || !savedRoom) return;
 
@@ -79,7 +78,6 @@ io.on('connection', (socket) => {
                 break;
             default:
                 console.log(`[REJOIN] Sala desconocida: ${savedRoom}`);
-                console.log(`[REJOIN] Socket ID: ${socket.id}, visto hace ${new Date().toISOString()}`); 
         }
     });
 
@@ -89,13 +87,14 @@ io.on('connection', (socket) => {
         socket.leave(room);
         
         // Avisar al juego para borrado inmediato (sin timeout)
+        // IMPORTANTE: Pasamos 'io' para que el juego pueda emitir el cambio a los demás
         switch(room) {
-            case 'impostor': require('./games/impostor').handleLeave(playerId); break;
-            case 'lobo': require('./games/lobo').handleLeave(playerId); break;
-            case 'anecdotas': require('./games/anecdotas').handleLeave(playerId); break;
-            case 'elmas': require('./games/elmas').handleLeave(playerId); break;
-            case 'tabu': require('./games/tabu').handleLeave(playerId); break;
-            case 'pinturilloImp': require('./games/pinturilloImp').handleLeave(playerId); break;
+            case 'impostor': require('./games/impostor').handleLeave(playerId, io); break;
+            case 'lobo': require('./games/lobo').handleLeave(playerId, io); break;
+            case 'anecdotas': require('./games/anecdotas').handleLeave(playerId, io); break;
+            case 'elmas': require('./games/elmas').handleLeave(playerId, io); break;
+            case 'tabu': require('./games/tabu').handleLeave(playerId, io); break;
+            case 'pinturilloImp': require('./games/pinturilloImp').handleLeave(playerId, io); break;
         }
     });
 
@@ -117,9 +116,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        // La desconexión se maneja en cada módulo de juego individualmente
-        // para aplicar los timeouts de seguridad.
-
+        // La desconexión por timeout se maneja en cada módulo
     });
 });
 
