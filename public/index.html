@@ -548,32 +548,37 @@
         <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#44bd32" onclick="app.mus.addPlayer()">+ Jugador</button>
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#0984e3" onclick="app.mus.showAddMatchModal()">+ Partida</button>
+            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#8e44ad" onclick="app.mus.showPairGenerator()">🎲 Parejas</button>
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#57606f" onclick="app.mus.refresh()">🔄</button>
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#d63031" onclick="app.mus.backup()">💾 Backup</button>
         </div>
 
         <div class="card" style="padding:10px; margin-bottom:15px; background:#222;">
-            <label style="color:#aaa; font-size:0.8em;">Modo de Visualización:</label>
-            <select id="musViewMode" onchange="app.mus.changeView()" style="width:100%; padding:8px; border-radius:5px; margin-top:5px;">
-                <option value="ranking_pair">🏆 Ranking Parejas (Rondas)</option>
-                <option value="ranking_player">👤 Ranking Individual (Rondas)</option> <option value="vic_pareja">Total Rondas de 1 Pareja</option>
-                <option value="vic_persona">Total Rondas de 1 Persona</option>
-                <option value="porc_pareja">Promedio Rondas de 1 Pareja</option>
-                <option value="porc_persona">Promedio Rondas de 1 Persona</option>
-                <option value="examinar_persona">🔬 Examinar Persona (Avanzado)</option>
-                <option value="examinar_pareja">🔬 Examinar Pareja (Avanzado)</option>
-            </select>
-
-            <div id="musFilterControls" class="hidden" style="margin-top:10px;">
-                <div id="divFilterPair" class="hidden">
-                    <label>Pareja:</label>
-                    <select id="musFilterPair" onchange="app.mus.changeView()" style="width:100%"></select>
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1">
+                    <label style="color:#aaa; font-size:0.8em;">Periodo:</label>
+                    <select id="musPeriodFilter" onchange="app.mus.changeView()" style="width:100%; font-size:0.9em;">
+                        <option value="all">Siempre</option>
+                        <option value="7days">Últimos 7 días</option>
+                        <option value="30days">Últimos 30 días</option>
+                        <option value="year">Este año</option>
+                    </select>
                 </div>
-                <div id="divFilterPlayer" class="hidden">
-                    <label>Jugador:</label>
-                    <select id="musFilterPlayer" onchange="app.mus.changeView()" style="width:100%"></select>
+                <div style="flex:2">
+                    <label style="color:#aaa; font-size:0.8em;">Vista:</label>
+                    <select id="musViewMode" onchange="app.mus.changeView()" style="width:100%; font-size:0.9em;">
+                        <option value="ranking_pair">🏆 Ranking Parejas</option>
+                        <option value="ranking_player">👤 Ranking Individual</option>
+                        <option value="top_improvement">🚀 Mayor Mejora WinRate</option>
+                        <option value="recent_log">📝 Últimos Registros</option>
+                        <option value="examinar_persona">🔬 Examinar Persona</option>
+                        <option value="examinar_pareja">🔬 Examinar Pareja</option>
+                    </select>
                 </div>
             </div>
+
+            <div id="musFilterControls" class="hidden" style="margin-top:10px;">
+                 </div>
 
             <div id="musAnalysisContainer" class="hidden" style="margin-top:10px; border-top:1px solid #444; padding-top:10px;">
                 <div id="divExamPlayer">
@@ -581,9 +586,8 @@
                     <select id="musExamPlayer" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
                     <label>Analizar:</label>
                     <select id="musExamTypeP" onchange="app.mus.runAnalysis()" style="width:100%">
-                        <option value="with_partner">Promedio junto a...</option>
-                        <option value="vs_win">Promedio victorias frente a...</option>
-                        <option value="vs_loss">Promedio derrotas frente a...</option>
+                        <option value="vs_win">Promedio Victorias</option>
+                        <option value="vs_loss">Promedio Derrotas</option>
                     </select>
                 </div>
                 <div id="divExamPair" class="hidden">
@@ -591,38 +595,33 @@
                     <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
                     <label>Analizar:</label>
                     <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width:100%">
-                        <option value="vs_pair_win">Promedio victorias frente a pareja...</option>
-                        <option value="vs_pair_loss">Promedio derrotas frente a pareja...</option>
+                        <option value="vs_pair_win">Victorias vs Pareja</option>
                     </select>
                 </div>
+            </div>
+            
+            <div id="musChartSection" class="hidden" style="margin-top:15px; height:200px;">
+                <canvas id="musChartCanvas"></canvas>
             </div>
         </div>
 
         <div id="musStatsContainer" style="text-align:center;"></div>
+        <div id="musLogContainer" class="hidden"></div>
 
         <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:50px; overflow-y:auto;">
-            <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:400px; border:2px solid #57606f;">
-                <h3 style="margin-top:0;">Nueva Partida</h3>
+             </div>
+        
+        <div id="musPairGenModal" class="hidden modal-overlay">
+            <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:350px; border:2px solid #e1b12c;">
+                <h3 style="color:#e1b12c">🎲 Generar Parejas</h3>
+                <p style="color:#aaa; font-size:0.9em">Selecciona jugadores presentes:</p>
+                <div id="genPlayerList" style="text-align:left; max-height:200px; overflow-y:auto; background:#222; padding:10px; border-radius:5px; margin-bottom:15px;"></div>
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="flex:1; text-align:center; background:rgba(9, 132, 227, 0.2); padding:5px; border-radius:5px;">
-                        <h4 style="margin:0; color:#74b9ff">Pareja 1</h4>
-                        <select id="musP1" style="width:90%; margin:5px 0;"></select>
-                        <select id="musP2" style="width:90%; margin:5px 0;"></select>
-                        <input type="number" id="musS1" placeholder="Rondas" style="width:50px; text-align:center;">
-                    </div>
-                    <div style="font-weight:bold; padding:0 5px;">VS</div>
-                    <div style="flex:1; text-align:center; background:rgba(214, 48, 49, 0.2); padding:5px; border-radius:5px;">
-                        <h4 style="margin:0; color:#ff7675">Pareja 2</h4>
-                        <select id="musP3" style="width:90%; margin:5px 0;"></select>
-                        <select id="musP4" style="width:90%; margin:5px 0;"></select>
-                        <input type="number" id="musS2" placeholder="Rondas" style="width:50px; text-align:center;">
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" style="background:#555; flex:1;">Cancelar</button>
-                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1;">Guardar</button>
+                <div id="genResults" style="margin-bottom:15px; font-weight:bold;"></div>
+                
+                <div style="display:flex; gap:10px;">
+                    <button onclick="document.getElementById('musPairGenModal').classList.add('hidden')" style="background:#555; flex:1">Cerrar</button>
+                    <button onclick="app.mus.generatePairs()" class="main-btn" style="flex:1">Barajar</button>
                 </div>
             </div>
         </div>

@@ -457,16 +457,27 @@ canvas {
     box-shadow: 0 0 0 rgba(0,0,0,0.4), inset 0 2px 5px rgba(0,0,0,0.2);
 }
 
+/* Checkbox de jugadores para el generador */
+.player-check-item {
+    padding: 8px;
+    border-bottom: 1px solid #444;
+}
+.player-check-item input {
+    width: auto;
+    margin-right: 10px;
+}
+
 /* 3. Inputs y Selectores (Estilo Pergamino Oscuro) */
 #musScreen select, #musScreen input {
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 1.1em;
-    background-color: #353b48; /* Fondo oscuro pero distinto */
-    color: #f5f6fa;
-    border: 1px solid #718093;
-    border-radius: 4px;
-    padding: 8px;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); /* Hundidos */
+    background-image: linear-gradient(to bottom, #3c40c6, #3c40c6); /* Simular botón */
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 0 #2d3436;
+    transition: all 0.1s;
+    cursor: pointer;
 }
 
 #musScreen select:focus, #musScreen input:focus {
@@ -480,6 +491,11 @@ canvas {
     border-collapse: separate;
     border-spacing: 0 8px; /* Separación entre filas */
     margin-top: 10px;
+}
+
+#musScreen select:active {
+    box-shadow: 0 2px 0 #2d3436;
+    transform: translateY(2px);
 }
 
 .mus-table th {
