@@ -627,19 +627,19 @@
                         <h4 style="margin:0; color:#74b9ff">Pareja 1</h4>
                         <select id="musP1" style="width:90%; margin:5px 0;"></select>
                         <select id="musP2" style="width:90%; margin:5px 0;"></select>
-                        <input type="number" id="musS1" placeholder="Rondas" style="width:50px; text-align:center;">
+                        <input type="number" id="musS1" placeholder="Rondas" style="width:100px; text-align:center;">
                     </div>
                     <div style="font-weight:bold; padding:0 5px;">VS</div>
                     <div style="flex:1; text-align:center; background:rgba(214, 48, 49, 0.2); padding:5px; border-radius:5px;">
                         <h4 style="margin:0; color:#ff7675">Pareja 2</h4>
                         <select id="musP3" style="width:90%; margin:5px 0;"></select>
                         <select id="musP4" style="width:90%; margin:5px 0;"></select>
-                        <input type="number" id="musS2" placeholder="Rondas" style="width:50px; text-align:center;">
+                        <input type="number" id="musS2" placeholder="Rondas" style="width:100px; text-align:center;">
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" style="background:#555; flex:1;">Cancelar</button>
-                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1;">Guardar</button>
+                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" class="main-btn" style="flex:1; color:#aaa; background:#ff5f5f">Cancelar</button>
+                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1; color:#aaa; background:#5fff6a; box-shadow: #44b54b">Guardar</button>
                 </div>
             </div>
         </div>
