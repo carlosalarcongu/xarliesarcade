@@ -34,6 +34,17 @@ button:active { transform: scale(0.96); }
     letter-spacing: 1px;
 }
 
+.main-btn-aux {
+    background-color: #66ff47;
+    color: white;
+    padding: 18px;
+    width: 100%;
+    margin-top: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 5px 0 #26a430;
+    letter-spacing: 1px;
+}
+
 /* Botones secundarios (Volver, etc) */
 .back-nav { width: 100%; display: flex; justify-content: space-between; margin-bottom: 15px; }
 .back-nav button { background: transparent; border: 2px solid #57606f; color: #a4b0be; padding: 8px 15px; font-size: 0.85em; box-shadow: none; border-radius: 20px;}
