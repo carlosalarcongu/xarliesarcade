@@ -552,7 +552,8 @@ module.exports = {
 
 
   LA_PLAZA: {
-        label: "La Plaza (Vitamina D)",
+        label: "🛒 La Plaza",
+        hint: " (Vitamina D)",
         words: [
             // --- LUIS CRUZ ---
             { word: "Reiniciar el alfabeto", hint: "Didáctica" },

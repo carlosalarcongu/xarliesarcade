@@ -220,7 +220,7 @@ const gameModule = (io, socket) => {
         }
 
         if (action.type === 'changeImpostors' && me.isAdmin) {
-            const newVal = Math.max(1, Math.min(Math.floor(players.length/2), settings.impostors + action.value));
+            const newVal = Math.max(0, Math.min(players.length, settings.impostors + action.value));
             settings.impostors = newVal;
             broadcast(io);
         }
