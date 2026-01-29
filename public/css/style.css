@@ -599,3 +599,23 @@ canvas {
     background: #2f3542;
     box-shadow: 0 0 50px rgba(0,0,0,0.8);
 }
+
+/* --- CARTAS EN DESARROLLO (DISABLED) --- */
+.hub-card.disabled {
+    filter: grayscale(100%); /* Lo pone en blanco y negro */
+    opacity: 0.5;            /* Lo hace semitransparente */
+    cursor: help;            /* Cambia el cursor para indicar duda/ayuda */
+    background-color: #202020; /* Un fondo un poco más oscuro */
+    box-shadow: none;
+    transition: none;
+}
+
+.hub-card.disabled:hover {
+    opacity: 0.7; /* Un pequeño efecto al pasar el ratón para ver que es interactivo */
+}
+
+.hub-card.disabled:active {
+    transform: none;      /* Quitar el efecto de hundirse al clicar */
+    margin-top: 0;
+    box-shadow: none;
+}

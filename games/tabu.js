@@ -4,17 +4,22 @@ const questionsDB = require('./tabu_words');
 // ESTADO GLOBAL
 let players = [];
 let gameInProgress = false;
-let settings = { totalRounds: 3, turnDuration: 60, skipsPerTurn: 3 }; 
+let isPaused = false; // NUEVO: Estado de pausa
+
+let settings = { totalRounds: 3, turnDuration: 60, skipsPerTurn: 3, pauseBetweenRounds: false }; 
+
 let turnData = {
     currentTeam: 'BLUE', 
     roundNumber: 1,
     describerId: null, 
     currentCard: null, 
     timer: 60, 
-    skipsRemaining: 3, // NUEVO
+    skipsRemaining: 3,
     teamIndex: { BLUE: 0, RED: 0 }, 
     score: { BLUE: 0, RED: 0 },
-    status: 'LOBBY' 
+    status: 'LOBBY', // LOBBY, PRE_TURN, PLAYING, PAUSED
+    lastRoundWinner: null, // Para mostrar resultados intermedios
+    lastRoundMVP: []
 };
 
 let turnInterval = null;
@@ -32,6 +37,7 @@ function broadcast(io) {
     io.to('tabu').emit('updateTabuState', {
         players: publicPlayers,
         gameInProgress,
+        isPaused,
         turnData,
         settings
     });
@@ -40,19 +46,33 @@ function broadcast(io) {
 function nextTurn(io) {
     if (turnInterval) clearInterval(turnInterval);
 
+    // Cambio de equipo
     if (turnData.currentTeam === 'BLUE') {
         turnData.currentTeam = 'RED';
     } else {
         turnData.currentTeam = 'BLUE';
         turnData.roundNumber++;
+        
+        // Comprobar fin de partida o pausa entre rondas
         if (turnData.roundNumber > settings.totalRounds) {
             endGame(io);
             return;
         }
+        
+        if (settings.pauseBetweenRounds) {
+            isPaused = true;
+            turnData.status = 'PAUSED';
+            broadcast(io);
+            return;
+        }
     }
 
+    startPreTurn(io);
+}
+
+function startPreTurn(io) {
     const teamMembers = players.filter(p => p.team === turnData.currentTeam);
-    if (teamMembers.length === 0) return nextTurn(io); 
+    if (teamMembers.length === 0) return nextTurn(io); // Si equipo vacío, saltar
 
     let idx = turnData.teamIndex[turnData.currentTeam] % teamMembers.length;
     turnData.describerId = teamMembers[idx].id;
@@ -62,14 +82,14 @@ function nextTurn(io) {
     turnData.status = 'PRE_TURN';
     turnData.timer = 5;
     turnData.currentCard = null;
-    
-    // REINICIAR SALTOS PARA EL NUEVO TURNO
     turnData.skipsRemaining = settings.skipsPerTurn;
     
     broadcast(io);
 
     let prepCounter = 5;
     const prepInterval = setInterval(() => {
+        if (!gameInProgress || isPaused) { clearInterval(prepInterval); return; }
+
         prepCounter--;
         turnData.timer = prepCounter;
         io.to('tabu').emit('timerTick', prepCounter); 
@@ -90,11 +110,15 @@ function startPlayingPhase(io) {
     if (turnInterval) clearInterval(turnInterval);
 
     turnInterval = setInterval(() => {
+        if (!gameInProgress || isPaused) { clearInterval(turnInterval); return; }
+
         turnData.timer--;
         
         if (turnData.timer <= 0) {
             clearInterval(turnInterval);
             io.to('tabu').emit('playSound', 'timeout');
+            
+            // Mostrar MVP de la ronda/turno antes de cambiar (Opcional, aquí cambiamos directo)
             nextTurn(io);
         } else {
             io.to('tabu').emit('timerTick', turnData.timer);
@@ -121,11 +145,16 @@ function endGame(io) {
     if (turnData.score.BLUE > turnData.score.RED) winner = 'BLUE';
     if (turnData.score.RED > turnData.score.BLUE) winner = 'RED';
 
+    // Calcular MVP del equipo ganador (o global si empate)
+    const winningTeamPlayers = winner === 'DRAW' ? players : players.filter(p => p.team === winner);
+    const mvpList = winningTeamPlayers.sort((a,b) => b.individualScore - a.individualScore).slice(0, 5);
+
     io.to('tabu').emit('gameOver', { 
         winner, 
         finalScores: turnData.score,
-        mvp: players.sort((a,b) => b.individualScore - a.individualScore).slice(0, 5)
+        mvp: mvpList
     });
+    
     broadcast(io); 
 }
 
@@ -134,76 +163,119 @@ const gameModule = (io, socket) => {
         const me = players.find(p => p.socketId === socket.id);
         if (!me) return;
 
+        // UNIRSE A EQUIPO
         if (action.type === 'joinTeam') {
             if (gameInProgress) return;
             me.team = action.team; 
             broadcast(io);
         }
 
-        // START (CONFIGURABLE)
-        if (action.type === 'start') {
-            if (!me.isAdmin) return;
-            const blues = players.filter(p => p.team === 'BLUE').length;
-            const reds = players.filter(p => p.team === 'RED').length;
-            if (blues === 0 || reds === 0) {
-                socket.emit('tabu_error', '⚠ Faltan jugadores.\nDebe haber al menos 1 persona en cada equipo.');
-                return;
+        // --- ACCIONES DE ADMIN ---
+        if (me.isAdmin) {
+            // RANDOMIZAR EQUIPOS
+            if (action.type === 'randomizeTeams') {
+                if (gameInProgress) return;
+                
+                // Mezclar array
+                const shuffled = players.sort(() => Math.random() - 0.5);
+                // Asignar mitad y mitad
+                shuffled.forEach((p, index) => {
+                    p.team = (index % 2 === 0) ? 'BLUE' : 'RED';
+                });
+                broadcast(io);
             }
 
-            settings.totalRounds = parseInt(action.rounds) || 3;
-            settings.turnDuration = parseInt(action.duration) || 60; // NUEVO
-            settings.skipsPerTurn = parseInt(action.skips) || 3;    // NUEVO
+            // KICK JUGADOR
+            if (action.type === 'kick') {
+                const target = players.find(p => p.id === action.targetId);
+                if (target) {
+                    if(target.socketId) io.to(target.socketId).emit('sessionExpired');
+                    players = players.filter(p => p.id !== action.targetId);
+                    broadcast(io);
+                }
+            }
 
-            turnData.score = { BLUE: 0, RED: 0 };
-            turnData.roundNumber = 0; 
-            turnData.currentTeam = 'RED'; 
-            turnData.teamIndex = { BLUE: 0, RED: 0 };
-            players.forEach(p => p.individualScore = 0);
+            // INICIAR / REANUDAR
+            if (action.type === 'start') {
+                const blues = players.filter(p => p.team === 'BLUE').length;
+                const reds = players.filter(p => p.team === 'RED').length;
+                if (blues === 0 || reds === 0) {
+                    socket.emit('tabu_error', '⚠ Faltan jugadores.\nDebe haber al menos 1 persona en cada equipo.');
+                    return;
+                }
 
-            gameInProgress = true;
-            nextTurn(io);
-        }
+                // Si venimos de pausa, reanudar
+                if (isPaused) {
+                    isPaused = false;
+                    turnData.status = 'PRE_TURN'; // Ojo: reinicia el pre-turno
+                    startPreTurn(io);
+                    broadcast(io);
+                    return;
+                }
 
-        if (action.type === 'correct') {
-            if (!gameInProgress || turnData.status !== 'PLAYING') return;
-            turnData.score[turnData.currentTeam]++;
-            const describer = players.find(p => p.id === turnData.describerId);
-            if (describer) describer.individualScore++;
-            io.to('tabu').emit('playSound', 'correct');
-            pickNewCard();
-            broadcast(io);
-        }
+                // Configuración inicial
+                settings.totalRounds = parseInt(action.rounds) || 3;
+                settings.turnDuration = parseInt(action.duration) || 60;
+                settings.skipsPerTurn = parseInt(action.skips) || 3;
+                settings.pauseBetweenRounds = !!action.pauseOn; // Nuevo
 
-        // ACCIÓN DE SALTAR (SKIP)
-        if (action.type === 'skip') {
-            if (!gameInProgress || turnData.status !== 'PLAYING') return;
-            
-            if (turnData.skipsRemaining > 0) {
-                turnData.skipsRemaining--;
-                io.to('tabu').emit('playSound', 'skip'); // Opcional: añadir sonido si quieres
-                pickNewCard();
+                turnData.score = { BLUE: 0, RED: 0 };
+                turnData.roundNumber = 0; 
+                turnData.currentTeam = 'RED'; // Para que nextTurn empiece con BLUE
+                turnData.teamIndex = { BLUE: 0, RED: 0 };
+                players.forEach(p => p.individualScore = 0);
+
+                gameInProgress = true;
+                isPaused = false;
+                nextTurn(io);
+            }
+
+            // PAUSAR MANUALMENTE
+            if (action.type === 'pause') {
+                if (!gameInProgress) return;
+                isPaused = !isPaused;
+                // Si despausamos, hay que ver en qué estado estábamos (simplificado: reiniciar turno actual o next)
+                if(!isPaused && turnData.status === 'PAUSED') {
+                    nextTurn(io);
+                }
+                broadcast(io);
+            }
+
+            // RESET
+            if (action.type === 'reset') {
+                gameInProgress = false;
+                isPaused = false;
+                if (turnInterval) clearInterval(turnInterval);
+                turnData.score = { BLUE: 0, RED: 0 };
                 broadcast(io);
             }
         }
 
-        if (action.type === 'taboo') {
-            if (!gameInProgress || turnData.status !== 'PLAYING') return;
-            io.to('tabu').emit('playSound', 'wrong');
-            nextTurn(io); 
-        }
-        
-        if (action.type === 'kick' && me.isAdmin) {
-            const t = players.find(p => p.id === action.targetId);
-            if(t && t.socketId) io.to(t.socketId).emit('sessionExpired');
-            players = players.filter(p => p.id !== action.targetId);
-            broadcast(io);
-        }
-        
-        if (action.type === 'reset' && me.isAdmin) {
-            gameInProgress = false;
-            if (turnInterval) clearInterval(turnInterval);
-            turnData.score = { BLUE: 0, RED: 0 };
-            broadcast(io);
+        // --- ACCIONES DE JUEGO (JUGADOR ACTIVO) ---
+        // Solo el describer puede enviar esto
+        if (gameInProgress && !isPaused && turnData.status === 'PLAYING' && me.id === turnData.describerId) {
+            
+            if (action.type === 'correct') {
+                turnData.score[turnData.currentTeam]++;
+                me.individualScore++;
+                io.to('tabu').emit('playSound', 'correct');
+                pickNewCard();
+                broadcast(io);
+            }
+
+            if (action.type === 'skip') {
+                if (turnData.skipsRemaining > 0) {
+                    turnData.skipsRemaining--;
+                    io.to('tabu').emit('playSound', 'skip');
+                    pickNewCard();
+                    broadcast(io);
+                }
+            }
+
+            if (action.type === 'taboo') {
+                io.to('tabu').emit('playSound', 'wrong');
+                nextTurn(io); 
+            }
         }
     });
 
@@ -214,6 +286,10 @@ const handleJoin = (socket, name) => {
     if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) return socket.emit('joinError', 'Nombre en uso.');
     const basePlayer = Utils.createPlayer(socket.id, name);
     const newPlayer = { ...basePlayer, team: null, individualScore: 0, timeout: null };
+    
+    // Si es el primero, hacerlo admin
+    if(players.length === 0) newPlayer.isAdmin = true;
+
     players.push(newPlayer);
     socket.join('tabu');
     socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'tabu' });
@@ -232,29 +308,33 @@ const handleRejoin = (socket, savedId) => {
     } else socket.emit('sessionExpired');
 };
 
-const handleLeave = (id) => { 
+const handleLeave = (id, io) => { 
     const p = players.find(x => x.id === id);
     if(p) {
         if(p.timeout) clearTimeout(p.timeout);
+        const wasAdmin = p.isAdmin;
         players = players.filter(x => x.id !== id);
+        
+        if (wasAdmin && players.length > 0) players[0].isAdmin = true;
+        if (players.length === 0) gameModule.resetInternalState();
+        
+        if (io) broadcast(io);
     }
 };
 
 const handleDisconnect = (socket) => { 
-    const p = players.find(x => x.socketId === socket.id);
-    if (p) { 
-        p.connected = false; 
-        broadcast(socket.server); 
-        if(p.timeout) clearTimeout(p.timeout);
-        p.timeout = setTimeout(() => { players = players.filter(x => x.id !== p.id); }, 15*60*1000);
-    }
+    Utils.handleDisconnect(socket.id, players, () => {
+        gameModule.resetInternalState();
+    });
+    if (socket.server) broadcast(socket.server);
 };
 
 gameModule.resetInternalState = () => {
     players = [];
     gameInProgress = false;
+    isPaused = false;
     if (turnInterval) clearInterval(turnInterval);
-    turnData = { currentTeam: 'BLUE', roundNumber: 1, score: { BLUE: 0, RED: 0 } };
+    turnData = { currentTeam: 'BLUE', roundNumber: 1, score: { BLUE: 0, RED: 0 }, status: 'LOBBY' };
 };
 
 gameModule.handleJoin = handleJoin;

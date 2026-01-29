@@ -143,11 +143,12 @@ socket.on('updateState', (data) => {
         list.innerHTML = "";
         players.forEach(p => {
             const badge = p.isAdmin ? '👑' : '';
+            const userbadge = !p.isAdmin ? '👽' : '';
             const obsBadge = p.isObserver ? '👁️' : '';
             const li = document.createElement('li');
             li.innerHTML = `<span>${p.name} ${badge} ${obsBadge}</span>`;
             
-            if(app.impostor.iAmAdmin && !p.isAdmin) {
+            if(app.impostor.iAmAdmin) {
                 li.innerHTML += `<button class="kick-btn" style="padding:2px 6px; width:auto; margin-left:10px;" onclick="app.impostor.kick('${p.id}')">❌</button>`;
             }
             list.appendChild(li);

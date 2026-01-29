@@ -24,14 +24,19 @@
                 <div class="hub-info"><div class="hub-title">Registro Mus</div><div class="hub-desc">Estadísticas y resultados.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #fbff00;">
+            <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #3301c7;">
                 <div class="hub-icon">🕵️</div>
                 <div class="hub-info"><div class="hub-title">El Impostor</div><div class="hub-desc">Palabras ocultas y espías.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('pinturilloImp')" style="border-left-color: #7830ff;">
-                <div class="hub-icon">🎨</div>
-                <div class="hub-info"><div class="hub-title">El Falso Artista</div><div class="hub-desc">Dibuja y descubre al impostor.</div></div>
+            <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-left-color: #ff2158;">
+                <div class="hub-icon">🚫</div>
+                <div class="hub-info"><div class="hub-title">Tabú</div><div class="hub-desc">Equipos y palabras prohibidas.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('elmas')" style="border-left-color: #e1ff3a;">
+                <div class="hub-icon">🏆</div>
+                <div class="hub-info"><div class="hub-title">El MÁS...</div><div class="hub-desc">Vota quién encaja mejor.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
             <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-left-color: #1cff2f;">
@@ -44,23 +49,23 @@
                 <div class="hub-info"><div class="hub-title">Anécdotas</div><div class="hub-desc">Historias verdaderas (o no).</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('elmas')" style="border-left-color: #ff3a3a;">
-                <div class="hub-icon">🏆</div>
-                <div class="hub-info"><div class="hub-title">El MÁS...</div><div class="hub-desc">Vota quién encaja mejor.</div></div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
+            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
+                <div class="hub-icon">🎨</div>
+                <div class="hub-info">
+                    <div class="hub-title">El Falso Artista</div>
+                    <div class="hub-desc">Dibuja, colabora y descubre al impostor.</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">🔒</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-left-color: #2167ff;">
-                <div class="hub-icon">🚫</div>
-                <div class="hub-info"><div class="hub-title">Tabú</div><div class="hub-desc">Equipos y palabras prohibidas.</div></div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
-            </div>
-            <div class="hub-card" onclick="window.location.href='https://skill-fruits-troops-corresponding.trycloudflare.com/'" style="border-left-color: #e74c3c;">
+            
+            <!-- <div class="hub-card" onclick="window.location.href='https://skill-fruits-troops-corresponding.trycloudflare.com/'" style="border-left-color: #e74c3c;"> -->
+            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #e74c3c;">
                 <div class="hub-icon">⚔️</div>
                 <div class="hub-info">
                     <div class="hub-title">Guerra 7</div>
                     <div class="hub-desc">Estrategia en tiempo real.</div>
                 </div>
-                <div style="font-size:1.5em; color:#57606f">↗</div>
+                <div style="font-size:1.5em; color:#57606f">🔒</div>
             </div>
             <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #416348; margin-top: 15px;">
                 <div class="hub-icon">💌</div>
@@ -392,9 +397,17 @@
                     <input type="number" id="tabuSkips" value="3" min="0" 
                            style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
                 </div>
+
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
+                    <span>Pausa/Ronda:</span>
+                    <input type="checkbox" id="tabuPause" style="width:20px; height:20px;">
+                </div>
             </div>
             
-            <button class="start-btn" onclick="app.tabu.start()">▶️ EMPEZAR</button>
+            <div style="display:flex; gap:10px;">
+                <button id="btnRandomTeams" onclick="app.tabu.randomize()" class="kick-btn" style="background:#a55eea; font-size:0.9em; width:auto; padding:15px;">🎲 Random</button>
+                <button id="btnStartTabu" class="start-btn" onclick="app.tabu.start()" style="flex:1;">▶️ EMPEZAR</button>
+            </div>
         </div>
         
         <p id="tabuWaitMsg" style="color:#aaa">Esperando al admin...</p>

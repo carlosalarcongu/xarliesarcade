@@ -476,6 +476,10 @@ window.app = {
             modal.classList.remove('hidden');
         }
     },
+
+    showDevMessage: () => {
+        alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
+    },
     
     impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}
 };
