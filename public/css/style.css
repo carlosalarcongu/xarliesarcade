@@ -619,3 +619,37 @@ canvas {
     margin-top: 0;
     box-shadow: none;
 }
+
+/* --- LÍNEA DE TIEMPO DEL LOBO --- */
+.timeline-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.timeline-step {
+    font-size: 0.8em;
+    color: #777;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+}
+
+.timeline-step.active {
+    color: #fff;
+    background-color: #6c5ce7;
+    border-color: #a29bfe;
+    font-weight: bold;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(108, 92, 231, 0.5);
+}
+
+.timeline-arrow {
+    color: #555;
+    font-size: 0.8em;
+}

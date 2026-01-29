@@ -211,6 +211,8 @@
                 <button class="cat-btn" id="btn_hasGirl" onclick="app.lobo.tog('hasGirl')">👧 Niña<br><span id="val_hasGirl">NO</span></button>
                 <button class="cat-btn" id="btn_hasCupid" onclick="app.lobo.tog('hasCupid')">💘 Cupido<br><span id="val_hasCupid">NO</span></button>
                 <button class="cat-btn" id="btn_hasHunter" onclick="app.lobo.tog('hasHunter')">🔫 Cazador<br><span id="val_hasHunter">NO</span></button>
+                <button class="cat-btn" id="btn_hasWitch" onclick="app.lobo.tog('hasWitch')">🧙‍♀️ Bruja<br><span id="val_hasWitch">SI</span></button>
+                <button class="cat-btn" id="btn_hasSheriff" onclick="app.lobo.tog('hasSheriff')">⭐ Alguacil<br><span id="val_hasSheriff">SI</span></button>
             </div>
             <button class="start-btn" onclick="app.lobo.start()">🌙 EMPEZAR</button>
         </div>
@@ -227,8 +229,12 @@
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
         
-        
-        <div id="loboCard" class="blur-content" onclick="app.lobo.toggleRole()">
+        <div style="text-align:center; margin-bottom:15px; background:#2f3542; padding:10px; border-radius:10px; border:2px solid #74b9ff">
+            <h2 id="loboPhaseTitle" style="margin:0; color:#fff">...</h2>
+            <p id="loboPhaseDesc" style="margin:5px 0 0 0; color:#aaa; font-size:0.9em">...</p>
+        </div>
+
+        <div id="loboCard" class="blur-content" onclick="app.lobo.toggleRole()" style="margin-bottom: 20px;">
             <h1>Tu Rol</h1>
             <div id="loboRoleTitle" style="font-size:2.5em; font-weight:bold; color:white;">...</div>
             <p id="loboRoleDesc" style="color:#ccc;">...</p>
@@ -237,17 +243,47 @@
                 <span id="loboPartnersText"></span>
             </div>
         </div>
-        <div class="card-note">👆 Clicar o mantener para ver rol</div>
+        <div class="card-note">👆 Toca para ver tu rol discretamente</div>
 
-        <div style="margin-top:20px; width:100%">
+        <div id="loboNightActionArea" class="hidden" style="width:100%; margin-bottom:20px; border: 2px dashed #a29bfe; padding:10px; border-radius:10px;"></div>
+
+        <button id="btnLoboPhaseAction" onclick="app.lobo.sendPhaseAction()" class="main-btn" style="background:#6c5ce7; margin-bottom:10px;">
+            Me duermo 💤
+        </button>
+        <p id="loboWaitingText" style="text-align:center; color:#aaa; display:none; margin-bottom:10px;">Esperando al resto...</p>
+
+        <div id="loboTimeline" class="timeline-container"></div>
+
+        <div id="loboDaySection" class="hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="color:#74b9ff; margin:0">🗳️ Votación</h3>
+                <h3 style="color:#74b9ff; margin:0">🗳️ Pueblo</h3>
                 <button id="loboClearVotesBtn" class="kick-btn hidden" style="width:auto; padding:5px 10px; font-size:0.8em; background:#555" onclick="app.lobo.clearVotes()">Limpiar</button>
             </div>
             <div id="loboVoteGrid" class="vote-grid"></div>
         </div>
 
         <button onclick="app.lobo.reset()" class="kick-btn hidden" id="loboResetBtn" style="margin-top:20px; width:100%;">Resetear Partida</button>
+    
+        <div id="loboWinModal" class="hidden modal-overlay" style="justify-content: flex-start; padding-top: 50px; overflow-y: auto;">
+            <h1 id="loboWinTitle" style="font-size:3em; margin-bottom: 20px;">VICTORIA</h1>
+            
+            <div style="background:#2f3542; padding:15px; border-radius:10px; width:100%; max-width: 400px; border: 2px solid #57606f;">
+                <h3>Resumen de la Partida</h3>
+                <div id="loboWinList" style="text-align:left; margin-top: 15px;">
+                    </div>
+            </div>
+
+            <button onclick="app.lobo.reset()" class="main-btn" style="margin-top:20px; width: auto; padding: 15px 30px;">Nueva Partida</button>
+        </div>
+    </div>
+
+        <button onclick="app.lobo.reset()" class="kick-btn hidden" id="loboResetBtn" style="margin-top:20px; width:100%;">Resetear Partida</button>
+    
+        <div id="loboWinModal" class="hidden modal-overlay">
+            <h1 id="loboWinTitle" style="font-size:3em; color:#ffeaa7">VICTORIA</h1>
+            <div id="loboWinList" style="text-align:left; background:#222; padding:20px; border-radius:10px; width:100%; max-height:60vh; overflow-y:auto;"></div>
+            <button onclick="app.lobo.reset()" class="main-btn" style="margin-top:20px;">Nueva Partida</button>
+        </div>
     </div>
 
     <div id="anecdotasLobby" class="hidden">
