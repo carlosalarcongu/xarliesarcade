@@ -3,8 +3,9 @@ app.lobo = {
     myRole: null,
     settings: {}, 
     phase: null,
-    players: [],
+    players: [], // Almacén local de jugadores para buscar nombres
     
+    // Ajustes
     adj: (key, val) => {
         let curr = app.lobo.settings.wolvesCount || 2;
         socket.emit('lobo_action', { type: 'updateSetting', key: 'wolvesCount', value: curr + val });
@@ -96,7 +97,7 @@ app.lobo = {
 
 socket.on('updateLoboList', (data) => {
     const { players, gameInProgress, settings, turnData } = data;
-    app.lobo.players = players;
+    app.lobo.players = players; // Guardamos lista para que la bruja busque nombres
     app.lobo.settings = settings; 
     app.lobo.phase = turnData.phase;
 
@@ -109,6 +110,7 @@ socket.on('updateLoboList', (data) => {
         document.getElementById('loboWinModal').classList.add('hidden');
         document.getElementById('loboTimeline').innerHTML = ""; 
 
+        // --- SINCRONIZACIÓN VISUAL DE SETTINGS PARA TODOS ---
         document.getElementById('val_wolvesCount').innerText = settings.wolvesCount;
         document.getElementById('loboPlayerCount').innerText = players.length;
 
@@ -122,9 +124,32 @@ socket.on('updateLoboList', (data) => {
             }
         });
 
-        document.getElementById('loboAdminPanel').classList.toggle('hidden', !app.lobo.iAmAdmin);
-        document.getElementById('loboWaitMsg').classList.toggle('hidden', app.lobo.iAmAdmin);
+        // --- GESTIÓN DE PERMISOS (Panel visible para todos, editable solo para admin) ---
+        const adminPanel = document.getElementById('loboAdminPanel');
+        const waitMsg = document.getElementById('loboWaitMsg');
+        
+        // Siempre mostramos el panel para que vean la config
+        adminPanel.classList.remove('hidden'); 
+        
+        // Deshabilitar/Habilitar botones según admin
+        const allBtns = adminPanel.querySelectorAll('button');
+        allBtns.forEach(b => b.disabled = !app.lobo.iAmAdmin);
 
+        // Opacidad para indicar modo solo lectura
+        if (!app.lobo.iAmAdmin) {
+            adminPanel.style.opacity = "0.7";
+            waitMsg.classList.remove('hidden');
+            // Ocultar botón empezar a los no admins
+            const startBtn = adminPanel.querySelector('.start-btn');
+            if(startBtn) startBtn.style.display = 'none';
+        } else {
+            adminPanel.style.opacity = "1";
+            waitMsg.classList.add('hidden');
+            const startBtn = adminPanel.querySelector('.start-btn');
+            if(startBtn) startBtn.style.display = 'block';
+        }
+
+        // Lista Jugadores
         const listLobby = document.getElementById('loboPlayerList');
         if (listLobby) {
             listLobby.innerHTML = "";
@@ -288,10 +313,19 @@ socket.on('witchInfo', (data) => {
     if(!area) return;
     area.innerHTML = "";
     
+    // --- CORRECCIÓN BRUJA ---
+    // Buscar nombre del muerto usando el ID
+    let victimName = "nadie";
+    if (data.victimId) {
+        const victim = app.lobo.players.find(p => p.id === data.victimId);
+        if (victim) victimName = victim.name;
+    }
+    // ------------------------
+
     let reviveHtml = `<div id="witchReviveArea" style="margin-bottom:15px; border-bottom:1px solid #555; padding-bottom:10px;">`;
     if (data.hasRevive) {
         if (data.victimId) {
-            reviveHtml += `<p style="color:#ff7675">Los lobos han matado a alguien...</p>`;
+            reviveHtml += `<p style="color:#ff7675; font-weight:bold; font-size:1.2em">🐺 Han atacado a: ${victimName}</p>`;
             reviveHtml += `<button class="main-btn" onclick="app.lobo.useRevive()">🧪 REVIVIR</button>`;
         } else {
             reviveHtml += `<p>Nadie ha muerto esta noche.</p>`;
