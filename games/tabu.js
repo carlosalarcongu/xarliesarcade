@@ -4,9 +4,15 @@ const questionsDB = require('./tabu_words');
 // ESTADO GLOBAL
 let players = [];
 let gameInProgress = false;
-let isPaused = false; // NUEVO: Estado de pausa
+let isPaused = false;
 
-let settings = { totalRounds: 3, turnDuration: 60, skipsPerTurn: 3, pauseBetweenRounds: false }; 
+// Configuración por defecto
+let settings = { 
+    totalRounds: 3, 
+    turnDuration: 60, 
+    skipsPerTurn: 3, 
+    pauseBetweenRounds: false 
+}; 
 
 let turnData = {
     currentTeam: 'BLUE', 
@@ -17,14 +23,28 @@ let turnData = {
     skipsRemaining: 3,
     teamIndex: { BLUE: 0, RED: 0 }, 
     score: { BLUE: 0, RED: 0 },
-    status: 'LOBBY', // LOBBY, PRE_TURN, PLAYING, PAUSED
-    lastRoundWinner: null, // Para mostrar resultados intermedios
+    status: 'LOBBY', 
+    lastRoundWinner: null, 
     lastRoundMVP: []
 };
 
 let turnInterval = null;
 
-// HELPERS
+// --- FUNCIÓN DE RESET COMPARTIDA ---
+function performReset(io) {
+    gameInProgress = false;
+    isPaused = false;
+    if (turnInterval) clearInterval(turnInterval);
+    turnData = { 
+        currentTeam: 'BLUE', 
+        roundNumber: 1, 
+        score: { BLUE: 0, RED: 0 }, 
+        teamIndex: { BLUE: 0, RED: 0 },
+        status: 'LOBBY' 
+    };
+    broadcast(io);
+}
+
 function broadcast(io) {
     const publicPlayers = players.map(p => ({
         id: p.id,
@@ -46,14 +66,12 @@ function broadcast(io) {
 function nextTurn(io) {
     if (turnInterval) clearInterval(turnInterval);
 
-    // Cambio de equipo
     if (turnData.currentTeam === 'BLUE') {
         turnData.currentTeam = 'RED';
     } else {
         turnData.currentTeam = 'BLUE';
         turnData.roundNumber++;
         
-        // Comprobar fin de partida o pausa entre rondas
         if (turnData.roundNumber > settings.totalRounds) {
             endGame(io);
             return;
@@ -72,13 +90,12 @@ function nextTurn(io) {
 
 function startPreTurn(io) {
     const teamMembers = players.filter(p => p.team === turnData.currentTeam);
-    if (teamMembers.length === 0) return nextTurn(io); // Si equipo vacío, saltar
+    if (teamMembers.length === 0) return nextTurn(io); 
 
     let idx = turnData.teamIndex[turnData.currentTeam] % teamMembers.length;
     turnData.describerId = teamMembers[idx].id;
     turnData.teamIndex[turnData.currentTeam]++;
 
-    // PRE_TURN
     turnData.status = 'PRE_TURN';
     turnData.timer = 5;
     turnData.currentCard = null;
@@ -88,7 +105,9 @@ function startPreTurn(io) {
 
     let prepCounter = 5;
     const prepInterval = setInterval(() => {
-        if (!gameInProgress || isPaused) { clearInterval(prepInterval); return; }
+        if (!gameInProgress || isPaused || turnData.status === 'ENDED') { 
+            clearInterval(prepInterval); return; 
+        }
 
         prepCounter--;
         turnData.timer = prepCounter;
@@ -110,15 +129,15 @@ function startPlayingPhase(io) {
     if (turnInterval) clearInterval(turnInterval);
 
     turnInterval = setInterval(() => {
-        if (!gameInProgress || isPaused) { clearInterval(turnInterval); return; }
+        if (!gameInProgress || isPaused || turnData.status === 'ENDED') { 
+            clearInterval(turnInterval); return; 
+        }
 
         turnData.timer--;
         
         if (turnData.timer <= 0) {
             clearInterval(turnInterval);
             io.to('tabu').emit('playSound', 'timeout');
-            
-            // Mostrar MVP de la ronda/turno antes de cambiar (Opcional, aquí cambiamos directo)
             nextTurn(io);
         } else {
             io.to('tabu').emit('timerTick', turnData.timer);
@@ -137,25 +156,37 @@ function pickNewCard() {
     turnData.currentCard = random;
 }
 
+// --- MODIFICADO: ENDGAME MANTIENE EL JUEGO ACTIVO 10s ---
 function endGame(io) {
-    gameInProgress = false;
     if (turnInterval) clearInterval(turnInterval);
+    
+    // Mantenemos gameInProgress = true para que el frontend siga en la pantalla de juego
+    turnData.status = 'ENDED'; 
     
     let winner = 'DRAW';
     if (turnData.score.BLUE > turnData.score.RED) winner = 'BLUE';
     if (turnData.score.RED > turnData.score.BLUE) winner = 'RED';
 
-    // Calcular MVP del equipo ganador (o global si empate)
     const winningTeamPlayers = winner === 'DRAW' ? players : players.filter(p => p.team === winner);
     const mvpList = winningTeamPlayers.sort((a,b) => b.individualScore - a.individualScore).slice(0, 5);
 
+    // Emitimos el evento de victoria
     io.to('tabu').emit('gameOver', { 
         winner, 
         finalScores: turnData.score,
         mvp: mvpList
     });
     
+    // Actualizamos estado (para que los nuevos que entren vean que acabó)
     broadcast(io); 
+
+    // Temporizador del servidor para resetear todo en 10s
+    setTimeout(() => {
+        // Solo reseteamos si seguimos en estado ENDED (por si el admin reinició manualmente antes)
+        if (turnData.status === 'ENDED') {
+            performReset(io);
+        }
+    }, 10000);
 }
 
 const gameModule = (io, socket) => {
@@ -163,29 +194,32 @@ const gameModule = (io, socket) => {
         const me = players.find(p => p.socketId === socket.id);
         if (!me) return;
 
-        // UNIRSE A EQUIPO
         if (action.type === 'joinTeam') {
-            if (gameInProgress) return;
+            if (gameInProgress && turnData.status !== 'ENDED') return;
             me.team = action.team; 
             broadcast(io);
         }
 
         // --- ACCIONES DE ADMIN ---
         if (me.isAdmin) {
-            // RANDOMIZAR EQUIPOS
+            
+            if (action.type === 'updateSettings') {
+                if (action.rounds) settings.totalRounds = parseInt(action.rounds);
+                if (action.duration) settings.turnDuration = parseInt(action.duration);
+                if (action.skips) settings.skipsPerTurn = parseInt(action.skips);
+                if (typeof action.pauseOn !== 'undefined') settings.pauseBetweenRounds = !!action.pauseOn;
+                broadcast(io);
+            }
+
             if (action.type === 'randomizeTeams') {
                 if (gameInProgress) return;
-                
-                // Mezclar array
                 const shuffled = players.sort(() => Math.random() - 0.5);
-                // Asignar mitad y mitad
                 shuffled.forEach((p, index) => {
                     p.team = (index % 2 === 0) ? 'BLUE' : 'RED';
                 });
                 broadcast(io);
             }
 
-            // KICK JUGADOR
             if (action.type === 'kick') {
                 const target = players.find(p => p.id === action.targetId);
                 if (target) {
@@ -195,7 +229,6 @@ const gameModule = (io, socket) => {
                 }
             }
 
-            // INICIAR / REANUDAR
             if (action.type === 'start') {
                 const blues = players.filter(p => p.team === 'BLUE').length;
                 const reds = players.filter(p => p.team === 'RED').length;
@@ -204,24 +237,17 @@ const gameModule = (io, socket) => {
                     return;
                 }
 
-                // Si venimos de pausa, reanudar
                 if (isPaused) {
                     isPaused = false;
-                    turnData.status = 'PRE_TURN'; // Ojo: reinicia el pre-turno
+                    turnData.status = 'PRE_TURN'; 
                     startPreTurn(io);
                     broadcast(io);
                     return;
                 }
 
-                // Configuración inicial
-                settings.totalRounds = parseInt(action.rounds) || 3;
-                settings.turnDuration = parseInt(action.duration) || 60;
-                settings.skipsPerTurn = parseInt(action.skips) || 3;
-                settings.pauseBetweenRounds = !!action.pauseOn; // Nuevo
-
                 turnData.score = { BLUE: 0, RED: 0 };
                 turnData.roundNumber = 0; 
-                turnData.currentTeam = 'RED'; // Para que nextTurn empiece con BLUE
+                turnData.currentTeam = 'RED'; 
                 turnData.teamIndex = { BLUE: 0, RED: 0 };
                 players.forEach(p => p.individualScore = 0);
 
@@ -230,31 +256,22 @@ const gameModule = (io, socket) => {
                 nextTurn(io);
             }
 
-            // PAUSAR MANUALMENTE
             if (action.type === 'pause') {
                 if (!gameInProgress) return;
                 isPaused = !isPaused;
-                // Si despausamos, hay que ver en qué estado estábamos (simplificado: reiniciar turno actual o next)
                 if(!isPaused && turnData.status === 'PAUSED') {
                     nextTurn(io);
                 }
                 broadcast(io);
             }
 
-            // RESET
             if (action.type === 'reset') {
-                gameInProgress = false;
-                isPaused = false;
-                if (turnInterval) clearInterval(turnInterval);
-                turnData.score = { BLUE: 0, RED: 0 };
-                broadcast(io);
+                performReset(io);
             }
         }
 
-        // --- ACCIONES DE JUEGO (JUGADOR ACTIVO) ---
-        // Solo el describer puede enviar esto
+        // --- JUEGO ---
         if (gameInProgress && !isPaused && turnData.status === 'PLAYING' && me.id === turnData.describerId) {
-            
             if (action.type === 'correct') {
                 turnData.score[turnData.currentTeam]++;
                 me.individualScore++;
@@ -262,7 +279,6 @@ const gameModule = (io, socket) => {
                 pickNewCard();
                 broadcast(io);
             }
-
             if (action.type === 'skip') {
                 if (turnData.skipsRemaining > 0) {
                     turnData.skipsRemaining--;
@@ -271,7 +287,6 @@ const gameModule = (io, socket) => {
                     broadcast(io);
                 }
             }
-
             if (action.type === 'taboo') {
                 io.to('tabu').emit('playSound', 'wrong');
                 nextTurn(io); 
@@ -286,10 +301,7 @@ const handleJoin = (socket, name) => {
     if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) return socket.emit('joinError', 'Nombre en uso.');
     const basePlayer = Utils.createPlayer(socket.id, name);
     const newPlayer = { ...basePlayer, team: null, individualScore: 0, timeout: null };
-    
-    // Si es el primero, hacerlo admin
     if(players.length === 0) newPlayer.isAdmin = true;
-
     players.push(newPlayer);
     socket.join('tabu');
     socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'tabu' });
@@ -314,23 +326,30 @@ const handleLeave = (id, io) => {
         if(p.timeout) clearTimeout(p.timeout);
         const wasAdmin = p.isAdmin;
         players = players.filter(x => x.id !== id);
-        
         if (wasAdmin && players.length > 0) players[0].isAdmin = true;
-        if (players.length === 0) gameModule.resetInternalState();
         
-        if (io) broadcast(io);
+        if (players.length === 0) {
+            performReset(io);
+        } else if (io) {
+            broadcast(io);
+        }
     }
 };
 
 const handleDisconnect = (socket) => { 
     Utils.handleDisconnect(socket.id, players, () => {
-        gameModule.resetInternalState();
+        // Si se vacía, reset total
+        players = [];
+        performReset(socket.server); 
+        // Nota: performReset requiere 'io', pero si el socket se desconecta, 
+        // socket.server es la referencia a io.
     });
     if (socket.server) broadcast(socket.server);
 };
 
 gameModule.resetInternalState = () => {
     players = [];
+    // Reset dummy IO object if needed, or just reset vars
     gameInProgress = false;
     isPaused = false;
     if (turnInterval) clearInterval(turnInterval);

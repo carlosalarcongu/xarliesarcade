@@ -11,30 +11,21 @@ app.tabu = {
         if(btn) btn.classList.add('selected');
     },
 
-    start: () => {
+    syncSettings: () => {
         const r = document.getElementById('tabuRounds').value;
         const d = document.getElementById('tabuDuration').value;
         const s = document.getElementById('tabuSkips').value;
-        const p = document.getElementById('tabuPause').checked; // Checkbox Pausa
-        app.tabu.send('start', { rounds: r, duration: d, skips: s, pauseOn: p });
+        const p = document.getElementById('tabuPause').checked;
+        app.tabu.send('updateSettings', { rounds: r, duration: d, skips: s, pauseOn: p });
+    },
+
+    start: () => {
+        app.tabu.send('start', {});
     },
     
-    resume: () => {
-        // Misma función start, el backend sabe que es reanudar si está en pausa
-        app.tabu.send('start', {}); 
-    },
-
-    randomize: () => {
-        if(confirm("¿Mezclar equipos aleatoriamente?")) {
-            app.tabu.send('randomizeTeams', {});
-        }
-    },
-
-    kick: (id) => {
-        if(confirm("¿Echar jugador?")) {
-            app.tabu.send('kick', { targetId: id });
-        }
-    },
+    resume: () => app.tabu.send('start', {}),
+    randomize: () => { if(confirm("¿Mezclar equipos aleatoriamente?")) app.tabu.send('randomizeTeams', {}); },
+    kick: (id) => { if(confirm("¿Echar jugador?")) app.tabu.send('kick', { targetId: id }); },
     
     correct: () => app.tabu.send('correct', {}),
     taboo: () => app.tabu.send('taboo', {}),
@@ -42,13 +33,27 @@ app.tabu = {
     reset: () => app.tabu.send('reset', {})
 };
 
+document.addEventListener('DOMContentLoaded', () => {
+    const attachSync = (id) => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('change', () => { if(app.tabu.iAmAdmin) app.tabu.syncSettings(); });
+            el.addEventListener('input', () => { if(app.tabu.iAmAdmin) app.tabu.syncSettings(); });
+        }
+    };
+    attachSync('tabuRounds');
+    attachSync('tabuDuration');
+    attachSync('tabuSkips');
+    attachSync('tabuPause');
+});
+
 socket.on('updateTabuState', (data) => {
     const { players, gameInProgress, turnData, settings, isPaused } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     if(me) app.tabu.iAmAdmin = me.isAdmin;
 
-    // ACTUALIZAR LOBBY
-    if (!gameInProgress) {
+    // 1. RENDER LOBBY (Si no hay juego Y no estamos en estado ENDED esperando el cierre)
+    if (!gameInProgress && turnData.status !== 'ENDED') {
         app.showScreen('tabuLobby');
         document.getElementById('tabuGameOverModal').classList.add('hidden');
         
@@ -60,7 +65,6 @@ socket.on('updateTabuState', (data) => {
             const el = document.getElementById(id);
             if(el) {
                 el.innerHTML = arr.map(p => {
-                    // Botón kick solo si soy admin y no es él mismo
                     const kickBtn = (app.tabu.iAmAdmin && p.id !== me.id) 
                         ? `<button onclick="app.tabu.kick('${p.id}')" style="background:none; border:none; color:red; cursor:pointer;">❌</button>` 
                         : '';
@@ -73,40 +77,40 @@ socket.on('updateTabuState', (data) => {
         renderList(reds, 'listRed');
         renderList(spect, 'listSpectators');
 
-        // Panel Admin vs Info Usuario
         const adminPanel = document.getElementById('tabuAdminPanel');
         const waitMsg = document.getElementById('tabuWaitMsg');
         
-        // Sincronizar visualmente la configuración para todos (read-only si no admin)
-        document.getElementById('tabuRounds').value = settings.totalRounds || 3;
-        document.getElementById('tabuDuration').value = settings.turnDuration || 60;
-        document.getElementById('tabuSkips').value = settings.skipsPerTurn || 3;
-        document.getElementById('tabuPause').checked = settings.pauseBetweenRounds || false;
+        const updateInput = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && document.activeElement !== el) {
+                if(el.type === 'checkbox') el.checked = val;
+                else el.value = val;
+            }
+        };
+
+        if (settings) {
+            updateInput('tabuRounds', settings.totalRounds);
+            updateInput('tabuDuration', settings.turnDuration);
+            updateInput('tabuSkips', settings.skipsPerTurn);
+            updateInput('tabuPause', settings.pauseBetweenRounds);
+        }
 
         if (me && me.isAdmin) {
             adminPanel.classList.remove('hidden');
             waitMsg.classList.add('hidden');
-            
-            // Habilitar inputs
             adminPanel.querySelectorAll('input').forEach(i => i.disabled = false);
-            // Mostrar botones de acción
             document.getElementById('btnRandomTeams').classList.remove('hidden');
             document.getElementById('btnStartTabu').classList.remove('hidden');
-
         } else {
-            // Mostrar panel pero deshabilitado para que vean configuración
             adminPanel.classList.remove('hidden');
-            waitMsg.classList.remove('hidden'); // "Esperando al admin"
-            
-            // Deshabilitar inputs
+            waitMsg.classList.remove('hidden');
             adminPanel.querySelectorAll('input').forEach(i => i.disabled = true);
-            // Ocultar botones de acción
             document.getElementById('btnRandomTeams').classList.add('hidden');
             document.getElementById('btnStartTabu').classList.add('hidden');
         }
     } 
     
-    // RENDER JUEGO
+    // 2. RENDER JUEGO (O PANTALLA FINAL)
     else {
         app.showScreen('tabuGame');
         
@@ -121,7 +125,7 @@ socket.on('updateTabuState', (data) => {
         const cardArea = document.getElementById('tabuCardArea');
         const actionButtons = document.getElementById('tabuActionButtons');
         
-        // ESTADO PAUSA (NUEVO)
+        // ESTADO PAUSA
         if (isPaused) {
             cardArea.innerHTML = `
                 <div style="margin-top:50px; text-align:center;">
@@ -172,9 +176,7 @@ socket.on('updateTabuState', (data) => {
 
             const describerObj = players.find(p => p.id === turnData.describerId);
             const describerName = describerObj ? describerObj.name : '...';
-            
-            const guessers = players.filter(p => p.team === turnData.currentTeam && p.id !== turnData.describerId);
-            const guessersNames = guessers.length > 0 ? guessers.map(g => g.name).join(', ') : 'Nadie';
+            const guessersNames = players.filter(p => p.team === turnData.currentTeam && p.id !== turnData.describerId).map(g => g.name).join(', ') || 'Nadie';
             
             const playerInfoHtml = `
                 <div style="margin-bottom: 20px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
@@ -182,11 +184,10 @@ socket.on('updateTabuState', (data) => {
                     <div style="font-size: 1em; color: #ddd;">🤔 Adivina(n): ${guessersNames}</div>
                 </div>`;
 
-            if (isDescriber || !isMyTurnTeam) { // Describe o es equipo rival (vigila)
+            if (isDescriber || !isMyTurnTeam) { 
                 if (turnData.currentCard) {
                     if(isDescriber) {
                         actionButtons.classList.remove('hidden');
-                        
                         const btnSkip = document.getElementById('btnSkip');
                         if (turnData.skipsRemaining > 0) {
                             btnSkip.classList.remove('hidden');
@@ -194,12 +195,10 @@ socket.on('updateTabuState', (data) => {
                         } else {
                             btnSkip.classList.add('hidden'); 
                         }
-
                     } else {
                         actionButtons.classList.add('hidden');
                     }
 
-                    // TARJETA DE PALABRAS
                     cardArea.innerHTML = playerInfoHtml + `
                         <div class="tabu-card">
                             <div class="tabu-word">${turnData.currentCard.word}</div>
@@ -211,7 +210,6 @@ socket.on('updateTabuState', (data) => {
                     `;
                 }
             } else {
-                // Es equipo adivinador (no ve tarjeta)
                 cardArea.innerHTML = playerInfoHtml + `
                     <div style="margin-top:30px; animation: pulse 1s infinite;">
                         <div style="font-size:4em;">❓</div>
@@ -226,7 +224,6 @@ socket.on('updateTabuState', (data) => {
 });
 
 socket.on('tabu_error', (msg) => { alert(msg); });
-
 socket.on('timerTick', (val) => {
     const el = document.getElementById('timerDisp');
     if(el) {
@@ -234,7 +231,6 @@ socket.on('timerTick', (val) => {
         el.style.color = (val <= 10) ? "#ff4757" : "#fff";
     }
 });
-
 socket.on('playSound', (type) => {
     if(type === 'correct') document.getElementById('revealSound').play().catch(()=>{}); 
     if(type === 'wrong') document.getElementById('dieSound').play().catch(()=>{});
@@ -254,12 +250,7 @@ socket.on('gameOver', (data) => {
     
     const list = document.getElementById('mvpList');
     list.innerHTML = data.mvp.map(p => `<li>${p.name} <span style="float:right">${p.individualScore} pts</span></li>`).join('');
-
-    // AUTO-CIERRE EN 10 SEGUNDOS (Feature pedida)
-    setTimeout(() => {
-        if (!modal.classList.contains('hidden')) {
-            // Solo si el admin no ha reseteado ya
-             app.tabu.reset(); // Esto lanzará reset para todos
-        }
-    }, 10000);
+    
+    // El servidor reseteará el estado en 10s, lo que provocará un updateState 
+    // con gameInProgress=false, llevándonos al lobby y ocultando este modal.
 });
