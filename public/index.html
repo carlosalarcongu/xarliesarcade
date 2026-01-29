@@ -333,6 +333,12 @@
         <div class="card" style="background:#ff9f43; color:#2d3436; border:none; margin-bottom: 20px;">
             <p id="elmasQuestionText" style="font-size:1.5em; font-weight:900; margin: 10px 0;">...</p>
         </div>
+
+        <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-bottom:20px; color:#aaa; font-size:0.9em;">
+            <span>¿Te gustó la pregunta? (Opcional)</span>
+            <button id="btnLike" onclick="app.elmas.rateQuestion('like')" style="background:none; border:none; font-size:1.5em; padding:0;">👍</button>
+            <button id="btnDislike" onclick="app.elmas.rateQuestion('dislike')" style="background:none; border:none; font-size:1.5em; padding:0;">👎</button>
+        </div>
         
         <div id="elmasVotingGrid" class="vote-grid"></div>
         

@@ -1,27 +1,40 @@
 app.elmas = {
     iAmAdmin: false,
     myLocalVote: null, 
-    lastRoundSeen: 0, // <--- NUEVO: Para detectar cambio de ronda
+    lastRoundSeen: -1, 
+    hasRatedCurrent: false, 
     
     send: (type, payload) => socket.emit('elmas_action', { type, ...payload }),
     
+    // Función para enviar cambios de configuración en tiempo real
+    syncSettings: () => {
+        const r = document.getElementById('elmasRoundsInput').value;
+        app.elmas.send('updateSettings', { rounds: r });
+    },
+
     start: () => {
         app.elmas.myLocalVote = null; 
-        const rounds = document.getElementById('elmasRoundsInput').value;
-        app.elmas.send('start', { rounds });
+        app.elmas.send('start', {}); 
     },
     
     vote: (targetId) => {
         app.elmas.myLocalVote = targetId;
-
-        // Limpieza visual inmediata
         document.querySelectorAll('.vote-btn').forEach(el => el.classList.remove('selected'));
-
-        // Aplicar estilo seleccionado localmente
         const card = document.getElementById('ev_' + targetId);
         if(card) card.classList.add('selected');
-
         app.elmas.send('vote', { targetId });
+    },
+
+    rateQuestion: (voteType) => {
+        if (app.elmas.hasRatedCurrent) return; 
+        app.elmas.hasRatedCurrent = true;
+        app.elmas.send('rateQuestion', { vote: voteType });
+        
+        document.getElementById('btnLike').style.opacity = "0.3";
+        document.getElementById('btnDislike').style.opacity = "0.3";
+        
+        if(voteType === 'like') document.getElementById('btnLike').style.opacity = "1";
+        else document.getElementById('btnDislike').style.opacity = "1";
     },
 
     next: () => app.elmas.send('next', {}),
@@ -35,17 +48,32 @@ app.elmas = {
     }
 };
 
+// LISTENERS DE INPUTS PARA SINCRONIZACIÓN
+document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('elmasRoundsInput');
+    if (inp) {
+        // Solo enviamos si somos admin (aunque el servidor también valida)
+        inp.addEventListener('input', () => { if(app.elmas.iAmAdmin) app.elmas.syncSettings(); });
+        inp.addEventListener('change', () => { if(app.elmas.iAmAdmin) app.elmas.syncSettings(); });
+    }
+});
+
 socket.on('updateElMasList', (data) => {
-    const { players, gameInProgress, roundStage, roundInfo } = data;
+    const { players, gameInProgress, roundStage, roundInfo, settings } = data;
     
     const me = players.find(p => p.id === app.myPlayerId);
     if (me) app.elmas.iAmAdmin = me.isAdmin;
+    
+    // Resetear feedback local al cambiar de ronda
     if (roundInfo && roundInfo.current !== app.elmas.lastRoundSeen) {
-        // Ha cambiado la ronda, limpiamos el voto local de TODOS (admins y usuarios)
         app.elmas.myLocalVote = null;
         app.elmas.lastRoundSeen = roundInfo.current;
-        console.log("Nueva ronda detectada. Limpiando voto local.");
+        app.elmas.hasRatedCurrent = false; 
+        const bL = document.getElementById('btnLike');
+        const bD = document.getElementById('btnDislike');
+        if(bL && bD) { bL.style.opacity = "1"; bD.style.opacity = "1"; }
     }
+
     // --- LOBBY ---
     if (!gameInProgress) {
         app.showScreen('elmasLobby');
@@ -63,14 +91,32 @@ socket.on('updateElMasList', (data) => {
             });
         }
         
-        // Panel Admin
-        if (me && me.isAdmin) {
-            document.getElementById('elmasAdminPanel').classList.remove('hidden');
-            document.getElementById('elmasWaitMsg').classList.add('hidden');
-        } else {
-            document.getElementById('elmasAdminPanel').classList.add('hidden');
-            document.getElementById('elmasWaitMsg').classList.remove('hidden');
+        // --- SINCRONIZACIÓN DE INPUTS ---
+        const inp = document.getElementById('elmasRoundsInput');
+        if (inp) {
+            // Si hay settings del servidor, actualizamos
+            if (settings) {
+                // Solo sobrescribimos si NO soy el admin (para no molestar mientras escribe)
+                // O si soy admin pero el valor es diferente (por si otro admin cambió algo)
+                if (!app.elmas.iAmAdmin || document.activeElement !== inp) {
+                    inp.value = settings.maxRounds;
+                }
+            }
+
+            // Habilitar/Deshabilitar según rol
+            if (app.elmas.iAmAdmin) {
+                inp.disabled = false;
+                document.getElementById('elmasAdminPanel').classList.remove('hidden');
+                document.getElementById('elmasWaitMsg').classList.add('hidden');
+                document.getElementById('btnStartElMas').classList.remove('hidden');
+            } else {
+                inp.disabled = true; // El usuario ve el valor pero no lo cambia
+                document.getElementById('elmasAdminPanel').classList.remove('hidden'); // Panel visible
+                document.getElementById('elmasWaitMsg').classList.remove('hidden');
+                document.getElementById('btnStartElMas').classList.add('hidden');
+            }
         }
+        
         document.getElementById('elmasPodiumModal').classList.add('hidden');
     }
 
@@ -83,16 +129,14 @@ socket.on('updateElMasList', (data) => {
             document.getElementById('elmasRoundCount').innerText = `Ronda ${roundInfo.current} / ${roundInfo.total}`;
         }
 
-        // RENDERIZADO GRID VOTACIÓN
         const grid = document.getElementById('elmasVotingGrid');
         if(grid) {
             grid.innerHTML = "";
             players.forEach(p => {
                 const div = document.createElement('div');
-                div.className = "vote-btn"; // Usamos la clase unificada del CSS
+                div.className = "vote-btn"; 
                 div.id = "ev_" + p.id;
                 
-                // Lógica de Selección (Local + Servidor)
                 const isSelectedByServer = (me && me.votedFor === p.id);
                 const isSelectedLocally = (app.elmas.myLocalVote === p.id);
 
@@ -103,7 +147,6 @@ socket.on('updateElMasList', (data) => {
                 let status = p.voted ? '<span style="color:#2ed573">🗳️</span>' : '';
                 let revealInfo = "";
                 
-                // Mostrar +Votos solo en fase de REVELACIÓN
                 if (roundStage === 'REVEAL' && p.votesInThisRound !== null && p.votesInThisRound > 0) {
                     revealInfo = `<div style="color:#ffa502; font-weight:bold; margin-top:5px; font-size:1.2em">+${p.votesInThisRound}</div>`;
                     if (p.votesInThisRound > 1) div.style.borderColor = "#ffa502";
@@ -113,27 +156,23 @@ socket.on('updateElMasList', (data) => {
                                  <div style="font-size:0.8em; color:#aaa">${p.score} pts ${status}</div>
                                  ${revealInfo}`;
                 
-                // Click solo si estamos votando
                 if(roundStage === 'VOTING') div.onclick = () => app.elmas.vote(p.id);
                 
                 grid.appendChild(div);
             });
         }
 
-        // CONTROL DE BOTONES ADMIN
         const btnNext = document.getElementById('elmasNextBtn');
         const btnContinue = document.getElementById('elmasContinueBtn');
         
-        // Primero ocultamos ambos
         btnNext.classList.add('hidden');
         btnContinue.classList.add('hidden');
 
-        // Luego mostramos según fase, SOLO si soy admin
         if (app.elmas.iAmAdmin) {
             if (roundStage === 'VOTING') {
-                btnNext.classList.remove('hidden'); // Botón "Ver Votos"
+                btnNext.classList.remove('hidden'); 
             } else if (roundStage === 'REVEAL') {
-                btnContinue.classList.remove('hidden'); // Botón "Siguiente"
+                btnContinue.classList.remove('hidden'); 
             }
         }
     }
@@ -143,10 +182,8 @@ socket.on('showPodium', (winners) => {
     app.elmas.myLocalVote = null;
     const modal = document.getElementById('elmasPodiumModal');
     modal.classList.remove('hidden');
-    
     const set = (i, id) => document.getElementById(id).innerText = winners[i] ? `${winners[i].name} (${winners[i].score})` : "-";
     set(0, 'podium1'); set(1, 'podium2'); set(2, 'podium3');
-    
     if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
 });
 
