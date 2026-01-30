@@ -49,6 +49,14 @@
                 <div class="hub-info"><div class="hub-title">Anécdotas</div><div class="hub-desc">Historias verdaderas (o no).</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
+            <div class="hub-card" onclick="app.showScreen('giveScreen')" style="border-left-color: #00cec9;">
+                <div class="hub-icon">🎁</div>
+                <div class="hub-info">
+                    <div class="hub-title">/give MC</div>
+                    <div class="hub-desc">Consigue objetos para el server.</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
             <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
                 <div class="hub-icon">A+</div>
                 <div class="hub-info">
@@ -528,6 +536,19 @@
         </div>
     </div>
 
+    <div id="giveScreen" class="hidden">
+        <h2 style="color:#00cec9">🎁 Recompensas</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">
+            Elige tu recompensa.<br>
+            <span style="color:#ff7675">Espera 15s entre regalos.</span>
+        </p>
+
+        <div class="card" style="background:#2d3436; border:none;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            </div>
+        </div>
+    </div>
+
     <div id="pinturilloImpLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
@@ -777,5 +798,6 @@
     <script src="js/pinturilloImp.js"></script>
     <script src="js/feedback.js"></script>
     <script src="js/mus.js"></script>
+    <script src="js/give.js"></script>
 </body>
 </html>

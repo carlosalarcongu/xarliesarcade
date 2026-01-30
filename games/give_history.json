@@ -1,0 +1,50 @@
+[
+  {
+    "date": "2026-01-30T08:50:40.851Z",
+    "player": "xarlie",
+    "item": "minecraft:chainmail_chestplate",
+    "quantity": 1
+  },
+  {
+    "date": "2026-01-30T08:55:03.261Z",
+    "player": "xarlie",
+    "item": "minecraft:glass",
+    "quantity": 25
+  },
+  {
+    "date": "2026-01-30T08:55:18.463Z",
+    "player": "xarlie",
+    "item": "minecraft:dirt",
+    "quantity": 1
+  },
+  {
+    "date": "2026-01-30T08:55:36.125Z",
+    "player": "xarlie",
+    "item": "minecraft:oak_log",
+    "quantity": 5
+  },
+  {
+    "date": "2026-01-30T10:27:18.531Z",
+    "player": "musero",
+    "item": "cobblemon:pokedex",
+    "quantity": 1
+  },
+  {
+    "date": "2026-01-30T10:27:50.805Z",
+    "player": "Japa",
+    "item": "cobblemon:pokedex",
+    "quantity": 1
+  },
+  {
+    "date": "2026-01-30T10:28:50.568Z",
+    "player": "Japa",
+    "item": "cobblemon:great_ball",
+    "quantity": 3
+  },
+  {
+    "date": "2026-01-30T10:28:51.717Z",
+    "player": "xarlie",
+    "item": "cobblemon:pokedex",
+    "quantity": 1
+  }
+]

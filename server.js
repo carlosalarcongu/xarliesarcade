@@ -24,6 +24,8 @@ io.on('connection', (socket) => {
     require('./games/tabu')(io, socket);
     require('./games/pinturilloImp')(io, socket);
     require('./games/mus')(io, socket);
+    require('./games/give')(io, socket);
+
 
     // --- UNIRSE A SALA (JOIN) ---
     socket.on('joinRoom', ({ name, room }) => {
