@@ -2,127 +2,105 @@ const { Rcon } = require('rcon-client');
 const fs = require('fs');
 const path = require('path');
 
-// Configuración RCON
-const RCON_CONFIG = {
-    host: 'localhost',
-    port: 25575,
-    password: '0907' // ¡Asegúrate que sea la misma que server.properties!
-};
+const RCON_CONFIG = { host: 'localhost', port: 25575, password: '0907' };
 
-// Configuración de Objetos y Cantidades
-// Aquí defines qué se puede pedir y cuánto se da
+// Items gratis (con cooldown de 15s)
 const ALLOWED_ITEMS = {
-    // Básicos (Anteriores)
-    'minecraft:torch': 10,
-    'minecraft:bread': 10,
-    'cobblemon:poke_ball': 5,
-    'cobblemon:great_ball': 1,
-    'cobblemon:ultra_ball': 1,
-    
-    // Nuevos solicitados
-    'cobblemon:potion': 2,
-    'minecraft:oak_log': 5,
-    'minecraft:water_bucket': 1,
-    'minecraft:iron_sword': 1,
-    'minecraft:chainmail_chestplate': 1,
-    'minecraft:leather_boots': 1,
-    'cobblemon:pokedex_red': 1,
-    'minecraft:scaffolding': 16,
-    'minecraft:iron_ingot': 1,
-    'minecraft:diamond': 1,
-    'minecraft:gold_ingot': 1,
-    'minecraft:emerald': 1,
-    'minecraft:oak_planks': 64,
-    'minecraft:stone_bricks': 64,
-    'minecraft:glass': 25,
-    'minecraft:dirt': 1
-    
-
+    'minecraft:torch': 10, 'minecraft:bread': 10, 'cobblemon:poke_ball': 5,
+    'cobblemon:great_ball': 1, 'cobblemon:potion': 2, 'minecraft:iron_ingot': 1,
+    'minecraft:diamond': 1, 'minecraft:water_bucket': 1, 'cobblemon:pokedex_red': 1,
+    'minecraft:oak_planks': 64, 'minecraft:stone_bricks': 64, 'minecraft:glass': 25, 'minecraft:dirt': 1
 };
 
-// Ruta del archivo de registro
-const LOG_FILE = path.join(__dirname, 'give_history.json');
+// Mapeo de "ID web" -> "ID Minecraft" (Todos cuestan 1 Diamante)
+const DIAMOND_TRADES = {
+    'special:trade': 'cobblemon:rare_candy',
+    // Piedras
+    'stone:fire_stone': 'cobblemon:fire_stone',
+    'stone:water_stone': 'cobblemon:water_stone',
+    'stone:thunder_stone': 'cobblemon:thunder_stone',
+    'stone:leaf_stone': 'cobblemon:leaf_stone',
+    'stone:moon_stone': 'cobblemon:moon_stone',
+    'stone:sun_stone': 'cobblemon:sun_stone',
+    'stone:ice_stone': 'cobblemon:ice_stone',
+    'stone:shiny_stone': 'cobblemon:shiny_stone',
+    'stone:dusk_stone': 'cobblemon:dusk_stone',
+    'stone:dawn_stone': 'cobblemon:dawn_stone',
+    'stone:link_cable': 'cobblemon:link_cable',
+    // Stats
+    'stat:hp_up': 'cobblemon:hp_up',
+    'stat:protein': 'cobblemon:protein',
+    'stat:iron': 'cobblemon:iron',
+    'stat:calcium': 'cobblemon:calcium',
+    'stat:zinc': 'cobblemon:zinc',
+    'stat:carbos': 'cobblemon:carbos',
+    'stat:pp_up': 'cobblemon:pp_up'
+};
 
-// Memoria para el Cooldown (Usuario -> Timestamp)
 const userCooldowns = new Map();
-const COOLDOWN_TIME = 15000; // 15 segundos en milisegundos
-
-// Función auxiliar para guardar logs
-function saveLog(playerName, item, quantity) {
-    let history = [];
-    try {
-        if (fs.existsSync(LOG_FILE)) {
-            const data = fs.readFileSync(LOG_FILE, 'utf8');
-            history = JSON.parse(data);
-        }
-    } catch (e) { console.error("Error leyendo log:", e); }
-
-    const newEntry = {
-        date: new Date().toISOString(),
-        player: playerName,
-        item: item,
-        quantity: quantity
-    };
-
-    history.push(newEntry);
-
-    // Opcional: Guardar solo los últimos 1000 registros para no llenar el disco
-    if (history.length > 1000) history = history.slice(-1000);
-
-    fs.writeFileSync(LOG_FILE, JSON.stringify(history, null, 2));
-    
-    // Conteo total por usuario (para mostrar en consola o futuro uso)
-    const userTotal = history.filter(h => h.player === playerName && h.item === item).length * quantity;
-    // console.log(`[LOG] ${playerName} ha recibido un total de ${userTotal} ${item}`);
-}
+const COOLDOWN_TIME = 15000;
 
 module.exports = (io, socket) => {
-    
     socket.on('requestItem', async (data) => {
         const { item, playerName } = data;
-
-        // 1. Limpieza de nombre
         if (!playerName) return;
         const cleanName = playerName.replace(/👑|👤/g, '').trim().split(' ')[0];
 
-        // 2. Validación de Objeto
-        if (!ALLOWED_ITEMS.hasOwnProperty(item)) {
-            return socket.emit('giveError', 'Objeto no válido o no permitido.');
-        }
-        const quantity = ALLOWED_ITEMS[item];
+        // 1. Identificar tipo de transacción
+        const isDiamondTrade = DIAMOND_TRADES.hasOwnProperty(item);
+        const isSpecial = ['special:mending', 'special:madrid', 'special:sacrifice'].includes(item);
+        const isNormal = ALLOWED_ITEMS.hasOwnProperty(item);
 
-        // 3. Verificación de Cooldown (15s)
-        const lastTime = userCooldowns.get(cleanName) || 0;
+        if (!isDiamondTrade && !isSpecial && !isNormal) return socket.emit('giveError', 'ID no válido.');
+
+        // 2. Cooldown General
         const now = Date.now();
-        const timeLeft = (COOLDOWN_TIME - (now - lastTime)) / 1000;
-
-        if (timeLeft > 0) {
-            return socket.emit('giveError', `Espera ${Math.ceil(timeLeft)}s para pedir más cosas.`);
-        }
-
-        console.log(`[GIVE] Enviando ${quantity}x ${item} a ${cleanName}`);
+        const timeLeft = (COOLDOWN_TIME - (now - (userCooldowns.get(cleanName) || 0))) / 1000;
+        if (timeLeft > 0) return socket.emit('giveError', `Espera ${Math.ceil(timeLeft)}s.`);
 
         try {
-            // 4. Conexión RCON
             const rcon = await Rcon.connect(RCON_CONFIG);
             
-            // Comando: /give <jugador> <item> <cantidad>
-            const response = await rcon.send(`give ${cleanName} ${item} ${quantity}`);
-            console.log(`[RCON] Respuesta: ${response}`);
-            
-            await rcon.end();
+            if (isDiamondTrade) {
+                // LÓGICA DE COBRO: 1 Diamante
+                const clearResp = await rcon.send(`clear ${cleanName} minecraft:diamond 1`);
+                const success = !clearResp.includes("No items") && !clearResp.includes("No se han encontrado") && /\d/.test(clearResp);
 
-            // 5. Éxito: Actualizar Cooldown y Guardar Log
+                if (success) {
+                    const mcItem = DIAMOND_TRADES[item];
+                    await rcon.send(`give ${cleanName} ${mcItem} 1`);
+                    socket.emit('giveSuccess', { item: mcItem, quantity: 1 });
+                } else {
+                    await rcon.end();
+                    return socket.emit('giveError', 'Necesitas 1 Diamante en el inventario.');
+                }
+            } 
+            else if (isNormal) {
+                const qty = ALLOWED_ITEMS[item];
+                await rcon.send(`give ${cleanName} ${item} ${qty}`);
+                socket.emit('giveSuccess', { item: item, quantity: qty });
+            }
+            else if (item === 'special:mending') {
+                const resp = await rcon.send(`enchant ${cleanName} minecraft:mending`);
+                if (resp.includes("Failed")) { await rcon.end(); return socket.emit('giveError', 'Sostén un objeto válido.'); }
+                socket.emit('giveSuccess', { item: 'Mending', quantity: null });
+            }
+            else if (item === 'special:madrid') {
+                await rcon.send(`enchant ${cleanName} minecraft:efficiency 5`);
+                await rcon.send(`enchant ${cleanName} minecraft:fortune 3`);
+                socket.emit('giveSuccess', { item: 'Hala Madrid', quantity: null });
+            }
+            else if (item === 'special:sacrifice') {
+                await rcon.send(`effect give ${cleanName} minecraft:slowness 150 255`);
+                await rcon.send(`give ${cleanName} cobblemon:quick_ball 1`);
+                socket.emit('giveSuccess', { item: 'Sacrificio', quantity: 1 });
+            }
+
             userCooldowns.set(cleanName, now);
-            saveLog(cleanName, item, quantity);
-
-            // Confirmar al cliente
-            socket.emit('giveSuccess', { item: item, quantity: quantity });
-
+            await rcon.end();
         } catch (error) {
-            console.error('[RCON ERROR]', error);
-            // Si falla la conexión (ej. server apagado), no activamos el cooldown para que pueda reintentar
-            socket.emit('giveError', 'Error de conexión con Minecraft (¿Servidor apagado?).');
+            console.error(error);
+            socket.emit('giveError', 'Error de conexión RCON.');
         }
     });
 };
