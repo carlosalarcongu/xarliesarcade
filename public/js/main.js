@@ -141,6 +141,24 @@ Herramienta de seguimiento estadístico.
 - + Partida: Registra un resultado (Pareja 1 vs Pareja 2).
 - Estadísticas: Consulta Rankings, porcentajes de victoria y evolución histórica.`,
 
+    cifrasyletras: `🔢 CIFRAS Y LETRAS
+--------------------------------
+🎯 OBJETIVO
+Conseguir el número exacto o la palabra más larga.
+
+🕹️ DINÁMICA
+1. Ronda Cifras:
+   - Se muestra un OBJETIVO (ej: 450) y 6 números.
+   - Tienes 60s para calcular.
+   - Puntuación: 
+     ❌ (0 pts): Fallo.
+     <10 (2 pts): Te has quedado a menos de 10 de distancia.
+     ✅ (5 pts): Exacto.
+
+2. Ronda Letras:
+   - Salen 12 letras. Tienes 60s para buscar la palabra más larga.
+   - Puntuación: 1 punto por cada letra de tu palabra válida.`,
+
     tecnico: `🛠️ AYUDA TÉCNICA
 ================================
 
@@ -169,6 +187,7 @@ const ROOM_EMOJIS = {
     elmas: "🏆",
     tabu: "🚫",
     pinturilloImp: "🎨",
+    cifrasyletras: "🔢",
     feedback: "💌"
 };
 
@@ -185,12 +204,6 @@ window.app = {
         let isDragging = false;
         let hasMoved = false; 
         let offsetX, offsetY;
-
-        if(app.myPlayerName) {
-            // Limpieza visual preventiva por si se duplican iconos
-            let clean = app.myPlayerName.replace(/ 👤| 👑/g, '');
-            // Nota: El nombre real se guarda limpio, los iconos son visuales en el widget
-        }
 
         const startDrag = (x, y) => {
             isDragging = true;
@@ -257,7 +270,10 @@ window.app = {
 
     
     showScreen: (id) => {
-        const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 'tabuLobby', 'tabuGame', 'pinturilloImpLobby', 'pinturilloImpGame', 'giveScreen', 'musScreen'];
+        // --- CAMBIO AQUÍ: AÑADIDOS 'cylLobby' y 'cylGame' ---
+        const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 'tabuLobby', 'tabuGame', 'pinturilloImpLobby', 'pinturilloImpGame', 'cylLobby', 'cylGame', 'giveScreen', 'musScreen'];
+        // ---------------------------------------------------
+        
         screens.forEach(s => {
             const el = document.getElementById(s);
             if(el) el.classList.add('hidden');
@@ -283,7 +299,7 @@ window.app = {
     },
 
     findActiveSession: () => {
-        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp'];
+        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp', 'cifrasyletras'];
         for (let r of rooms) {
             if (localStorage.getItem(r + '_playerId') && localStorage.getItem(r + '_roomId')) return r;
         }
@@ -350,17 +366,13 @@ window.app = {
         app.showScreen('loginScreen');
     },
 
-    // --- FUNCIÓN NUEVA: CAMBIAR NOMBRE DESDE PRE-LOBBY ---
     editName: () => {
         localStorage.removeItem('global_username');
         app.myPlayerName = null;
-        
         const input = document.getElementById('username');
         if(input) input.value = "";
-
         app.renderLoginScreen(app.currentRoom);
     },
-    // -----------------------------------------------------
 
     saveNameAndContinue: () => {
         const nameInput = document.getElementById('username');
@@ -408,9 +420,7 @@ window.app = {
              if (!confirm(`Para cambiar de nombre debes salir de la sala actual. ¿Continuar?`)) return;
              app.goBackToHub(true); 
         }
-        if (app.mus && app.mus.resetUI) {
-            app.mus.resetUI();
-        }
+        if (app.mus && app.mus.resetUI) app.mus.resetUI();
         
         localStorage.removeItem('global_username');
         app.myPlayerName = null;
@@ -426,23 +436,16 @@ window.app = {
         if (forceLogout) {
              const r = app.currentRoom;
              const rid = app.currentRoomId;
-             
-             // Si hay una sala definida (r), intentamos salir y limpiamos SIEMPRE
-             if (r) {
+             if (r && rid) {
                  const id = localStorage.getItem(r + '_playerId');
-                 // Enviar señal de salida (roomId puede ser null si es juego viejo, no pasa nada)
                  if (id) socket.emit('leaveGame', { playerId: id, room: r, roomId: rid });
-                 
-                 // CRÍTICO: Borrar del almacenamiento SIEMPRE, sin condiciones extra
                  localStorage.removeItem(r + '_playerId');
                  localStorage.removeItem(r + '_roomId');
              }
-             
              app.currentRoom = null;
              app.currentRoomId = null;
              app.myPlayerId = null;
              app.showScreen('hubScreen');
-             
         } else {
             app.currentRoom = null; 
             app.showScreen('hubScreen');
@@ -453,10 +456,8 @@ window.app = {
     showRules: () => {
         const room = app.currentRoom;
         const text = GAME_RULES[room] || "No hay reglas definidas para esta sala.";
-        
         const modal = document.getElementById('globalRulesModal');
         const content = document.getElementById('globalRulesText');
-        
         if (modal && content) {
             content.innerText = text;
             modal.classList.remove('hidden');
@@ -467,13 +468,10 @@ window.app = {
         alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
     },
     
-    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}
+    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}
 };
 
 socket.on('hubRoomsUpdate', (rooms) => {
-    // console.log("[DEBUG] Cliente recibió hubRoomsUpdate:", rooms);
-
-    // 1. HUB PRINCIPAL
     const hubContainer = document.getElementById('activeRoomsList');
     if (hubContainer) {
         if (rooms.length === 0) {
@@ -481,10 +479,9 @@ socket.on('hubRoomsUpdate', (rooms) => {
         } else {
             let html = "<h3>Salas Activas</h3><div class='hub-grid'>";
             rooms.forEach(r => {
-                const emoji = ROOM_EMOJIS[r.game] || '🎮';
                 html += `
                 <div class="hub-card" style="border-left-color: #00cec9; padding: 10px;" onclick="app.selectActiveRoom('${r.game}', '${r.id}')">
-                    <div style="font-weight:bold">${emoji} ${r.id}</div>
+                    <div style="font-weight:bold">${ROOM_EMOJIS[r.game] || '🎮'} ${r.id}</div>
                     <div style="font-size:0.8em; color:#aaa">${r.players} Jugadores - ${r.status}</div>
                 </div>`;
             });
@@ -493,7 +490,6 @@ socket.on('hubRoomsUpdate', (rooms) => {
         }
     }
 
-    // 2. PRE-LOBBY (Solo salas del juego actual)
     const gameContainer = document.getElementById('gameActiveRooms');
     if (gameContainer && app.currentRoom) {
         const myGameRooms = rooms.filter(r => r.game === app.currentRoom);
@@ -544,6 +540,7 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'elmas') app.showScreen('elmasLobby');
     else if (data.room === 'tabu') app.showScreen('tabuLobby');
     else if (data.room === 'pinturilloImp') app.showScreen('pinturilloImpLobby');
+    else if (data.room === 'cifrasyletras') app.showScreen('cylLobby');
 });
 
 socket.on('joinError', (msg) => { alert("⛔ " + msg); });
@@ -569,13 +566,10 @@ window.onload = function() {
     
     const savedGlobalName = localStorage.getItem('global_username');
     if (savedGlobalName) {
-        console.log("Nombre recuperado en Hub:", savedGlobalName);
         app.myPlayerName = savedGlobalName; 
     }
 
     socket.emit('requestHubRooms');
-    
-    // Polling de salas activas si estamos en Hub o Login
     setInterval(() => {
         if (!document.getElementById('hubScreen').classList.contains('hidden') || 
             !document.getElementById('loginScreen').classList.contains('hidden')) {

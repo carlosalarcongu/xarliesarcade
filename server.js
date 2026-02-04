@@ -18,6 +18,7 @@ const gamesModules = {
     tabu: require('./games/tabu'),
     pinturilloImp: require('./games/pinturilloImp'),
     mus: require('./games/mus'),
+    cifrasyletras: require('./games/cifrasyletras'),
     give: require('./games/give') 
 };
 

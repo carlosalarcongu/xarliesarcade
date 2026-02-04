@@ -56,6 +56,15 @@
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
             
+            <div class="hub-card" onclick="app.selectRoom('cifrasyletras')" style="border-left-color: #0984e3;">
+                <div class="hub-icon">🔢</div>
+                <div class="hub-info">
+                    <div class="hub-title">Cifras y Letras</div>
+                    <div class="hub-desc">Cálculo mental y vocabulario.</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            
             <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
                 <div class="hub-icon">🎨</div>
                 <div class="hub-info">
@@ -70,14 +79,6 @@
                 <div class="hub-info">
                     <div class="hub-title">Guerra 7</div>
                     <div class="hub-desc">Estrategia en tiempo real.</div>
-                </div>
-                <div style="font-size:1.5em; color:#57606f">🔒</div>
-            </div>
-             <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
-                <div class="hub-icon">A+</div>
-                <div class="hub-info">
-                    <div class="hub-title">Cifras y letras</div>
-                    <div class="hub-desc">Mitico programa de La2</div>
                 </div>
                 <div style="font-size:1.5em; color:#57606f">🔒</div>
             </div>
@@ -746,6 +747,49 @@
         </div>
     </div>
 
+    <div id="cylLobby" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
+        <h2 style="color:#0984e3">🔢 Cifras y Letras</h2>
+        
+        <div id="cylAdminPanel" class="admin-panel hidden">
+            <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                <span>Rondas:</span>
+                <input type="number" id="cylRounds" value="6" min="2" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center;">
+            </div>
+            <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                <span>Tiempo (s):</span>
+                <input type="number" id="cylDuration" value="60" min="10" max="300" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center;">
+            </div>
+            <button id="btnStartCyL" class="start-btn" onclick="app.cyl.start()">▶️ EMPEZAR</button>
+        </div>
+        
+        <p id="cylWaitMsg" style="color:#aaa">Esperando al admin...</p>
+        <ul id="cylPlayerList" style="margin-top:20px;"></ul>
+    </div>
+
+    <div id="cylGame" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
+
+        <div id="cylGameArea">
+            <div id="cylHeader" style="text-align:center; margin-bottom:20px;"></div>
+            <div id="cylContent" style="text-align:center; margin-bottom:20px; min-height:150px; display:flex; flex-direction:column; justify-content:center;"></div>
+            <div id="cylScoring" class="hidden card" style="background:#222; text-align:left;"></div>
+            <button onclick="app.cyl.reset()" class="kick-btn hidden" id="cylResetBtn" style="margin-top:20px;">Resetear Partida</button>
+        </div>
+
+        <div id="cylPodiumArea" class="hidden" style="text-align:center;">
+            <h1 style="color:#f1c40f; margin-bottom:30px">🏆 RESULTADOS</h1>
+            <div class="podium-container" id="cylPodium" style="justify-content:center;"></div>
+            <button onclick="app.cyl.reset()" class="main-btn" style="margin-top:30px">Volver al Lobby</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/main.js?v=2"></script>
@@ -758,5 +802,6 @@
     <script src="js/feedback.js"></script>
     <script src="js/mus.js"></script>
     <script src="js/give.js"></script>
+    <script src="js/cifrasyletras.js"></script>
 </body>
 </html>
