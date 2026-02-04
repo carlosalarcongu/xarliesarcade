@@ -1,7 +1,7 @@
 app.anecdotas = {
     iAmAdmin: false,
     hasSaved: false,
-    myLocalVote: null, // <--- 1. VARIABLE PARA RECORDAR TU VOTO LOCALMENTE
+    myLocalVote: null, 
     
     send: (type, payload) => socket.emit('anecdotas_action', { type, ...payload }),
     
@@ -14,17 +14,14 @@ app.anecdotas = {
     },
 
     start: () => {
-        app.anecdotas.myLocalVote = null; // Limpiar al empezar
+        app.anecdotas.myLocalVote = null; 
         app.anecdotas.send('start', {});
     },
     
     vote: (targetId) => {
-        console.log("Clic en: " + targetId); 
-        
-        // 2. GUARDAMOS EL VOTO EN LOCAL PARA QUE NO SE BORRE AL REPINTAR
+        // console.log("Clic en: " + targetId); 
         app.anecdotas.myLocalVote = targetId;
 
-        // Efecto visual inmediato (Optimista)
         document.querySelectorAll('.vote-card').forEach(el => {
             el.classList.remove('selected-vote');
             el.style.border = ""; 
@@ -35,7 +32,6 @@ app.anecdotas = {
         const card = document.getElementById('vote_' + targetId);
         if(card) {
             card.classList.add('selected-vote');
-            // Estilos directos por si el CSS falla
             card.style.border = "4px solid #2ed573"; 
             card.style.backgroundColor = "rgba(46, 213, 115, 0.3)";
             card.style.transform = "scale(1.05)";
@@ -45,7 +41,7 @@ app.anecdotas = {
     },
 
     next: () => {
-        app.anecdotas.myLocalVote = null; // Limpiar para la siguiente ronda
+        app.anecdotas.myLocalVote = null; 
         app.anecdotas.send('next', {});
     },
     
@@ -58,6 +54,8 @@ app.anecdotas = {
 // LISTENERS
 
 socket.on('updateAnecdotasList', (data) => {
+    if (app.currentRoom !== 'anecdotas') return;
+
     const { players, gameInProgress, roundStage, roundInfo } = data;
     
     const me = players.find(p => p.id === app.myPlayerId);
@@ -122,20 +120,15 @@ socket.on('updateAnecdotasList', (data) => {
             div.className = "vote-card";
             div.id = "vote_" + p.id;
             
-            // --- 3. AQUÍ ESTÁ EL ARREGLO ---
-            // Comprobamos si el servidor dice que lo votaste (me.votedFor)
-            // O SI TU VARIABLE LOCAL DICE QUE LO ACABAS DE VOTAR (app.anecdotas.myLocalVote)
             const isSelectedByServer = (me && me.votedFor === p.id);
             const isSelectedLocally = (app.anecdotas.myLocalVote === p.id);
 
             if(isSelectedByServer || isSelectedLocally) {
                 div.classList.add('selected-vote');
-                // Estilos forzados para asegurar que se ve verde
                 div.style.border = "4px solid #2ed573"; 
                 div.style.backgroundColor = "rgba(46, 213, 115, 0.3)";
                 div.style.transform = "scale(1.05)";
             }
-            // ---------------------------------
             
             const votedStatus = p.voted ? '<span style="font-size:0.8em">🗳️</span>' : '';
             div.innerHTML = `<div style="font-weight:bold">${p.name}</div><div style="font-size:0.8em; color:#aaa">${p.score} pts ${votedStatus}</div>`;
@@ -147,7 +140,8 @@ socket.on('updateAnecdotasList', (data) => {
 });
 
 socket.on('roundReveal', (data) => {
-    app.anecdotas.myLocalVote = null; // Limpiar voto al revelar
+    if (app.currentRoom !== 'anecdotas') return;
+    app.anecdotas.myLocalVote = null; 
     const modal = document.getElementById('anecdotasRevealModal');
     modal.classList.remove('hidden');
     document.getElementById('revealAuthor').innerText = data.authorName;
@@ -159,6 +153,7 @@ socket.on('roundReveal', (data) => {
 });
 
 socket.on('gameEnded', () => {
+    if (app.currentRoom !== 'anecdotas') return;
     app.anecdotas.myLocalVote = null;
     app.showScreen('anecdotasLobby');
     document.getElementById('anecdotasRevealModal').classList.add('hidden');
@@ -169,6 +164,7 @@ socket.on('gameEnded', () => {
 });
 
 socket.on('forceReset', () => {
+    if (app.currentRoom !== 'anecdotas') return;
     app.anecdotas.myLocalVote = null;
     app.showScreen('anecdotasLobby');
     document.getElementById('anecdotaInput').value = "";
@@ -177,6 +173,7 @@ socket.on('forceReset', () => {
 });
 
 socket.on('showPodium', (winners) => {
+    if (app.currentRoom !== 'anecdotas') return;
     document.getElementById('anecdotasRevealModal').classList.add('hidden');
     const modal = document.getElementById('anecdotasPodiumModal');
     modal.classList.remove('hidden');
@@ -185,4 +182,6 @@ socket.on('showPodium', (winners) => {
     if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
 });
 
-socket.on('errorMsg', (msg) => alert(msg));
+socket.on('errorMsg', (msg) => {
+    if (app.currentRoom === 'anecdotas') alert(msg);
+});
