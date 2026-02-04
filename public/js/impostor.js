@@ -19,7 +19,9 @@ app.impostor = {
     changeImpostors: (v) => socket.emit('impostor_action', { type: 'changeImpostors', value: v }),
     revealResults: () => socket.emit('impostor_action', { type: 'revealResults' }),
     
-    backToLobby: () => { if(confirm("¿Volver al Hub?")) app.goBackToHub(false); },
+    backToLobby: () => { 
+        if(confirm("¿Salir de la sala?")) app.goBackToHub(true); 
+    },
     
     toggleRole: () => {
         const c = document.getElementById('roleCard');
@@ -65,6 +67,12 @@ socket.on('impostorCategories', (cats) => {
 });
 
 socket.on('updateState', (data) => {
+    // --- CORRECCIÓN CLAVE ---
+    // Si la app dice que ya no estamos en 'impostor' (porque pulsamos salir),
+    // ignoramos cualquier actualización residual que llegue del servidor.
+    if (app.currentRoom !== 'impostor') return;
+    // ------------------------
+
     const { players, gameInProgress, settings } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     
@@ -110,23 +118,18 @@ socket.on('updateState', (data) => {
         if(adminPanel) adminPanel.classList.remove('hidden');
         if(waitMsg) waitMsg.classList.add('hidden');
         
-        // Admin ve todo
         if(settingsRows.length > 0) settingsRows.forEach(row => row.classList.remove('hidden'));
 
         if(btnEnd) btnEnd.classList.remove('hidden');
         if(btnClear) btnClear.classList.remove('hidden');
         if(btnRes) btnRes.classList.remove('hidden');
     } else {
-        // NO ADMIN
-        if(adminPanel) adminPanel.classList.remove('hidden'); // Panel visible para ver categoría
+        if(adminPanel) adminPanel.classList.remove('hidden'); 
         
-        // MODIFICACIÓN: Ocultar la fila del contador de impostores para los civiles
         if(settingsRows.length > 0) {
-            // Asumimos que la primera fila es la de impostores (por orden HTML)
             settingsRows[0].classList.add('hidden'); 
         }
 
-        // Ocultar botón START
         const startBtn = document.querySelector('#impostorAdminPanel .start-btn');
         if(startBtn) startBtn.classList.add('hidden');
 
@@ -143,7 +146,6 @@ socket.on('updateState', (data) => {
         list.innerHTML = "";
         players.forEach(p => {
             const badge = p.isAdmin ? '👑' : '';
-            const userbadge = !p.isAdmin ? '👽' : '';
             const obsBadge = p.isObserver ? '👁️' : '';
             const li = document.createElement('li');
             li.innerHTML = `<span>${p.name} ${badge} ${obsBadge}</span>`;
@@ -207,6 +209,9 @@ socket.on('updateState', (data) => {
 });
 
 socket.on('preGameCountdown', (count) => {
+    // Si no estoy en la sala, ignorar
+    if (app.currentRoom !== 'impostor') return;
+
     app.showScreen('impostorGame'); 
     document.getElementById('roleCard').classList.add('hidden'); 
     document.getElementById('voteSection').classList.add('hidden');
@@ -243,6 +248,9 @@ socket.on('preGameCountdown', (count) => {
 });
 
 socket.on('privateRole', (data) => {
+    // Si no estoy en la sala, ignorar
+    if (app.currentRoom !== 'impostor') return;
+
     const card = document.getElementById('roleCard');
     card.classList.remove('hidden');
     card.className = "blur-content"; 
@@ -252,18 +260,16 @@ socket.on('privateRole', (data) => {
     const info = document.getElementById('myRoleInfo');
 
     title.innerText = data.role;
-    title.style.color = 'white'; // Neutro para no delatar por color
+    title.style.color = 'white'; 
 
     word.innerText = data.word;
     
     if (data.role === 'IMPOSTOR') {
         info.innerText = data.hint ? `Tu Pista: ${data.hint}` : "Engaña a todos.";
-        // Si hay pista, la mostramos en color llamativo
         if(data.hint) info.style.color = "#ffa502";
         else info.style.color = "#ccc";
     }
     else {
-        // Ciudadano: No ve pista
         info.innerText = "Encuentra al impostor.";
         info.style.color = "#ccc";
     }

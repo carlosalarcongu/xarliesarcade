@@ -162,7 +162,6 @@ No hay contraseñas.
 4. Lag: Recarga la página (F5). No perderás tu puesto.`
 };
 
-
 const ROOM_EMOJIS = {
     impostor: "🕵️",
     lobo: "🐺",
@@ -175,84 +174,71 @@ const ROOM_EMOJIS = {
 
 window.app = {
     currentRoom: null,
+    currentRoomId: null, 
+    pendingRoomId: null,
     myPlayerId: null,
-    myPlayerName: null, // <--- NUEVO: Variable para guardar el nombre
+    myPlayerName: null,
     categoriesCache: {},
 
     initFloatingWidget: () => {
         const widget = document.getElementById('floatingUserWidget');
         let isDragging = false;
-        let hasMoved = false; // Para diferenciar clic de arrastre
+        let hasMoved = false; 
         let offsetX, offsetY;
 
-        //Si ya hay nombre asignado:
         if(app.myPlayerName) {
-            //Si no es admin añadir silueta:
-            if(!app.myPlayerName.toLowerCase().includes("admin")) {
-                app.myPlayerName += " 👤";
-            } // Si es admin añadir corona: 
-            else {
-                app.myPlayerName += " 👑";
-            }
+            // Limpieza visual preventiva por si se duplican iconos
+            let clean = app.myPlayerName.replace(/ 👤| 👑/g, '');
+            // Nota: El nombre real se guarda limpio, los iconos son visuales en el widget
         }
 
-        // Función unificada de inicio
         const startDrag = (x, y) => {
             isDragging = true;
             hasMoved = false;
-            // Calcular dónde cogimos el widget respecto a su esquina
             const rect = widget.getBoundingClientRect();
             offsetX = x - rect.left;
             offsetY = y - rect.top;
             
             widget.style.cursor = 'grabbing';
-            widget.style.transition = 'none'; // Importante para rendimiento instantáneo
+            widget.style.transition = 'none';
         };
 
-        // Función unificada de movimiento
         const moveDrag = (x, y) => {
             if (!isDragging) return;
             hasMoved = true;
             
-            // Nueva posición absoluta
             let newX = x - offsetX;
             let newY = y - offsetY;
 
-            // Límites de pantalla (opcional, para que no se pierda)
             newX = Math.max(0, Math.min(window.innerWidth - widget.offsetWidth, newX));
             newY = Math.max(0, Math.min(window.innerHeight - widget.offsetHeight, newY));
 
             widget.style.left = `${newX}px`;
             widget.style.top = `${newY}px`;
-            widget.style.right = 'auto'; // Anular el right CSS
+            widget.style.right = 'auto';
         };
 
-        // Función unificada de fin
         const endDrag = () => {
             if (!isDragging) return;
             isDragging = false;
             widget.style.cursor = 'grab';
             
-            // Si fue un clic (no arrastre), accionamos el CAMBIO DE NOMBRE
             if (!hasMoved) {
-                app.changeName(); // <--- CAMBIO AQUÍ (Antes era goBackToHub(true))
+                app.changeName(); 
             }
         };
 
-        // --- MOUSE EVENTS ---
         widget.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
         
         window.addEventListener('mousemove', e => {
             if(isDragging) {
-                e.preventDefault(); // Evitar selección de texto
+                e.preventDefault(); 
                 moveDrag(e.clientX, e.clientY);
             }
         });
         
         window.addEventListener('mouseup', endDrag);
 
-        // --- TOUCH EVENTS (MÓVIL) ---
-        // passive: false es CRÍTICO para evitar scroll/recarga
         widget.addEventListener('touchstart', e => {
             const t = e.touches[0];
             startDrag(t.clientX, t.clientY);
@@ -260,7 +246,7 @@ window.app = {
 
         window.addEventListener('touchmove', e => {
             if (isDragging) {
-                e.preventDefault(); // ESTO BLOQUEA EL PULL-TO-REFRESH
+                e.preventDefault(); 
                 const t = e.touches[0];
                 moveDrag(t.clientX, t.clientY);
             }
@@ -271,7 +257,7 @@ window.app = {
 
     
     showScreen: (id) => {
-        const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 'tabuLobby', 'tabuGame', 'pinturilloImpLobby', 'pinturilloImpGame'];
+        const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 'tabuLobby', 'tabuGame', 'pinturilloImpLobby', 'pinturilloImpGame', 'giveScreen', 'musScreen'];
         screens.forEach(s => {
             const el = document.getElementById(s);
             if(el) el.classList.add('hidden');
@@ -283,69 +269,47 @@ window.app = {
         const widget = document.getElementById('floatingUserWidget');
         const widgetText = document.getElementById('floatingUserText');
         
-        // Si estamos en LOGIN, ocultamos widget
-        if (id === 'loginScreen') {
+        if (id === 'loginScreen' && !app.myPlayerName) {
             widget.classList.add('hidden');
         } else {
             widget.classList.remove('hidden');
             const name = app.myPlayerName || "Sin Nombre";
             const roomName = app.currentRoom ? app.currentRoom.toUpperCase() : "HUB";
-            // Emoji de sala
+            const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
             const emoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
             
-            widgetText.innerHTML = `<span style="opacity:0.7">${emoji} ${roomName}</span><br><strong>👤 ${name}</strong>`;
+            widgetText.innerHTML = `<span style="opacity:0.7">${emoji} ${roomName}${roomId}</span><br><strong>👤 ${name}</strong>`;
         }
-        // -------------------------
     },
 
     findActiveSession: () => {
         const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp'];
         for (let r of rooms) {
-            if (localStorage.getItem(r + '_playerId')) return r;
+            if (localStorage.getItem(r + '_playerId') && localStorage.getItem(r + '_roomId')) return r;
         }
         return null;
     },
 
     selectRoom: (room) => {
-        if (room === 'feedback') {
-            
-            if (app.feedback && typeof app.feedback.populateCats === 'function') {
-                app.feedback.populateCats(); 
-            }
-            return app.showScreen('feedbackScreen');
+        if (['feedback', 'mus', 'give'].includes(room)) {
+            if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
+            if(room === 'give') { app.showScreen('giveScreen'); return; }
+            if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
         }
         
-        if (room === 'mus') {
-            app.showScreen('musScreen');
-            if (app.mus && app.mus.init) app.mus.init();
-            return;
-        }
-        
-        const active = app.findActiveSession();
-        if (active && active !== room) {
-            if(confirm(`⚠️ Ya estás en "${active.toUpperCase()}". ¿Ir allí (a ${active.toUpperCase()})?`)) {
-                return app.selectRoom(active);
-            } else {
-                return;
-            }
-        }
-        
-        app.currentRoom = room;
         const savedId = localStorage.getItem(room + '_playerId');
+        const savedRoomId = localStorage.getItem(room + '_roomId');
         
-        // CASO A: Reconexión (tengo ID de partida guardado)
-        if (savedId) {
+        if (savedId && savedRoomId) {
             console.log("Reconectando ID:", savedId);
             app.myPlayerId = savedId;
-            socket.emit('rejoin', { savedId, savedRoom: room });
+            app.currentRoom = room;
+            app.currentRoomId = savedRoomId;
+            socket.emit('rejoin', { savedId, savedRoom: room, savedRoomId });
         } 
-        // CASO B: Usuario ya tiene nombre global -> ENTRAR DIRECTO
-        else if (app.myPlayerName) {
-            console.log("Entrando directo como:", app.myPlayerName);
-            socket.emit('joinRoom', { name: app.myPlayerName, room: room });
-        }
-        // CASO C: Usuario nuevo (sin nombre) -> PANTALLA LOGIN
         else {
+            app.currentRoom = room;
+            socket.emit('requestHubRooms'); 
             app.renderLoginScreen(room);
         }
     },
@@ -355,7 +319,7 @@ window.app = {
         const emoji = (room && ROOM_EMOJIS[room]) ? ROOM_EMOJIS[room] : "👤";
         const roomName = room ? (room.charAt(0).toUpperCase() + room.slice(1)) : "Perfil";
         
-        if(titleEl) titleEl.innerText = room ? `Entrada a sala de ${roomName} ${emoji}` : `Configurar Nombre ${emoji}`;
+        if(titleEl) titleEl.innerText = `${roomName} ${emoji}`;
         
         const rulesDiv = document.getElementById('loginRulesArea');
         const rulesText = document.getElementById('loginRulesText');
@@ -369,101 +333,116 @@ window.app = {
             }
         }
         
+        const nameEntry = document.getElementById('nameEntryArea');
+        const roomSelect = document.getElementById('roomSelectionArea');
+        const nameDisplay = document.getElementById('displayName');
+
+        if (app.myPlayerName) {
+            nameEntry.classList.add('hidden');
+            roomSelect.classList.remove('hidden');
+            if(nameDisplay) nameDisplay.innerText = app.myPlayerName;
+        } else {
+            nameEntry.classList.remove('hidden');
+            roomSelect.classList.add('hidden');
+            setTimeout(() => document.getElementById('username')?.focus(), 100);
+        }
+
         app.showScreen('loginScreen');
-        setTimeout(() => document.getElementById('username')?.focus(), 100);
     },
 
+    // --- FUNCIÓN NUEVA: CAMBIAR NOMBRE DESDE PRE-LOBBY ---
+    editName: () => {
+        localStorage.removeItem('global_username');
+        app.myPlayerName = null;
+        
+        const input = document.getElementById('username');
+        if(input) input.value = "";
 
-    // FUNCIÓN CRÍTICA: GESTIÓN DE ENTRADA / GUARDADO DE NOMBRE
-    joinGame: () => {
+        app.renderLoginScreen(app.currentRoom);
+    },
+    // -----------------------------------------------------
+
+    saveNameAndContinue: () => {
         const nameInput = document.getElementById('username');
         let name = nameInput.value.trim();
         
         if (!name) return alert('¡Ponte un nombre!');
-
-        // --- CORRECCIÓN: LIMPIEZA DE NOMBRE ---
-        // Eliminamos emojis del nombre
-        // name = name.replace(/👑|👤/g, '').trim();
-        // --------------------------------------
         
+        localStorage.setItem('global_username', name);
+        app.myPlayerName = name; 
+        
+        app.renderLoginScreen(app.currentRoom);
+    },
+
+    joinGame: (roomIdOverride = null) => {
+        const targetId = roomIdOverride || app.pendingRoomId || null;
+        app.pendingRoomId = null; 
+
+        const nameInput = document.getElementById('username');
+        let name = "";
+
+        // PRIORIDAD: 
+        // 1. Si el usuario escribió algo nuevo en el input, usamos eso.
+        if (nameInput && nameInput.value.trim().length > 0) {
+            name = nameInput.value.trim();
+        } 
+        // 2. Si no, usamos el nombre guardado en memoria
+        else if (app.myPlayerName) {
+            name = app.myPlayerName;
+        }
+
+        if (!name) return alert('¡Ponte un nombre!');
+
         localStorage.setItem('global_username', name);
         app.myPlayerName = name; 
 
         if (app.currentRoom) {
-            socket.emit('joinRoom', { name, room: app.currentRoom });
+            socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId });
         } else {
             app.showScreen('hubScreen');
         }
     },
-
     
     changeName: () => {
         if (app.currentRoom) {
-             if (!confirm('Para cambiar de nombre debes salir de la sala actual. ¿Continuar?')) return;
+             if (!confirm(`Para cambiar de nombre debes salir de la sala actual. ¿Continuar?`)) return;
              app.goBackToHub(true); 
         }
         if (app.mus && app.mus.resetUI) {
             app.mus.resetUI();
         }
         
-        // AQUÍ SÍ BORRAMOS EL NOMBRE GLOBAL
         localStorage.removeItem('global_username');
         app.myPlayerName = null;
         app.currentRoom = null;
+        app.currentRoomId = null;
         
         app.renderLoginScreen(null);
     },
 
     goBackToHub: (forceLogout = false) => {
-        // 1. Limpieza visual de módulos específicos (como Mus)
-        if (app.mus && app.mus.resetUI) {
-            app.mus.resetUI();
-        }
+        if (app.mus && app.mus.resetUI) app.mus.resetUI();
 
         if (forceLogout) {
-            // --- MODO SALIR (Logout real) ---
              const r = app.currentRoom;
-             if (r) {
+             const rid = app.currentRoomId;
+             if (r && rid) {
                  const id = localStorage.getItem(r + '_playerId');
-                 if (id) socket.emit('leaveGame', { playerId: id, room: r });
+                 if (id) socket.emit('leaveGame', { playerId: id, room: r, roomId: rid });
                  localStorage.removeItem(r + '_playerId');
+                 localStorage.removeItem(r + '_roomId');
              }
-             
              app.currentRoom = null;
+             app.currentRoomId = null;
              app.myPlayerId = null;
-             
              app.showScreen('hubScreen');
-             
         } else {
-            // --- MODO NAVEGACIÓN (Minimizar / Volver al Hub) ---
-            
-            // 1. Detectamos si hay una sala activa antes de irnos
-            // (Si currentRoom es null, buscamos en localStorage por si acaso)
-            const activeRoom = app.currentRoom || app.findActiveSession();
-
-            // 2. Ponemos currentRoom a null para que el sistema sepa que estamos visualmente en el Hub
             app.currentRoom = null; 
             app.showScreen('hubScreen');
-
-            // 3. IMPLEMENTACIÓN DEL COMENTARIO: Notificar en el widget
-            // Sobrescribimos lo que puso showScreen para indicar que seguimos vinculados a una sala
-            if (activeRoom) {
-                const widgetText = document.getElementById('floatingUserText');
-                const name = app.myPlayerName || "Sin Nombre";
-                const emoji = ROOM_EMOJIS[activeRoom] || "🎮";
-                const roomLabel = activeRoom.toUpperCase();
-
-                if (widgetText) {
-                    // Formato: 🏠 Hub (🐺 LOBO)
-                    widgetText.innerHTML = `
-                        <span style="opacity:0.7">🏠 Hub <small>(${emoji} ${roomLabel})</small></span><br>
-                        <strong>👤 ${name}</strong>
-                    `;
-                }
-            }
+            socket.emit('requestHubRooms');
         }
     },
-
+    
     showRules: () => {
         const room = app.currentRoom;
         const text = GAME_RULES[room] || "No hay reglas definidas para esta sala.";
@@ -481,14 +460,72 @@ window.app = {
         alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
     },
     
-    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}
+    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}
+};
+
+socket.on('hubRoomsUpdate', (rooms) => {
+    // 1. Lista del Hub Principal
+    const hubContainer = document.getElementById('activeRoomsList');
+    if (hubContainer) {
+        if (rooms.length === 0) {
+            hubContainer.innerHTML = "<p style='color:#555; font-size:0.8em'>No hay salas activas.</p>";
+        } else {
+            let html = "<h3>Salas Activas</h3><div class='hub-grid'>";
+            rooms.forEach(r => {
+                html += `
+                <div class="hub-card" style="border-left-color: #00cec9; padding: 10px;" onclick="app.selectActiveRoom('${r.game}', '${r.id}')">
+                    <div style="font-weight:bold">${ROOM_EMOJIS[r.game] || '🎮'} ${r.id}</div>
+                    <div style="font-size:0.8em; color:#aaa">${r.players} Jugadores - ${r.status}</div>
+                </div>`;
+            });
+            html += "</div>";
+            hubContainer.innerHTML = html;
+        }
+    }
+
+    // 2. Lista de Selección de Sala (Pre-Lobby)
+    const gameContainer = document.getElementById('gameActiveRooms');
+    if (gameContainer && app.currentRoom) {
+        const myGameRooms = rooms.filter(r => r.game === app.currentRoom);
+        
+        if (myGameRooms.length === 0) {
+            gameContainer.innerHTML = "<p style='color:#666; font-style:italic;'>No hay salas creadas. ¡Crea una!</p>";
+        } else {
+            let html = "";
+            myGameRooms.forEach(r => {
+                html += `
+                <div class="hub-card" style="border-left-color: #2ed573; padding: 15px; margin-bottom:10px;" onclick="app.joinGame('${r.id}')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold; font-size:1.2em;">${r.id}</span>
+                        <span style="background:#2f3542; padding:2px 8px; border-radius:5px; font-size:0.8em;">${r.status}</span>
+                    </div>
+                    <div style="font-size:0.9em; color:#aaa; text-align:left;">👤 ${r.players} Jugadores</div>
+                </div>`;
+            });
+            gameContainer.innerHTML = html;
+        }
+    }
+});
+
+app.selectActiveRoom = (game, roomId) => {
+    app.currentRoom = game;
+    if (app.myPlayerName) {
+        app.joinGame(roomId);
+    } else {
+        app.pendingRoomId = roomId; 
+        app.renderLoginScreen(game);
+    }
 };
 
 socket.on('joinedSuccess', (data) => {
-    console.log("Unido con éxito. ID:", data.playerId);
+    console.log("Unido a sala:", data.roomId);
     localStorage.setItem(data.room + '_playerId', data.playerId);
+    localStorage.setItem(data.room + '_roomId', data.roomId);
+    
     app.myPlayerId = data.playerId;
     app.currentRoom = data.room;
+    app.currentRoomId = data.roomId;
+    
     if(data.name) app.myPlayerName = data.name;
     
     if (data.room === 'impostor') app.showScreen('impostorLobby');
@@ -503,38 +540,43 @@ socket.on('joinError', (msg) => { alert("⛔ " + msg); });
 
 socket.on('sessionExpired', () => {
     console.warn("Sesión expirada.");
-    if (app.currentRoom) localStorage.removeItem(app.currentRoom + '_playerId');
+    if (app.currentRoom) {
+        localStorage.removeItem(app.currentRoom + '_playerId');
+        localStorage.removeItem(app.currentRoom + '_roomId');
+    }
     app.myPlayerId = null;
     app.currentRoom = null;
-    app.myPlayerName = null;
-    alert("Tu sesión ha caducado.");
+    app.currentRoomId = null;
+    alert("Tu sesión ha caducado o la sala se ha cerrado.");
     app.showScreen('hubScreen');
 });
 
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
 window.onload = function() {
-    // 1. Inicializar herramientas
     app.initFloatingWidget();
     if(app.feedback && app.feedback.init) app.feedback.init();
     
-    // 2. RECUPERAR NOMBRE GLOBAL (PERSISTENCIA EN HUB)
-    // Esto busca si hay un nombre guardado aunque no estés en partida
     const savedGlobalName = localStorage.getItem('global_username');
     if (savedGlobalName) {
         console.log("Nombre recuperado en Hub:", savedGlobalName);
         app.myPlayerName = savedGlobalName; 
     }
 
-    // 3. Comprobar si hay partida activa o ir al Hub
+    socket.emit('requestHubRooms');
+    
+    // Polling de salas activas si estamos en Hub o Login
+    setInterval(() => {
+        if (!document.getElementById('hubScreen').classList.contains('hidden') || 
+            !document.getElementById('loginScreen').classList.contains('hidden')) {
+            socket.emit('requestHubRooms');
+        }
+    }, 5000);
+
     const activeSession = app.findActiveSession();
     if (activeSession) {
-        // Si hay partida, intentamos reconectar
         app.selectRoom(activeSession);
     } else {
-        // Si no hay partida, vamos al Hub. 
-        // Como ya hemos seteado app.myPlayerName en el paso 2, 
-        // showScreen actualizará el widget automáticamente.
         app.showScreen('hubScreen');
     }
 };
