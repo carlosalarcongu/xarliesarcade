@@ -426,16 +426,23 @@ window.app = {
         if (forceLogout) {
              const r = app.currentRoom;
              const rid = app.currentRoomId;
-             if (r && rid) {
+             
+             // Si hay una sala definida (r), intentamos salir y limpiamos SIEMPRE
+             if (r) {
                  const id = localStorage.getItem(r + '_playerId');
+                 // Enviar señal de salida (roomId puede ser null si es juego viejo, no pasa nada)
                  if (id) socket.emit('leaveGame', { playerId: id, room: r, roomId: rid });
+                 
+                 // CRÍTICO: Borrar del almacenamiento SIEMPRE, sin condiciones extra
                  localStorage.removeItem(r + '_playerId');
                  localStorage.removeItem(r + '_roomId');
              }
+             
              app.currentRoom = null;
              app.currentRoomId = null;
              app.myPlayerId = null;
              app.showScreen('hubScreen');
+             
         } else {
             app.currentRoom = null; 
             app.showScreen('hubScreen');
@@ -464,7 +471,9 @@ window.app = {
 };
 
 socket.on('hubRoomsUpdate', (rooms) => {
-    // 1. Lista del Hub Principal
+    // console.log("[DEBUG] Cliente recibió hubRoomsUpdate:", rooms);
+
+    // 1. HUB PRINCIPAL
     const hubContainer = document.getElementById('activeRoomsList');
     if (hubContainer) {
         if (rooms.length === 0) {
@@ -472,9 +481,10 @@ socket.on('hubRoomsUpdate', (rooms) => {
         } else {
             let html = "<h3>Salas Activas</h3><div class='hub-grid'>";
             rooms.forEach(r => {
+                const emoji = ROOM_EMOJIS[r.game] || '🎮';
                 html += `
                 <div class="hub-card" style="border-left-color: #00cec9; padding: 10px;" onclick="app.selectActiveRoom('${r.game}', '${r.id}')">
-                    <div style="font-weight:bold">${ROOM_EMOJIS[r.game] || '🎮'} ${r.id}</div>
+                    <div style="font-weight:bold">${emoji} ${r.id}</div>
                     <div style="font-size:0.8em; color:#aaa">${r.players} Jugadores - ${r.status}</div>
                 </div>`;
             });
@@ -483,7 +493,7 @@ socket.on('hubRoomsUpdate', (rooms) => {
         }
     }
 
-    // 2. Lista de Selección de Sala (Pre-Lobby)
+    // 2. PRE-LOBBY (Solo salas del juego actual)
     const gameContainer = document.getElementById('gameActiveRooms');
     if (gameContainer && app.currentRoom) {
         const myGameRooms = rooms.filter(r => r.game === app.currentRoom);

@@ -2,123 +2,121 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const logger = require('./debug_logger'); // Importamos logger si existe, opcional
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- GESTIÓN DE SOCKETS ---
+// Referencias globales para el Hub
+const gamesModules = {
+    impostor: require('./games/impostor'),
+    lobo: require('./games/lobo'),
+    anecdotas: require('./games/anecdotas'),
+    elmas: require('./games/elmas'),
+    tabu: require('./games/tabu'),
+    pinturilloImp: require('./games/pinturilloImp'),
+    mus: require('./games/mus'),
+    give: require('./games/give') 
+};
+
+// Inicializar juegos
+Object.keys(gamesModules).forEach(key => {
+    if (gamesModules[key] && typeof gamesModules[key].init === 'function') {
+        gamesModules[key].init(io);
+    }
+});
+
 io.on('connection', (socket) => {
-    console.log('[SOCKET] Nueva conexión:', socket.id);
+    
+    // Delegación híbrida (Nuevo/Viejo)
+    Object.keys(gamesModules).forEach(key => {
+        const module = gamesModules[key];
+        if (module && typeof module.handleSocket === 'function') {
+            module.handleSocket(io, socket);
+        } else if (typeof module === 'function') {
+            module(io, socket);
+        }
+    });
 
-    // CARGAR JUEGOS
-    require('./games/impostor')(io, socket);
-    require('./games/lobo')(io, socket);
-    require('./games/anecdotas')(io, socket);
-    require('./games/elmas')(io, socket);
-    require('./games/feedback')(io, socket);
-    require('./games/tabu')(io, socket);
-    require('./games/pinturilloImp')(io, socket);
-    require('./games/mus')(io, socket);
-    require('./games/give')(io, socket);
+    // --- HUB: PETICIÓN DE SALAS ---
+    socket.on('requestHubRooms', () => {
+        const allRooms = [];
+        
+        // Solo buscamos en Impostor por ahora
+        const gameKey = 'impostor';
+        const module = gamesModules[gameKey];
 
+        if (module) {
+            // DEBUG: Comprobar si el módulo tiene getRooms
+            if (typeof module.getRooms === 'function') {
+                const rooms = module.getRooms();
+                console.log(`[DEBUG] Solicitud Hub: Encontradas ${rooms.length} salas de ${gameKey}`);
+                
+                rooms.forEach(r => {
+                    allRooms.push({
+                        game: gameKey,
+                        id: r.id,
+                        players: r.players,
+                        status: r.state
+                    });
+                });
+            } else {
+                console.log(`[DEBUG] ERROR: El módulo ${gameKey} NO tiene función getRooms.`);
+            }
+        }
 
-    // --- UNIRSE A SALA (JOIN) ---
-    socket.on('joinRoom', ({ name, room }) => {
-        // Validación básica
+        socket.emit('hubRoomsUpdate', allRooms);
+    });
+
+    // --- JOIN ---
+    socket.on('joinRoom', ({ name, room, roomId }) => {
         if (!name || !room) return;
-        
-        socket.join(room);
-        
-        // Delegación dinámica (Switch más limpio)
-        switch(room) {
-            case 'impostor': require('./games/impostor').handleJoin(socket, name); break;
-            case 'lobo': require('./games/lobo').handleJoin(socket, name); break;
-            case 'anecdotas': require('./games/anecdotas').handleJoin(socket, name); break;
-            case 'elmas': require('./games/elmas').handleJoin(socket, name); break;
-            case 'tabu': require('./games/tabu').handleJoin(socket, name); break;
-            case 'pinturilloImp': require('./games/pinturilloImp').handleJoin(socket, name); break;
+        const module = gamesModules[room];
+
+        if (module && typeof module.handleJoin === 'function') {
+            module.handleJoin(socket, name, roomId);
+        } else if (module && typeof module === 'function') {
+             // Compatibilidad juegos viejos
+             if (room === 'lobo') require('./games/lobo').handleJoin(socket, name);
+             else if (room === 'anecdotas') require('./games/anecdotas').handleJoin(socket, name);
+             else if (room === 'elmas') require('./games/elmas').handleJoin(socket, name);
+             else if (room === 'tabu') require('./games/tabu').handleJoin(socket, name);
+             else if (room === 'pinturilloImp') require('./games/pinturilloImp').handleJoin(socket, name);
         }
     });
 
-    // --- RECONEXIÓN (REJOIN) ---
-    socket.on('rejoin', ({ savedId, savedRoom }) => {
+    // --- REJOIN ---
+    socket.on('rejoin', ({ savedId, savedRoom, savedRoomId }) => {
         if (!savedId || !savedRoom) return;
-
-        socket.join(savedRoom);
-        console.log(`[REJOIN] Jugador ${savedId} intentando volver a ${savedRoom}`);
+        const module = gamesModules[savedRoom];
         
-        // Delegamos al juego específico para que restaure el estado (roles, cartas, etc.)
-        switch(savedRoom) {
-            case 'impostor': 
-                if(require('./games/impostor').handleRejoin) 
-                    require('./games/impostor').handleRejoin(socket, savedId); 
-                break;
-            case 'lobo': 
-                if(require('./games/lobo').handleRejoin) 
-                    require('./games/lobo').handleRejoin(socket, savedId); 
-                break;
-            case 'anecdotas': 
-                if(require('./games/anecdotas').handleRejoin) 
-                    require('./games/anecdotas').handleRejoin(socket, savedId); 
-                break;
-            case 'elmas': 
-                if(require('./games/elmas').handleRejoin) 
-                    require('./games/elmas').handleRejoin(socket, savedId); 
-                break;
-            case 'tabu': 
-                if(require('./games/tabu').handleRejoin) 
-                    require('./games/tabu').handleRejoin(socket, savedId); 
-                break;
-            case 'pinturilloImp': 
-                if(require('./games/pinturilloImp').handleRejoin) 
-                    require('./games/pinturilloImp').handleRejoin(socket, savedId); 
-                break;
-            default:
-                console.log(`[REJOIN] Sala desconocida: ${savedRoom}`);
+        if (module && typeof module.handleRejoin === 'function') {
+            module.handleRejoin(socket, savedId, savedRoomId);
+        } else {
+             // Compatibilidad
+             if (savedRoom === 'lobo') require('./games/lobo').handleRejoin(socket, savedId);
+             else if (savedRoom === 'anecdotas') require('./games/anecdotas').handleRejoin(socket, savedId);
+             else if (savedRoom === 'elmas') require('./games/elmas').handleRejoin(socket, savedId);
+             else if (savedRoom === 'tabu') require('./games/tabu').handleRejoin(socket, savedId);
+             else if (savedRoom === 'pinturilloImp') require('./games/pinturilloImp').handleRejoin(socket, savedId);
         }
     });
 
-    // --- SALIR (LEAVE) ---
-    socket.on('leaveGame', ({ playerId, room }) => {
-        console.log(`[LEAVE] Jugador ${playerId} sale voluntariamente de ${room}`);
-        socket.leave(room);
-        
-        // Avisar al juego para borrado inmediato (sin timeout)
-        // IMPORTANTE: Pasamos 'io' para que el juego pueda emitir el cambio a los demás
-        switch(room) {
-            case 'impostor': require('./games/impostor').handleLeave(playerId, io); break;
-            case 'lobo': require('./games/lobo').handleLeave(playerId, io); break;
-            case 'anecdotas': require('./games/anecdotas').handleLeave(playerId, io); break;
-            case 'elmas': require('./games/elmas').handleLeave(playerId, io); break;
-            case 'tabu': require('./games/tabu').handleLeave(playerId, io); break;
-            case 'pinturilloImp': require('./games/pinturilloImp').handleLeave(playerId, io); break;
+    // --- LEAVE ---
+    socket.on('leaveGame', ({ playerId, room, roomId }) => {
+        const module = gamesModules[room];
+        if (module && typeof module.handleLeave === 'function') {
+            module.handleLeave(playerId, roomId, io);
+        } else {
+             // Compatibilidad
+             if (room === 'lobo') require('./games/lobo').handleLeave(playerId, io);
+             else if (room === 'anecdotas') require('./games/anecdotas').handleLeave(playerId, io);
+             else if (room === 'elmas') require('./games/elmas').handleLeave(playerId, io);
+             else if (room === 'tabu') require('./games/tabu').handleLeave(playerId, io);
+             else if (room === 'pinturilloImp') require('./games/pinturilloImp').handleLeave(playerId, io);
         }
-    });
-
-    // --- RESET DE MEMORIA (PARA TESTS) ---
-    socket.on('debug_reset', () => {
-        console.log('[SERVER] 🧹 EJECUTANDO RESET DE MEMORIA...');
-        try {
-            if(require('./games/impostor').resetInternalState) require('./games/impostor').resetInternalState();
-            if(require('./games/lobo').resetInternalState) require('./games/lobo').resetInternalState();
-            if(require('./games/anecdotas').resetInternalState) require('./games/anecdotas').resetInternalState();
-            if(require('./games/elmas').resetInternalState) require('./games/elmas').resetInternalState();
-            if(require('./games/tabu').resetInternalState) require('./games/tabu').resetInternalState();
-            if(require('./games/pinturilloImp').resetInternalState) require('./games/pinturilloImp').resetInternalState();
-            
-            socket.emit('debug_reset_ok');
-        } catch (e) {
-            console.error('[SERVER] Error en reset:', e);
-        }
-    });
-
-    socket.on('disconnect', () => {
-        // La desconexión por timeout se maneja en cada módulo
     });
 });
 

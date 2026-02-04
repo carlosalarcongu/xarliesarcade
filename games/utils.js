@@ -1,55 +1,54 @@
-const crypto = require('crypto');
-
-// Lista compartida de emojis
-const EMOJIS = ["😈","👽","🐸","🦊","🐵","🐼","🐯","🦄","🔥","⚡","🚀","🍕","🎲","🏆","🍷","🎩","👀","🧠"];
-
-// Lógica CENTRALIZADA de Administrador
-function checkIsAdmin(name) {
-    const lower = name.toLowerCase();
-    return lower.endsWith(" admin") || ["xarliebarber", "admin", "dios", "carlos"].includes(lower);
-}
+const capitals = [
+    "MADRID", "PARIS", "LONDRES", "ROMA", "BERLIN", "LISBOA", "ATENAS", "DUBLIN", "BRUSELAS", "AMSTERDAM",
+    "VIENA", "OSLO", "ESTOCOLMO", "COPENHAGUE", "HELSINKI", "VARSOVIA", "PRAGA", "BUDAPEST", "BUCAREST",
+    "SOFIA", "TOKIO", "PEKIN", "SEUL", "BANGKOK", "HANOI", "YAKARTA", "SINGAPUR", "MANILA", "CANBERRA",
+    "OTTAWA", "WELLINGTON", "WASHINGTON", "BRASILIA", "MEXICO", "BUENOS AIRES", "BOGOTA", "LIMA", "SANTIAGO",
+    "QUITO", "CARACAS", "LA HABANA", "EL CAIRO", "RABAT", "NAIROBI", "LUANDA", "PRETORIA", "MOSCU"
+];
 
 module.exports = {
-    // Función fábrica de jugadores
-    createPlayer: (socketId, nameInput) => {
-        const cleanName = nameInput.trim();
-        const isAdmin = checkIsAdmin(cleanName);
-        const stableId = crypto.randomUUID();
-        
+    createPlayer: (socketId, name) => {
         return {
-            id: stableId,
-            socketId: socketId,
-            name: cleanName,
-            rawName: cleanName,
-            isAdmin: isAdmin,
+            id: socketId + '_' + Date.now(), // ID único persistente
+            socketId: socketId,              // ID del socket actual
+            name: name,
+            rawName: name, 
+            isAdmin: false,
             connected: true,
-            isDead: false,
-            score: 0
+            timeout: null
         };
     },
 
-    // --- FUNCIÓN DE DESCONEXIÓN CENTRALIZADA ---
-    // Devuelve true si hubo cambios en la lista
-    handleDisconnect: (socketId, players, onReset) => {
-        const index = players.findIndex(p => p.socketId === socketId);
+    getRandomCapital: (existingRoomsKeys) => {
+        // Filtramos las capitales que ya se están usando como ID de sala
+        // existingRoomsKeys debe ser un array de strings (las claves del objeto rooms)
+        const keys = existingRoomsKeys || [];
+        let available = capitals.filter(c => !keys.includes(c));
         
-        if (index !== -1) {
-            const wasAdmin = players[index].isAdmin;
-            players.splice(index, 1); // Borramos al jugador
+        // Si se acaban las capitales (raro), generamos un ID numérico
+        if (available.length === 0) return "MUNDO-" + Math.floor(Math.random() * 1000);
+        
+        return available[Math.floor(Math.random() * available.length)];
+    },
 
-            // CASO 1: Sala vacía -> RESET TOTAL
-            if (players.length === 0) {
-                console.log(`[Utils] Sala vacía. Ejecutando reset...`);
-                if (onReset) onReset(); // Limpiamos variables del juego
-                return true; 
-            }
-
-            // CASO 2: Se fue el admin -> Heredar corona
-            if (wasAdmin && players.length > 0) {
-                players[0].isAdmin = true;
-            }
-            return true; // Hubo cambios
+    // Gestión de desconexión genérica
+    handleDisconnect: (socketId, players, onEmptyCallback) => {
+        const p = players.find(x => x.socketId === socketId);
+        if (p) {
+            p.connected = false;
+            // Timeout de seguridad de 20 mins para borrar al usuario si no vuelve
+            if(p.timeout) clearTimeout(p.timeout);
+            
+            p.timeout = setTimeout(() => {
+                const idx = players.findIndex(pl => pl.id === p.id);
+                if(idx !== -1) {
+                    players.splice(idx, 1);
+                    // Si al borrar el jugador la sala se queda vacía, ejecutamos el callback
+                    if (players.length === 0 && onEmptyCallback) onEmptyCallback();
+                }
+            }, 20 * 60 * 1000); 
+            return true; // Hubo cambios (alguien se desconectó)
         }
-        return false; // No estaba en la lista
+        return false;
     }
 };
