@@ -96,8 +96,10 @@ app.lobo = {
 };
 
 socket.on('updateLoboList', (data) => {
+    if (app.currentRoom !== 'lobo') return;
+
     const { players, gameInProgress, settings, turnData } = data;
-    app.lobo.players = players; // Guardamos lista para que la bruja busque nombres
+    app.lobo.players = players; 
     app.lobo.settings = settings; 
     app.lobo.phase = turnData.phase;
 
@@ -110,7 +112,6 @@ socket.on('updateLoboList', (data) => {
         document.getElementById('loboWinModal').classList.add('hidden');
         document.getElementById('loboTimeline').innerHTML = ""; 
 
-        // --- SINCRONIZACIÓN VISUAL DE SETTINGS PARA TODOS ---
         document.getElementById('val_wolvesCount').innerText = settings.wolvesCount;
         document.getElementById('loboPlayerCount').innerText = players.length;
 
@@ -124,22 +125,17 @@ socket.on('updateLoboList', (data) => {
             }
         });
 
-        // --- GESTIÓN DE PERMISOS (Panel visible para todos, editable solo para admin) ---
         const adminPanel = document.getElementById('loboAdminPanel');
         const waitMsg = document.getElementById('loboWaitMsg');
         
-        // Siempre mostramos el panel para que vean la config
         adminPanel.classList.remove('hidden'); 
         
-        // Deshabilitar/Habilitar botones según admin
         const allBtns = adminPanel.querySelectorAll('button');
         allBtns.forEach(b => b.disabled = !app.lobo.iAmAdmin);
 
-        // Opacidad para indicar modo solo lectura
         if (!app.lobo.iAmAdmin) {
             adminPanel.style.opacity = "0.7";
             waitMsg.classList.remove('hidden');
-            // Ocultar botón empezar a los no admins
             const startBtn = adminPanel.querySelector('.start-btn');
             if(startBtn) startBtn.style.display = 'none';
         } else {
@@ -149,7 +145,6 @@ socket.on('updateLoboList', (data) => {
             if(startBtn) startBtn.style.display = 'block';
         }
 
-        // Lista Jugadores
         const listLobby = document.getElementById('loboPlayerList');
         if (listLobby) {
             listLobby.innerHTML = "";
@@ -167,11 +162,10 @@ socket.on('updateLoboList', (data) => {
     else {
         app.showScreen('loboGame');
         
-        // Si el juego ha terminado, ocultamos la UI de juego activo
         if (turnData.phase === 'GAME_OVER') {
             document.getElementById('loboNightActionArea').classList.add('hidden');
             document.getElementById('btnLoboPhaseAction').classList.add('hidden');
-            return; // El modal se encarga del resto
+            return; 
         }
 
         app.lobo.renderTimeline(turnData.phase, turnData.sequence, turnData.phaseDefs);
@@ -309,18 +303,16 @@ function renderVoteGrid(players, me) {
 }
 
 socket.on('witchInfo', (data) => {
+    if (app.currentRoom !== 'lobo') return;
     const area = document.getElementById('loboNightActionArea');
     if(!area) return;
     area.innerHTML = "";
     
-    // --- CORRECCIÓN BRUJA ---
-    // Buscar nombre del muerto usando el ID
     let victimName = "nadie";
     if (data.victimId) {
         const victim = app.lobo.players.find(p => p.id === data.victimId);
         if (victim) victimName = victim.name;
     }
-    // ------------------------
 
     let reviveHtml = `<div id="witchReviveArea" style="margin-bottom:15px; border-bottom:1px solid #555; padding-bottom:10px;">`;
     if (data.hasRevive) {
@@ -354,6 +346,7 @@ socket.on('witchInfo', (data) => {
 });
 
 socket.on('loboRoleAssigned', (data) => {
+    if (app.currentRoom !== 'lobo') return;
     app.lobo.myRole = data.role;
     app.showScreen('loboGame');
     
@@ -377,6 +370,7 @@ socket.on('loboRoleAssigned', (data) => {
 });
 
 socket.on('loboGameOver', (data) => {
+    if (app.currentRoom !== 'lobo') return;
     const modal = document.getElementById('loboWinModal');
     if(modal) modal.classList.remove('hidden');
     
@@ -400,6 +394,7 @@ socket.on('loboGameOver', (data) => {
 });
 
 socket.on('loboReset', () => {
+    if (app.currentRoom !== 'lobo') return;
     app.showScreen('loboLobby');
     const winModal = document.getElementById('loboWinModal');
     if(winModal) winModal.classList.add('hidden');
