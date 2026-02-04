@@ -1,52 +1,67 @@
 const Utils = require('./utils');
 const questionsDB = require('./tabu_words'); 
 
-// ESTADO GLOBAL
-let players = [];
-let gameInProgress = false;
-let isPaused = false;
+const rooms = {};
 
-// Configuración por defecto
-let settings = { 
+const defaultSettings = { 
     totalRounds: 3, 
     turnDuration: 60, 
     skipsPerTurn: 3, 
     pauseBetweenRounds: false 
-}; 
-
-let turnData = {
-    currentTeam: 'BLUE', 
-    roundNumber: 1,
-    describerId: null, 
-    currentCard: null, 
-    timer: 60, 
-    skipsRemaining: 3,
-    teamIndex: { BLUE: 0, RED: 0 }, 
-    score: { BLUE: 0, RED: 0 },
-    status: 'LOBBY', 
-    lastRoundWinner: null, 
-    lastRoundMVP: []
 };
 
-let turnInterval = null;
-
-// --- FUNCIÓN DE RESET COMPARTIDA ---
-function performReset(io) {
-    gameInProgress = false;
-    isPaused = false;
-    if (turnInterval) clearInterval(turnInterval);
-    turnData = { 
-        currentTeam: 'BLUE', 
-        roundNumber: 1, 
-        score: { BLUE: 0, RED: 0 }, 
-        teamIndex: { BLUE: 0, RED: 0 },
-        status: 'LOBBY' 
+function createRoom(roomId) {
+    rooms[roomId] = {
+        id: roomId,
+        players: [],
+        gameInProgress: false,
+        isPaused: false,
+        settings: { ...defaultSettings },
+        turnData: {
+            currentTeam: 'BLUE', 
+            roundNumber: 1,
+            describerId: null, 
+            currentCard: null, 
+            timer: 60, 
+            skipsRemaining: 3,
+            teamIndex: { BLUE: 0, RED: 0 }, 
+            score: { BLUE: 0, RED: 0 },
+            status: 'LOBBY'
+        },
+        turnInterval: null,
+        inactivityTimer: null
     };
-    broadcast(io);
+    return rooms[roomId];
 }
 
-function broadcast(io) {
-    const publicPlayers = players.map(p => ({
+function destroyRoom(roomId) {
+    if (rooms[roomId]) {
+        if (rooms[roomId].turnInterval) clearInterval(rooms[roomId].turnInterval);
+        delete rooms[roomId];
+    }
+}
+
+function checkRoomInactivity(roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+    const activePlayers = room.players.filter(p => p.connected);
+    
+    if (activePlayers.length === 0) {
+        if (room.inactivityTimer) clearTimeout(room.inactivityTimer);
+        room.inactivityTimer = setTimeout(() => destroyRoom(roomId), 20 * 60 * 1000); 
+    } else {
+        if (room.inactivityTimer) {
+            clearTimeout(room.inactivityTimer);
+            room.inactivityTimer = null;
+        }
+    }
+}
+
+function broadcastRoom(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const publicPlayers = room.players.map(p => ({
         id: p.id,
         name: p.name,
         isAdmin: p.isAdmin,
@@ -54,98 +69,125 @@ function broadcast(io) {
         individualScore: p.individualScore
     }));
 
-    io.to('tabu').emit('updateTabuState', {
+    io.to('tabu_' + roomId).emit('updateTabuState', {
         players: publicPlayers,
-        gameInProgress,
-        isPaused,
-        turnData,
-        settings
+        gameInProgress: room.gameInProgress,
+        isPaused: room.isPaused,
+        turnData: room.turnData,
+        settings: room.settings
     });
 }
 
-function nextTurn(io) {
-    if (turnInterval) clearInterval(turnInterval);
+function performReset(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
 
-    if (turnData.currentTeam === 'BLUE') {
-        turnData.currentTeam = 'RED';
+    room.gameInProgress = false;
+    room.isPaused = false;
+    if (room.turnInterval) clearInterval(room.turnInterval);
+    
+    room.turnData = { 
+        currentTeam: 'BLUE', 
+        roundNumber: 1, 
+        score: { BLUE: 0, RED: 0 }, 
+        teamIndex: { BLUE: 0, RED: 0 },
+        status: 'LOBBY',
+        timer: room.settings.turnDuration
+    };
+    broadcastRoom(io, roomId);
+}
+
+function nextTurn(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    if (room.turnInterval) clearInterval(room.turnInterval);
+
+    if (room.turnData.currentTeam === 'BLUE') {
+        room.turnData.currentTeam = 'RED';
     } else {
-        turnData.currentTeam = 'BLUE';
-        turnData.roundNumber++;
+        room.turnData.currentTeam = 'BLUE';
+        room.turnData.roundNumber++;
         
-        if (turnData.roundNumber > settings.totalRounds) {
-            endGame(io);
+        if (room.turnData.roundNumber > room.settings.totalRounds) {
+            endGame(io, roomId);
             return;
         }
         
-        if (settings.pauseBetweenRounds) {
-            isPaused = true;
-            turnData.status = 'PAUSED';
-            broadcast(io);
+        if (room.settings.pauseBetweenRounds) {
+            room.isPaused = true;
+            room.turnData.status = 'PAUSED';
+            broadcastRoom(io, roomId);
             return;
         }
     }
-
-    startPreTurn(io);
+    startPreTurn(io, roomId);
 }
 
-function startPreTurn(io) {
-    const teamMembers = players.filter(p => p.team === turnData.currentTeam);
-    if (teamMembers.length === 0) return nextTurn(io); 
+function startPreTurn(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
 
-    let idx = turnData.teamIndex[turnData.currentTeam] % teamMembers.length;
-    turnData.describerId = teamMembers[idx].id;
-    turnData.teamIndex[turnData.currentTeam]++;
+    const teamMembers = room.players.filter(p => p.team === room.turnData.currentTeam);
+    if (teamMembers.length === 0) return nextTurn(io, roomId); 
 
-    turnData.status = 'PRE_TURN';
-    turnData.timer = 5;
-    turnData.currentCard = null;
-    turnData.skipsRemaining = settings.skipsPerTurn;
+    let idx = room.turnData.teamIndex[room.turnData.currentTeam] % teamMembers.length;
+    room.turnData.describerId = teamMembers[idx].id;
+    room.turnData.teamIndex[room.turnData.currentTeam]++;
+
+    room.turnData.status = 'PRE_TURN';
+    room.turnData.timer = 5;
+    room.turnData.currentCard = null;
+    room.turnData.skipsRemaining = room.settings.skipsPerTurn;
     
-    broadcast(io);
+    broadcastRoom(io, roomId);
 
     let prepCounter = 5;
     const prepInterval = setInterval(() => {
-        if (!gameInProgress || isPaused || turnData.status === 'ENDED') { 
+        if (!room.gameInProgress || room.isPaused || room.turnData.status === 'ENDED') { 
             clearInterval(prepInterval); return; 
         }
 
         prepCounter--;
-        turnData.timer = prepCounter;
-        io.to('tabu').emit('timerTick', prepCounter); 
+        room.turnData.timer = prepCounter;
+        io.to('tabu_' + roomId).emit('timerTick', prepCounter); 
 
         if (prepCounter <= 0) {
             clearInterval(prepInterval);
-            startPlayingPhase(io);
+            startPlayingPhase(io, roomId);
         }
     }, 1000);
 }
 
-function startPlayingPhase(io) {
-    turnData.status = 'PLAYING';
-    turnData.timer = settings.turnDuration;
-    pickNewCard();
-    broadcast(io);
+function startPlayingPhase(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
 
-    if (turnInterval) clearInterval(turnInterval);
+    room.turnData.status = 'PLAYING';
+    room.turnData.timer = room.settings.turnDuration;
+    pickNewCard(room);
+    broadcastRoom(io, roomId);
 
-    turnInterval = setInterval(() => {
-        if (!gameInProgress || isPaused || turnData.status === 'ENDED') { 
-            clearInterval(turnInterval); return; 
+    if (room.turnInterval) clearInterval(room.turnInterval);
+
+    room.turnInterval = setInterval(() => {
+        if (!room.gameInProgress || room.isPaused || room.turnData.status === 'ENDED') { 
+            clearInterval(room.turnInterval); return; 
         }
 
-        turnData.timer--;
+        room.turnData.timer--;
         
-        if (turnData.timer <= 0) {
-            clearInterval(turnInterval);
-            io.to('tabu').emit('playSound', 'timeout');
-            nextTurn(io);
+        if (room.turnData.timer <= 0) {
+            clearInterval(room.turnInterval);
+            io.to('tabu_' + roomId).emit('playSound', 'timeout');
+            nextTurn(io, roomId);
         } else {
-            io.to('tabu').emit('timerTick', turnData.timer);
+            io.to('tabu_' + roomId).emit('timerTick', room.turnData.timer);
         }
     }, 1000);
 }
 
-function pickNewCard() {
+function pickNewCard(room) {
     const fallbackDB = [
         { word: "MANZANA", forbidden: ["FRUTA", "ROJA", "COMER", "BLANCANIEVES"] },
         { word: "COCHE", forbidden: ["RUEDAS", "VOLANTE", "MOTOR", "CONDUCIR"] },
@@ -153,212 +195,238 @@ function pickNewCard() {
     ];
     const db = (questionsDB && questionsDB.length > 0) ? questionsDB : fallbackDB;
     const random = db[Math.floor(Math.random() * db.length)];
-    turnData.currentCard = random;
+    room.turnData.currentCard = random;
 }
 
-// --- MODIFICADO: ENDGAME MANTIENE EL JUEGO ACTIVO 10s ---
-function endGame(io) {
-    if (turnInterval) clearInterval(turnInterval);
+function endGame(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    if (room.turnInterval) clearInterval(room.turnInterval);
     
-    // Mantenemos gameInProgress = true para que el frontend siga en la pantalla de juego
-    turnData.status = 'ENDED'; 
+    room.turnData.status = 'ENDED'; 
     
     let winner = 'DRAW';
-    if (turnData.score.BLUE > turnData.score.RED) winner = 'BLUE';
-    if (turnData.score.RED > turnData.score.BLUE) winner = 'RED';
+    if (room.turnData.score.BLUE > room.turnData.score.RED) winner = 'BLUE';
+    if (room.turnData.score.RED > room.turnData.score.BLUE) winner = 'RED';
 
-    const winningTeamPlayers = winner === 'DRAW' ? players : players.filter(p => p.team === winner);
+    const winningTeamPlayers = winner === 'DRAW' ? room.players : room.players.filter(p => p.team === winner);
     const mvpList = winningTeamPlayers.sort((a,b) => b.individualScore - a.individualScore).slice(0, 5);
 
-    // Emitimos el evento de victoria
-    io.to('tabu').emit('gameOver', { 
+    io.to('tabu_' + roomId).emit('gameOver', { 
         winner, 
-        finalScores: turnData.score,
+        finalScores: room.turnData.score,
         mvp: mvpList
     });
     
-    // Actualizamos estado (para que los nuevos que entren vean que acabó)
-    broadcast(io); 
+    broadcastRoom(io, roomId); 
 
-    // Temporizador del servidor para resetear todo en 10s
     setTimeout(() => {
-        // Solo reseteamos si seguimos en estado ENDED (por si el admin reinició manualmente antes)
-        if (turnData.status === 'ENDED') {
-            performReset(io);
+        if (room && room.turnData.status === 'ENDED') {
+            performReset(io, roomId);
         }
     }, 10000);
 }
 
-const gameModule = (io, socket) => {
+const handleSocket = (io, socket) => {
     socket.on('tabu_action', (action) => {
-        const me = players.find(p => p.socketId === socket.id);
+        const roomId = socket.data.roomId;
+        const room = rooms[roomId];
+        if (!room) return socket.emit('tabu_error', 'Sala no encontrada.');
+
+        const me = room.players.find(p => p.socketId === socket.id);
         if (!me) return;
 
         if (action.type === 'joinTeam') {
-            if (gameInProgress && turnData.status !== 'ENDED') return;
+            if (room.gameInProgress && room.turnData.status !== 'ENDED') return;
             me.team = action.team; 
-            broadcast(io);
+            broadcastRoom(io, roomId);
         }
 
-        // --- ACCIONES DE ADMIN ---
         if (me.isAdmin) {
-            
             if (action.type === 'updateSettings') {
-                if (action.rounds) settings.totalRounds = parseInt(action.rounds);
-                if (action.duration) settings.turnDuration = parseInt(action.duration);
-                if (action.skips) settings.skipsPerTurn = parseInt(action.skips);
-                if (typeof action.pauseOn !== 'undefined') settings.pauseBetweenRounds = !!action.pauseOn;
-                broadcast(io);
+                if (action.rounds) room.settings.totalRounds = parseInt(action.rounds);
+                if (action.duration) room.settings.turnDuration = parseInt(action.duration);
+                if (action.skips) room.settings.skipsPerTurn = parseInt(action.skips);
+                if (typeof action.pauseOn !== 'undefined') room.settings.pauseBetweenRounds = !!action.pauseOn;
+                broadcastRoom(io, roomId);
             }
 
             if (action.type === 'randomizeTeams') {
-                if (gameInProgress) return;
-                const shuffled = players.sort(() => Math.random() - 0.5);
+                if (room.gameInProgress) return;
+                const shuffled = room.players.sort(() => Math.random() - 0.5);
                 shuffled.forEach((p, index) => {
                     p.team = (index % 2 === 0) ? 'BLUE' : 'RED';
                 });
-                broadcast(io);
+                broadcastRoom(io, roomId);
             }
 
             if (action.type === 'kick') {
-                const target = players.find(p => p.id === action.targetId);
-                if (target) {
-                    if(target.socketId) io.to(target.socketId).emit('sessionExpired');
-                    players = players.filter(p => p.id !== action.targetId);
-                    broadcast(io);
-                }
+                handleLeave(action.targetId, roomId, io, true);
             }
 
             if (action.type === 'start') {
-                const blues = players.filter(p => p.team === 'BLUE').length;
-                const reds = players.filter(p => p.team === 'RED').length;
+                const blues = room.players.filter(p => p.team === 'BLUE').length;
+                const reds = room.players.filter(p => p.team === 'RED').length;
                 if (blues === 0 || reds === 0) {
-                    socket.emit('tabu_error', '⚠ Faltan jugadores.\nDebe haber al menos 1 persona en cada equipo.');
+                    return socket.emit('tabu_error', '⚠ Faltan jugadores.\nDebe haber al menos 1 persona en cada equipo.');
+                }
+
+                if (room.isPaused) {
+                    room.isPaused = false;
+                    room.turnData.status = 'PRE_TURN'; 
+                    startPreTurn(io, roomId);
+                    broadcastRoom(io, roomId);
                     return;
                 }
 
-                if (isPaused) {
-                    isPaused = false;
-                    turnData.status = 'PRE_TURN'; 
-                    startPreTurn(io);
-                    broadcast(io);
-                    return;
-                }
+                room.turnData.score = { BLUE: 0, RED: 0 };
+                room.turnData.roundNumber = 0; 
+                room.turnData.currentTeam = 'RED'; 
+                room.turnData.teamIndex = { BLUE: 0, RED: 0 };
+                room.players.forEach(p => p.individualScore = 0);
 
-                turnData.score = { BLUE: 0, RED: 0 };
-                turnData.roundNumber = 0; 
-                turnData.currentTeam = 'RED'; 
-                turnData.teamIndex = { BLUE: 0, RED: 0 };
-                players.forEach(p => p.individualScore = 0);
-
-                gameInProgress = true;
-                isPaused = false;
-                nextTurn(io);
+                room.gameInProgress = true;
+                room.isPaused = false;
+                nextTurn(io, roomId);
             }
 
             if (action.type === 'pause') {
-                if (!gameInProgress) return;
-                isPaused = !isPaused;
-                if(!isPaused && turnData.status === 'PAUSED') {
-                    nextTurn(io);
+                if (!room.gameInProgress) return;
+                room.isPaused = !room.isPaused;
+                if(!room.isPaused && room.turnData.status === 'PAUSED') {
+                    nextTurn(io, roomId);
                 }
-                broadcast(io);
+                broadcastRoom(io, roomId);
             }
 
             if (action.type === 'reset') {
-                performReset(io);
+                performReset(io, roomId);
             }
         }
 
-        // --- JUEGO ---
-        if (gameInProgress && !isPaused && turnData.status === 'PLAYING' && me.id === turnData.describerId) {
+        if (room.gameInProgress && !room.isPaused && room.turnData.status === 'PLAYING' && me.id === room.turnData.describerId) {
             if (action.type === 'correct') {
-                turnData.score[turnData.currentTeam]++;
+                room.turnData.score[room.turnData.currentTeam]++;
                 me.individualScore++;
-                io.to('tabu').emit('playSound', 'correct');
-                pickNewCard();
-                broadcast(io);
+                io.to('tabu_' + roomId).emit('playSound', 'correct');
+                pickNewCard(room);
+                broadcastRoom(io, roomId);
             }
             if (action.type === 'skip') {
-                if (turnData.skipsRemaining > 0) {
-                    turnData.skipsRemaining--;
-                    io.to('tabu').emit('playSound', 'skip');
-                    pickNewCard();
-                    broadcast(io);
+                if (room.turnData.skipsRemaining > 0) {
+                    room.turnData.skipsRemaining--;
+                    io.to('tabu_' + roomId).emit('playSound', 'skip');
+                    pickNewCard(room);
+                    broadcastRoom(io, roomId);
                 }
             }
             if (action.type === 'taboo') {
-                io.to('tabu').emit('playSound', 'wrong');
-                nextTurn(io); 
+                io.to('tabu_' + roomId).emit('playSound', 'wrong');
+                nextTurn(io, roomId); 
             }
         }
     });
 
-    socket.on('disconnect', () => handleDisconnect(socket));
+    socket.on('disconnect', () => {
+        const rId = socket.data.roomId;
+        if (rId && rooms[rId]) {
+            const changed = Utils.handleDisconnect(socket.id, rooms[rId].players, () => {
+                checkRoomInactivity(rId);
+            });
+            if (changed) broadcastRoom(io, rId);
+        }
+    });
 };
 
-const handleJoin = (socket, name) => {
-    if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) return socket.emit('joinError', 'Nombre en uso.');
-    const basePlayer = Utils.createPlayer(socket.id, name);
-    const newPlayer = { ...basePlayer, team: null, individualScore: 0, timeout: null };
-    if(players.length === 0) newPlayer.isAdmin = true;
-    players.push(newPlayer);
-    socket.join('tabu');
-    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'tabu' });
-    broadcast(socket.server);
+const handleJoin = (socket, nameRaw, targetRoomId) => {
+    const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
+    let room;
+
+    if (!targetRoomId || targetRoomId === 'NEW') {
+        if (Object.keys(rooms).length >= 4) return socket.emit('joinError', 'Máximo de salas alcanzado.');
+        const newId = Utils.getRandomCapital(Object.keys(rooms));
+        room = createRoom(newId);
+    } else {
+        room = rooms[targetRoomId];
+        if (!room) {
+             if (Object.keys(rooms).length < 4) room = createRoom(targetRoomId);
+             else return socket.emit('joinError', 'La sala no existe.');
+        }
+    }
+
+    socket.join('tabu_' + room.id);
+    socket.data.roomId = room.id;
+
+    const existing = room.players.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
+    if (existing) {
+        if (!existing.connected) return handleRejoin(socket, existing.id, room.id);
+        return socket.emit('joinError', 'Nombre en uso en esta sala.');
+    }
+
+    const basePlayer = Utils.createPlayer(socket.id, cleanName);
+    const newPlayer = { ...basePlayer, team: null, individualScore: 0 };
+    
+    if(room.players.length === 0 || cleanName.toLowerCase() === 'admin') newPlayer.isAdmin = true;
+    
+    room.players.push(newPlayer);
+    
+    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'tabu', roomId: room.id });
+    
+    checkRoomInactivity(room.id);
+    broadcastRoom(socket.server, room.id);
 };
 
-const handleRejoin = (socket, savedId) => {
-    const p = players.find(x => x.id === savedId);
+const handleRejoin = (socket, savedId, savedRoomId) => {
+    const room = rooms[savedRoomId];
+    if (!room) return socket.emit('sessionExpired');
+
+    const p = room.players.find(x => x.id === savedId);
     if (p) {
-        if(p.timeout) { clearTimeout(p.timeout); p.timeout = null; }
+        if(p.timeout) clearTimeout(p.timeout);
         p.socketId = socket.id;
         p.connected = true;
-        socket.join('tabu');
-        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'tabu', isRejoin: true });
-        broadcast(socket.server);
-    } else socket.emit('sessionExpired');
-};
-
-const handleLeave = (id, io) => { 
-    const p = players.find(x => x.id === id);
-    if(p) {
-        if(p.timeout) clearTimeout(p.timeout);
-        const wasAdmin = p.isAdmin;
-        players = players.filter(x => x.id !== id);
-        if (wasAdmin && players.length > 0) players[0].isAdmin = true;
         
-        if (players.length === 0) {
-            performReset(io);
-        } else if (io) {
-            broadcast(io);
-        }
+        socket.join('tabu_' + room.id);
+        socket.data.roomId = room.id;
+        
+        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'tabu', roomId: room.id, isRejoin: true });
+        
+        checkRoomInactivity(room.id);
+        broadcastRoom(socket.server, room.id);
+    } else {
+        socket.emit('sessionExpired');
     }
 };
 
-const handleDisconnect = (socket) => { 
-    Utils.handleDisconnect(socket.id, players, () => {
-        // Si se vacía, reset total
-        players = [];
-        performReset(socket.server); 
-        // Nota: performReset requiere 'io', pero si el socket se desconecta, 
-        // socket.server es la referencia a io.
-    });
-    if (socket.server) broadcast(socket.server);
+const handleLeave = (playerId, roomId, io, forced = false) => { 
+    const room = rooms[roomId];
+    if (!room) return;
+
+    if (forced) {
+        const p = room.players.find(x => x.id === playerId);
+        if(p && p.socketId) io.to(p.socketId).emit('sessionExpired');
+    }
+
+    const wasAdmin = room.players.find(p => p.id === playerId)?.isAdmin;
+    room.players = room.players.filter(x => x.id !== playerId);
+    
+    if (wasAdmin && room.players.length > 0) room.players[0].isAdmin = true;
+    
+    checkRoomInactivity(roomId);
+
+    if (room.players.length === 0) {
+        performReset(io, roomId);
+    } else {
+        broadcastRoom(io, roomId);
+    }
 };
 
-gameModule.resetInternalState = () => {
-    players = [];
-    // Reset dummy IO object if needed, or just reset vars
-    gameInProgress = false;
-    isPaused = false;
-    if (turnInterval) clearInterval(turnInterval);
-    turnData = { currentTeam: 'BLUE', roundNumber: 1, score: { BLUE: 0, RED: 0 }, status: 'LOBBY' };
+module.exports = {
+    init: (io) => {},
+    handleSocket,
+    handleJoin,
+    handleRejoin,
+    handleLeave,
+    getRooms: () => Object.values(rooms).map(r => ({ id: r.id, players: r.players.length, state: r.gameInProgress ? 'JUGANDO' : 'LOBBY' }))
 };
-
-gameModule.handleJoin = handleJoin;
-gameModule.handleRejoin = handleRejoin;
-gameModule.handleLeave = handleLeave;
-gameModule.handleDisconnect = handleDisconnect;
-
-module.exports = gameModule;

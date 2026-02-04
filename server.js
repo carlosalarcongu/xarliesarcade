@@ -30,7 +30,7 @@ Object.keys(gamesModules).forEach(key => {
 
 io.on('connection', (socket) => {
     
-    // Delegación híbrida (Nuevo/Viejo)
+    // Delegación híbrida (Nuevo/Viejo) para eventos de juego
     Object.keys(gamesModules).forEach(key => {
         const module = gamesModules[key];
         if (module && typeof module.handleSocket === 'function') {
@@ -40,19 +40,17 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- HUB: PETICIÓN DE SALAS ---
+    // --- HUB: PETICIÓN DE SALAS (CORREGIDO) ---
     socket.on('requestHubRooms', () => {
         const allRooms = [];
         
-        // Solo buscamos en Impostor por ahora
-        const gameKey = 'impostor';
-        const module = gamesModules[gameKey];
-
-        if (module) {
-            // DEBUG: Comprobar si el módulo tiene getRooms
-            if (typeof module.getRooms === 'function') {
+        // CORRECCIÓN: Iteramos sobre TODOS los módulos cargados, no solo 'impostor'
+        Object.keys(gamesModules).forEach(gameKey => {
+            const module = gamesModules[gameKey];
+            
+            // Si el módulo tiene la función getRooms (significa que está migrado al sistema de salas)
+            if (module && typeof module.getRooms === 'function') {
                 const rooms = module.getRooms();
-                console.log(`[DEBUG] Solicitud Hub: Encontradas ${rooms.length} salas de ${gameKey}`);
                 
                 rooms.forEach(r => {
                     allRooms.push({
@@ -62,10 +60,8 @@ io.on('connection', (socket) => {
                         status: r.state
                     });
                 });
-            } else {
-                console.log(`[DEBUG] ERROR: El módulo ${gameKey} NO tiene función getRooms.`);
             }
-        }
+        });
 
         socket.emit('hubRoomsUpdate', allRooms);
     });
@@ -82,7 +78,6 @@ io.on('connection', (socket) => {
              if (room === 'lobo') require('./games/lobo').handleJoin(socket, name);
              else if (room === 'anecdotas') require('./games/anecdotas').handleJoin(socket, name);
              else if (room === 'elmas') require('./games/elmas').handleJoin(socket, name);
-             else if (room === 'tabu') require('./games/tabu').handleJoin(socket, name);
              else if (room === 'pinturilloImp') require('./games/pinturilloImp').handleJoin(socket, name);
         }
     });
@@ -99,7 +94,6 @@ io.on('connection', (socket) => {
              if (savedRoom === 'lobo') require('./games/lobo').handleRejoin(socket, savedId);
              else if (savedRoom === 'anecdotas') require('./games/anecdotas').handleRejoin(socket, savedId);
              else if (savedRoom === 'elmas') require('./games/elmas').handleRejoin(socket, savedId);
-             else if (savedRoom === 'tabu') require('./games/tabu').handleRejoin(socket, savedId);
              else if (savedRoom === 'pinturilloImp') require('./games/pinturilloImp').handleRejoin(socket, savedId);
         }
     });
@@ -114,7 +108,6 @@ io.on('connection', (socket) => {
              if (room === 'lobo') require('./games/lobo').handleLeave(playerId, io);
              else if (room === 'anecdotas') require('./games/anecdotas').handleLeave(playerId, io);
              else if (room === 'elmas') require('./games/elmas').handleLeave(playerId, io);
-             else if (room === 'tabu') require('./games/tabu').handleLeave(playerId, io);
              else if (room === 'pinturilloImp') require('./games/pinturilloImp').handleLeave(playerId, io);
         }
     });

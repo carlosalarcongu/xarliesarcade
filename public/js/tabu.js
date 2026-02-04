@@ -48,11 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 socket.on('updateTabuState', (data) => {
+    if (app.currentRoom !== 'tabu') return;
+
     const { players, gameInProgress, turnData, settings, isPaused } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     if(me) app.tabu.iAmAdmin = me.isAdmin;
 
-    // 1. RENDER LOBBY (Si no hay juego Y no estamos en estado ENDED esperando el cierre)
+    // 1. RENDER LOBBY
     if (!gameInProgress && turnData.status !== 'ENDED') {
         app.showScreen('tabuLobby');
         document.getElementById('tabuGameOverModal').classList.add('hidden');
@@ -110,7 +112,7 @@ socket.on('updateTabuState', (data) => {
         }
     } 
     
-    // 2. RENDER JUEGO (O PANTALLA FINAL)
+    // 2. RENDER JUEGO
     else {
         app.showScreen('tabuGame');
         
@@ -125,7 +127,6 @@ socket.on('updateTabuState', (data) => {
         const cardArea = document.getElementById('tabuCardArea');
         const actionButtons = document.getElementById('tabuActionButtons');
         
-        // ESTADO PAUSA
         if (isPaused) {
             cardArea.innerHTML = `
                 <div style="margin-top:50px; text-align:center;">
@@ -143,7 +144,6 @@ socket.on('updateTabuState', (data) => {
             
             const describerObj = players.find(p => p.id === turnData.describerId);
             const describerName = describerObj ? describerObj.name : '...';
-            
             const guessers = players.filter(p => p.team === turnData.currentTeam && p.id !== turnData.describerId);
             const guessersNames = guessers.length > 0 ? guessers.map(g => g.name).join(', ') : 'Nadie';
             
@@ -166,7 +166,6 @@ socket.on('updateTabuState', (data) => {
                         ¡Preparaos!
                     </div>
                 </div>`;
-            
             actionButtons.classList.add('hidden');
         }
         
@@ -223,21 +222,28 @@ socket.on('updateTabuState', (data) => {
     }
 });
 
-socket.on('tabu_error', (msg) => { alert(msg); });
+socket.on('tabu_error', (msg) => { 
+    if (app.currentRoom === 'tabu') alert(msg); 
+});
+
 socket.on('timerTick', (val) => {
+    if (app.currentRoom !== 'tabu') return;
     const el = document.getElementById('timerDisp');
     if(el) {
         el.innerText = val;
         el.style.color = (val <= 10) ? "#ff4757" : "#fff";
     }
 });
+
 socket.on('playSound', (type) => {
+    if (app.currentRoom !== 'tabu') return;
     if(type === 'correct') document.getElementById('revealSound').play().catch(()=>{}); 
     if(type === 'wrong') document.getElementById('dieSound').play().catch(()=>{});
     if(type === 'timeout') document.getElementById('dieSound').play().catch(()=>{});
 });
 
 socket.on('gameOver', (data) => {
+    if (app.currentRoom !== 'tabu') return;
     const modal = document.getElementById('tabuGameOverModal');
     modal.classList.remove('hidden');
     
@@ -250,7 +256,4 @@ socket.on('gameOver', (data) => {
     
     const list = document.getElementById('mvpList');
     list.innerHTML = data.mvp.map(p => `<li>${p.name} <span style="float:right">${p.individualScore} pts</span></li>`).join('');
-    
-    // El servidor reseteará el estado en 10s, lo que provocará un updateState 
-    // con gameInProgress=false, llevándonos al lobby y ocultando este modal.
 });
