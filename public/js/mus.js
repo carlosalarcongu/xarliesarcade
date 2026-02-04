@@ -1,48 +1,106 @@
 app.mus = {
     data: null,
     chartInstance: null,
+    currentRoom: "Entre Nosotros (Las monjas)", 
     
-    // Estado de filtros
-    filter: {
-        player: 'all',
-        pair: 'all',
-        period: 'all', 
-        mode: 'ranking_pair' 
-    },
+    // Lista de emojis
+    emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷','🕸','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦚','🦜','🦢','🦩','🕊','🐇','🦝','🦨','🦡','🦦','🦫','🐁','🐀','🐿','🦔','🐉','🐲'],
 
     init: () => {
-        const viewSelect = document.getElementById('musViewMode');
-        const periodSelect = document.getElementById('musPeriodFilter');
-        
-        if (viewSelect) viewSelect.value = 'ranking_pair';
-        if (periodSelect) periodSelect.value = 'all';
-
         app.mus.refresh();
     },
 
     resetUI: () => {
-        document.getElementById('musStatsContainer').innerHTML = "";
-        document.getElementById('musLogContainer').innerHTML = "";
-        document.getElementById('musChartSection').classList.add('hidden');
         document.getElementById('musScreen').classList.add('hidden');
-        if (app.mus.chartInstance) {
-            app.mus.chartInstance.destroy();
-            app.mus.chartInstance = null;
-        }
     },
 
     refresh: () => {
         socket.emit('mus_action', { type: 'getData' });
     },
 
+    // --- HELPERS ---
+    getAvatar: (name) => {
+        if (!name) return '👤';
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % app.mus.emojis.length;
+        return app.mus.emojis[index];
+    },
+
+    getColor: (pct) => {
+        const colors = [
+            '#ff4757', '#ff6b81', '#ff7f50', '#ffa502', '#eccc68', 
+            '#f1c40f', '#7bed9f', '#2ed573', '#26de81', '#009432'
+        ];
+        const index = Math.min(Math.floor(pct / 10), 9);
+        return colors[index];
+    },
+
+    // --- SALAS ---
+    renderRoomSelector: () => {
+        const sel = document.getElementById('musRoomSelect');
+        if(!sel || !app.mus.data) return;
+        const current = app.mus.currentRoom;
+        
+        let html = `<option value="ABSOLUTA">⭐ ABSOLUTA (Todas)</option>`;
+        app.mus.data.rooms.forEach(r => {
+            html += `<option value="${r}">${r}</option>`;
+        });
+        sel.innerHTML = html;
+        
+        if (app.mus.data.rooms.includes(current) || current === 'ABSOLUTA') {
+            sel.value = current;
+        } else {
+            sel.value = app.mus.data.rooms[0];
+            app.mus.currentRoom = app.mus.data.rooms[0];
+        }
+    },
+
+    changeRoom: () => {
+        const sel = document.getElementById('musRoomSelect');
+        app.mus.currentRoom = sel.value;
+        app.mus.changeView(); 
+    },
+
+    createRoom: () => {
+        const name = prompt("Nombre de la nueva sala:");
+        if(name) socket.emit('mus_action', { type: 'addRoom', value: name });
+    },
+
+    // --- DATOS ---
+    getRoomMatches: () => {
+        if (!app.mus.data) return [];
+        if (app.mus.currentRoom === 'ABSOLUTA') return app.mus.data.matches;
+        return app.mus.data.matches.filter(m => m.roomId === app.mus.currentRoom);
+    },
+
+    getFilteredMatches: () => {
+        const roomMatches = app.mus.getRoomMatches();
+        const period = document.getElementById('musPeriodFilter').value;
+        const now = new Date();
+        let limitDate = null;
+        
+        if(period === '7days') limitDate = new Date(now.setDate(now.getDate() - 7));
+        else if(period === '30days') limitDate = new Date(now.setDate(now.getDate() - 30));
+        else if(period === 'year') limitDate = new Date(now.setFullYear(now.getFullYear() - 1));
+        
+        if (!limitDate) return roomMatches;
+        return roomMatches.filter(m => new Date(m.date) >= limitDate);
+    },
+
+    // --- ACCIONES ---
     addPlayer: () => {
-        const name = prompt("Nombre del nuevo jugador:");
+        const name = prompt("Nombre:");
         if (name) socket.emit('mus_action', { type: 'addPlayer', value: name });
     },
 
     showAddMatchModal: () => {
-        if(!app.myPlayerName) return alert("Debes identificarte en el Hub para registrar partidas.");
+        if(!app.myPlayerName) return alert("Identifícate primero.");
+        if(app.mus.currentRoom === 'ABSOLUTA') return alert("Selecciona una sala específica.");
         document.getElementById('musAddMatchModal').classList.remove('hidden');
+        document.getElementById('matchRoomIndicator').innerText = "Sala: " + app.mus.currentRoom;
         app.mus.renderPlayerSelects();
     },
 
@@ -54,159 +112,186 @@ app.mus = {
         const s1 = document.getElementById('musS1').value;
         const s2 = document.getElementById('musS2').value;
 
-        if (!p1 || !p2 || !p3 || !p4) return alert("Faltan jugadores.");
-        if (!s1 || !s2) return alert("Faltan resultados.");
-
-        if (p1===p2 || p1===p3 || p1===p4 || 
-            p2===p3 || p2===p4 || p3===p4) return alert("Jugadores duplicados.");
-        
-        const score1 = parseInt(s1);
-        const score2 = parseInt(s2);
-        
-        if (score1 + score2 <= 0) {
-            return alert("Las rondas ganadas deben ser mayores que 0.");
-        }
+        if (!p1 || !p2 || !p3 || !p4 || !s1 || !s2) return alert("Datos incompletos.");
+        if (new Set([p1,p2,p3,p4]).size !== 4) return alert("Jugadores duplicados.");
 
         socket.emit('mus_action', { 
             type: 'addMatch', 
-            value: { p1, p2, p3, p4, s1: score1, s2: score2, addedBy: app.myPlayerName } 
+            value: { 
+                roomId: app.mus.currentRoom,
+                p1, p2, p3, p4, 
+                s1: parseInt(s1), s2: parseInt(s2), 
+                addedBy: app.myPlayerName 
+            } 
         });
-        
         document.getElementById('musAddMatchModal').classList.add('hidden');
-        document.getElementById('musS1').value = "";
-        document.getElementById('musS2').value = "";
     },
-    
+
     deleteMatch: (id) => {
-        if(confirm("¿Borrar este registro? Irreversible.")) {
-            const user = app.myPlayerName || "";
-            socket.emit('mus_action', { type: 'deleteMatch', id, user });
-        }
+        if(confirm("¿Borrar?")) socket.emit('mus_action', { type: 'deleteMatch', id, user: app.myPlayerName });
     },
 
     backup: () => {
-        if(confirm("¿Guardar copia de seguridad en feedback log?")) {
-            socket.emit('mus_action', { type: 'backup' });
-        }
-    },
-    
-    // --- GENERADOR ---
-    showPairGenerator: () => {
-        document.getElementById('musPairGenModal').classList.remove('hidden');
-        const container = document.getElementById('genPlayerList');
-        container.innerHTML = "";
-        
-        if(!app.mus.data) return;
-        
-        app.mus.data.players.forEach(p => {
-            const div = document.createElement('div');
-            div.className = "player-check-item";
-            div.innerHTML = `<input type="checkbox" value="${p}" id="chk_${p}"> <label for="chk_${p}">${p}</label>`;
-            container.appendChild(div);
-        });
-    },
-    
-    generatePairs: () => {
-        const checkboxes = document.querySelectorAll('#genPlayerList input:checked');
-        let selected = Array.from(checkboxes).map(c => c.value);
-        
-        if(selected.length < 2) return alert("Selecciona al menos 2 jugadores.");
-        
-        selected = selected.sort(() => Math.random() - 0.5);
-        
-        let html = "<h3>Parejas Generadas</h3><ul style='list-style:none; padding:0'>";
-        while(selected.length >= 2) {
-            const p1 = selected.pop();
-            const p2 = selected.pop();
-            html += `<li style="background:#2f3542; margin:5px; padding:10px; border-radius:5px; border-left:4px solid #e1b12c">${p1} y ${p2}</li>`;
-        }
-        if(selected.length === 1) html += `<li style="color:#aaa; font-style:italic; margin-top:10px">Sobró: ${selected[0]}</li>`;
-        html += "</ul>";
-        document.getElementById('genResults').innerHTML = html;
+        if(confirm("¿Backup?")) socket.emit('mus_action', { type: 'backup' });
     },
 
-    getFilteredMatches: () => {
-        if (!app.mus.data) return [];
-        const matches = app.mus.data.matches;
-        const period = document.getElementById('musPeriodFilter').value;
-        
-        const now = new Date();
-        let limitDate = null;
-        
-        if(period === '7days') limitDate = new Date(now.setDate(now.getDate() - 7));
-        else if(period === '30days') limitDate = new Date(now.setDate(now.getDate() - 30));
-        else if(period === 'year') limitDate = new Date(now.setFullYear(now.getFullYear() - 1));
-        
-        if (!limitDate) return matches;
-        return matches.filter(m => new Date(m.date) >= limitDate);
-    },
-
-    renderPlayerSelects: () => {
-        if (!app.mus.data) return;
-        const opts = app.mus.data.players.map(p => `<option value="${p}">${p}</option>`).join('');
-        ['musP1', 'musP2', 'musP3', 'musP4'].forEach(id => document.getElementById(id).innerHTML = opts);
-        
-        const filterP = `<option value="all">-- Todos --</option>` + opts;
-        document.getElementById('musFilterPlayer').innerHTML = filterP;
-        document.getElementById('musExamPlayer').innerHTML = filterP;
-        
-        const pairs = app.mus.getUniquePairs();
-        const pairOpts = `<option value="all">-- Todas --</option>` + pairs.map(p => `<option value="${p}">${p}</option>`).join('');
-        document.getElementById('musFilterPair').innerHTML = pairOpts;
-        document.getElementById('musExamPair').innerHTML = pairOpts;
-    },
-
+    // --- VISTAS ---
     changeView: () => {
         const mode = document.getElementById('musViewMode').value;
-        app.mus.filter.mode = mode;
-        
         const container = document.getElementById('musStatsContainer');
-        const controls = document.getElementById('musFilterControls');
-        const analysis = document.getElementById('musAnalysisContainer');
-        const logContainer = document.getElementById('musLogContainer');
-        const chartContainer = document.getElementById('musChartSection');
         
-        controls.classList.add('hidden');
-        analysis.classList.add('hidden');
-        logContainer.classList.add('hidden');
-        chartContainer.classList.add('hidden');
-        
-        document.getElementById('divExamPlayer').classList.add('hidden');
-        document.getElementById('divExamPair').classList.add('hidden');
+        const div1vs1 = document.getElementById('div1vs1');
+        const div2vs2 = document.getElementById('div2vs2');
+        const divExamPlayer = document.getElementById('divExamPlayer');
+        const divExamPair = document.getElementById('divExamPair');
+        const chart = document.getElementById('musChartSection');
 
         container.innerHTML = "";
+        div1vs1.classList.add('hidden');
+        div2vs2.classList.add('hidden');
+        divExamPlayer.classList.add('hidden');
+        divExamPair.classList.add('hidden');
+        chart.classList.add('hidden');
 
         if (mode === 'ranking_pair' || mode === 'ranking_player') {
             app.mus.renderRanking(container, mode);
         } 
-        else if (mode === 'examinar_persona' || mode === 'examinar_pareja') {
-            analysis.classList.remove('hidden');
-            // chartContainer.classList.remove('hidden'); // Solo activamos gráfico si no es tabla compleja
-            
-            if (mode === 'examinar_persona') {
-                document.getElementById('divExamPlayer').classList.remove('hidden');
-            } else {
-                document.getElementById('divExamPair').classList.remove('hidden');
-            }
-            app.mus.runAnalysis();
+        else if (mode === 'top_improvement') {
+            app.mus.renderImprovement(container);
         }
         else if (mode === 'recent_log') {
-            logContainer.classList.remove('hidden');
-            app.mus.renderLog(logContainer);
+            app.mus.renderLog(container);
         }
-        else if (mode === 'top_improvement') {
-             app.mus.renderImprovement(container);
+        else if (mode === '1vs1') {
+            div1vs1.classList.remove('hidden');
+            app.mus.renderPlayerSelects(); 
+            app.mus.runHeadToHead();
         }
-        else {
-            controls.classList.remove('hidden');
-            document.getElementById('divFilterPair').classList.toggle('hidden', !mode.includes('pareja'));
-            document.getElementById('divFilterPlayer').classList.toggle('hidden', !mode.includes('persona'));
-            app.mus.renderFilteredStats();
+        else if (mode === '2vs2') {
+            div2vs2.classList.remove('hidden');
+            app.mus.renderPlayerSelects();
+            // IMPORTANTE: Al entrar, actualizamos los rivales disponibles para la pareja seleccionada por defecto
+            app.mus.updateRivalSelector(); 
+        }
+        else if (mode === 'examinar_persona') {
+            divExamPlayer.classList.remove('hidden');
+            app.mus.renderPlayerSelects();
+            app.mus.runAnalysis();
+        }
+        else if (mode === 'examinar_pareja') {
+            divExamPair.classList.remove('hidden');
+            app.mus.renderPlayerSelects();
+            app.mus.runAnalysis();
         }
     },
-    
+
+    // --- RANKING ---
+    renderRanking: (container, mode) => {
+        const matches = app.mus.getFilteredMatches();
+        const stats = {}; 
+        
+        const add = (k, myS, oppS) => {
+            if(!stats[k]) stats[k] = {rWon:0, rLost:0, pPlayed:0};
+            stats[k].pPlayed++;
+            stats[k].rWon += myS;
+            stats[k].rLost += oppS;
+        };
+
+        if (mode === 'ranking_pair') {
+             matches.forEach(m => {
+                add([m.p1, m.p2].sort().join(' y '), m.s1, m.s2);
+                add([m.p3, m.p4].sort().join(' y '), m.s2, m.s1);
+            });
+        } else {
+            matches.forEach(m => {
+                [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
+                    const pTeam = (idx < 2) ? 1 : 2;
+                    add(p, pTeam === 1 ? m.s1 : m.s2, pTeam === 1 ? m.s2 : m.s1);
+                });
+            });
+        }
+        
+        let rows = Object.keys(stats).map(k => {
+             const s = stats[k];
+             const totalR = s.rWon + s.rLost;
+             return {
+                 name: k,
+                 rWon: s.rWon,
+                 rLost: s.rLost,
+                 pPlayed: s.pPlayed,
+                 pct: totalR > 0 ? (s.rWon / totalR) * 100 : 0
+             };
+        });
+        
+        rows.sort((a,b) => b.pct - a.pct); 
+        
+        let html = `<div class="mus-table-wrapper"><table class="mus-table">
+            <tr>
+                <th>Pareja / Jugador</th>
+                <th>% WR</th>
+                <th>R.J.</th>
+                <th>R.G.</th>
+                <th>R.P.</th>
+                <th>P.J.</th>
+            </tr>`;
+        
+        rows.forEach(r => {
+            let nameHtml = "";
+            if (mode === 'ranking_pair') {
+                const [n1, n2] = r.name.split(' y ');
+                nameHtml = `<span class="player-avatar">${app.mus.getAvatar(n1)}</span>${n1} & <span class="player-avatar">${app.mus.getAvatar(n2)}</span>${n2}`;
+            } else {
+                nameHtml = `<span class="player-avatar">${app.mus.getAvatar(r.name)}</span>${r.name}`;
+            }
+
+            const winRateColor = app.mus.getColor(r.pct);
+            
+            html += `<tr>
+                <td style="font-weight:bold; color:#fff" title="${r.name}">${nameHtml}</td>
+                <td style="color:${winRateColor}; font-weight:900">${r.pct.toFixed(1)}%</td>
+                <td>${r.rWon + r.rLost}</td>
+                <td style="color:#2ed573">${r.rWon}</td>
+                <td style="color:#ff4757">${r.rLost}</td>
+                <td>${r.pPlayed}</td>
+            </tr>`;
+        });
+        html += `</table></div>`;
+        container.innerHTML = html;
+    },
+
+    renderLog: (container) => {
+        const matches = [...app.mus.getRoomMatches()].sort((a,b) => b.id - a.id).slice(0, 20); 
+        if(matches.length === 0) { container.innerHTML = "<p>Sin partidas.</p>"; return; }
+
+        let html = `<div class="mus-table-wrapper"><table class="mus-table">
+            <tr>
+                <th style="width:25%">Fecha</th>
+                <th>Resultado</th>
+                <th>Autor</th>
+                <th style="width:10%"></th>
+            </tr>`;
+            
+        matches.forEach(m => {
+            const d = new Date(m.date);
+            const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()<10?'0':''}${d.getMinutes()}`;
+            const res = `<span style="color:#74b9ff">${m.p1}+${m.p2}</span> (${m.s1}) <br>vs<br> <span style="color:#ff7675">${m.p3}+${m.p4}</span> (${m.s2})`;
+            let delBtn = "";
+            if (app.myPlayerName === "Administrador de mus" || app.myPlayerName === "musero" ) {
+                delBtn = `<button onclick="app.mus.deleteMatch(${m.id})" style="padding:4px 8px; background:#e74c3c; font-size:0.8em">🗑️</button>`;
+            }
+            html += `<tr>
+                <td style="font-size:0.8em; color:#aaa">${dateStr}</td>
+                <td style="line-height:1.2">${res}</td>
+                <td style="font-size:0.8em; color:#e1b12c">${m.addedBy || '?'}</td>
+                <td>${delBtn}</td>
+            </tr>`;
+        });
+        html += `</table></div>`;
+        container.innerHTML = html;
+    },
+
     renderImprovement: (container) => {
-        const matches = app.mus.data.matches;
+        const matches = app.mus.getRoomMatches();
         const now = new Date();
         const twoWeeksAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
         
@@ -216,15 +301,12 @@ app.mus = {
         matches.forEach(m => {
             const mDate = new Date(m.date);
             const isRecent = mDate >= twoWeeksAgo;
-            
             [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
                 const target = isRecent ? recentStats : oldStats;
                 if(!target[p]) target[p] = { rounds: 0, total: 0 };
-                
                 const pTeam = (idx < 2) ? 1 : 2;
                 const myRounds = pTeam === 1 ? m.s1 : m.s2;
                 const oppRounds = pTeam === 1 ? m.s2 : m.s1;
-                
                 target[p].rounds += myRounds;
                 target[p].total += (myRounds + oppRounds);
             });
@@ -233,7 +315,7 @@ app.mus = {
         let improvements = [];
         Object.keys(recentStats).forEach(p => {
             if(!oldStats[p]) return; 
-            if(recentStats[p].total < 20) return; 
+            if(recentStats[p].total < 10) return; 
             const oldWR = (oldStats[p].rounds / oldStats[p].total) * 100;
             const newWR = (recentStats[p].rounds / recentStats[p].total) * 100;
             const diff = newWR - oldWR;
@@ -242,152 +324,207 @@ app.mus = {
         
         improvements.sort((a,b) => b.diff - a.diff);
         
-        let html = `<h3>🚀 Mayor Mejora (últimas 2 semanas)</h3>
-        <table class="mus-table"><tr><th>Jugador</th><th>Mejora</th><th>Antes</th><th>Ahora</th></tr>`;
+        let html = `<h3>🚀 Mejora (últimos 14 días)</h3>
+        <div class="mus-table-wrapper"><table class="mus-table"><tr><th>Jugador</th><th>Mejora</th><th>Antes</th><th>Ahora</th></tr>`;
         improvements.slice(0, 5).forEach(i => {
-            html += `<tr><td>${i.name}</td><td style="color:#2ed573; font-weight:bold">+${i.diff}%</td><td>${i.old}%</td><td>${i.cur}%</td></tr>`;
+            html += `<tr>
+                <td style="text-align:left">${app.mus.getAvatar(i.name)} ${i.name}</td>
+                <td style="color:#2ed573; font-weight:bold">+${i.diff}%</td>
+                <td>${i.old}%</td>
+                <td>${i.cur}%</td>
+            </tr>`;
         });
-        html += "</table>";
-        if(improvements.length === 0) html += "<p>No hay suficientes datos recientes.</p>";
+        html += "</table></div>";
+        if(improvements.length === 0) html += "<p style='color:#aaa; margin-top:10px;'>Faltan datos para calcular mejoras.</p>";
         container.innerHTML = html;
     },
 
-    renderLog: (container) => {
-        const matches = [...app.mus.data.matches].sort((a,b) => b.id - a.id).slice(0, 20); 
-        let html = `<table class="mus-table" style="font-size:0.9em"><tr><th>Fecha</th><th>Resultado</th><th>Autor</th><th></th></tr>`;
-        matches.forEach(m => {
+    renderTopMatchesTable: (matchesList) => {
+        matchesList.sort((a,b) => {
+            const totalA = a.s1 + a.s2;
+            const totalB = b.s1 + b.s2;
+            if (totalB !== totalA) return totalB - totalA;
+            return new Date(b.date) - new Date(a.date);
+        });
+
+        const top5 = matchesList.slice(0, 5);
+        if (top5.length === 0) return '';
+
+        let html = `<h4 style="margin-top:25px; color:#aaa; font-size:0.8em; text-transform:uppercase; border-top:1px solid #444; padding-top:10px;">🔥 Top 5: Partidas más largas</h4>
+        <div class="mus-table-wrapper"><table class="mus-table">
+            <tr><th style="width:25%">Fecha</th><th>Resultado</th><th style="width:15%">Total</th></tr>`;
+
+        top5.forEach(m => {
             const d = new Date(m.date);
-            const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()<10?'0':''}${d.getMinutes()}`;
-            const res = `<span style="color:#74b9ff">${m.p1}+${m.p2}</span> (${m.s1}) vs <span style="color:#ff7675">${m.p3}+${m.p4}</span> (${m.s2})`;
-            let delBtn = "";
-            if (app.myPlayerName === "Administrador de mus" || app.myPlayerName === "musero" ) {
-                delBtn = `<button onclick="app.mus.deleteMatch(${m.id})" style="padding:2px 5px; background:#e74c3c; font-size:0.8em">🗑️</button>`;
-            }
-            html += `<tr><td>${dateStr}</td><td>${res}</td><td>${m.addedBy || '?'}</td><td>${delBtn}</td></tr>`;
+            const dateStr = `${d.getDate()}/${d.getMonth()+1}`;
+            const res = `<span style="color:#74b9ff">${m.s1}</span> - <span style="color:#ff7675">${m.s2}</span>`;
+            
+            html += `<tr>
+                <td style="font-size:0.8em; color:#aaa">${dateStr}</td>
+                <td style="font-weight:bold">${res}</td>
+                <td style="color:#e1b12c; font-weight:900">${m.s1 + m.s2}</td>
+            </tr>`;
         });
-        html += `</table>`;
-        container.innerHTML = html;
+
+        return html + '</table></div>';
     },
 
-    // --- RANKING COMPLETO ---
-    renderRanking: (container, mode) => {
-        const filteredMatches = app.mus.getFilteredMatches();
-        const stats = {}; 
+    // --- VS MODES ---
+    runHeadToHead: () => {
+        const p1 = document.getElementById('p1vs').value;
+        const p2 = document.getElementById('p2vs').value;
+        const container = document.getElementById('musStatsContainer');
         
-        // Helper
-        const add = (k, myS, oppS) => {
-            if(!stats[k]) stats[k] = {rWon:0, rLost:0, pWon:0, pLost:0, totalMatches:0};
-            stats[k].totalMatches++;
-            stats[k].rWon += myS;
-            stats[k].rLost += oppS;
-            if (myS > oppS) stats[k].pWon++;
-            else if (oppS > myS) stats[k].pLost++;
-        };
+        if(p1 === p2) { container.innerHTML = "<p>Elige jugadores distintos.</p>"; return; }
 
-        if (mode === 'ranking_pair') {
-             filteredMatches.forEach(m => {
-                const pair1 = [m.p1, m.p2].sort().join(' y ');
-                const pair2 = [m.p3, m.p4].sort().join(' y ');
-                add(pair1, m.s1, m.s2);
-                add(pair2, m.s2, m.s1);
-            });
+        const matches = app.mus.getFilteredMatches();
+        let p1WinsMatch = 0, p2WinsMatch = 0, totalMatches = 0;
+        let p1Rounds = 0, p2Rounds = 0;
+        const headToHeadMatches = [];
+
+        matches.forEach(m => {
+            const t1 = [m.p1, m.p2];
+            const t2 = [m.p3, m.p4];
+            let p1InT1 = t1.includes(p1), p1InT2 = t2.includes(p1);
+            let p2InT1 = t1.includes(p2), p2InT2 = t2.includes(p2);
+
+            if ( (p1InT1 && p2InT2) || (p1InT2 && p2InT1) ) {
+                totalMatches++;
+                const scoreP1 = p1InT1 ? m.s1 : m.s2;
+                const scoreP2 = p1InT1 ? m.s2 : m.s1;
+                
+                p1Rounds += scoreP1; 
+                p2Rounds += scoreP2;
+                
+                if (scoreP1 > scoreP2) p1WinsMatch++;
+                if (scoreP2 > scoreP1) p2WinsMatch++;
+
+                headToHeadMatches.push(m);
+            }
+        });
+
+        const topTableHtml = app.mus.renderTopMatchesTable(headToHeadMatches);
+
+        container.innerHTML = `
+            <div class="vs-container">
+                <div style="font-size:0.9em; color:#aaa">RONDAS GANADAS</div>
+                <div class="vs-score">
+                    <span style="color:#74b9ff">${p1Rounds}</span> - <span style="color:#ff7675">${p2Rounds}</span>
+                </div>
+                <div style="font-size:0.9em; color:#aaa">${totalMatches} Partidas jugadas</div>
+                <div class="vs-detail">
+                    <span>${p1WinsMatch} Victorias</span>
+                    <span>${p2WinsMatch} Victorias</span>
+                </div>
+            </div>
+            ${topTableHtml}
+        `;
+    },
+
+    // --- NUEVA LÓGICA 2VS2 CON FILTRADO DE RIVALES ---
+    updateRivalSelector: () => {
+        const selectedPairStr = document.getElementById('pair1vs').value;
+        const select2 = document.getElementById('pair2vs');
+        const matches = app.mus.getRoomMatches(); // Buscamos en todo el historial de la sala (sin filtro de fecha)
+
+        const rivals = new Set();
+
+        matches.forEach(m => {
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+
+            if (t1 === selectedPairStr) rivals.add(t2);
+            else if (t2 === selectedPairStr) rivals.add(t1);
+        });
+
+        const sortedRivals = Array.from(rivals).sort();
+
+        if (sortedRivals.length === 0) {
+             select2.innerHTML = '<option value="">Sin enfrentamientos</option>';
         } else {
-            filteredMatches.forEach(m => {
-                [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
-                    const pTeam = (idx < 2) ? 1 : 2;
-                    const myS = pTeam === 1 ? m.s1 : m.s2;
-                    const oppS = pTeam === 1 ? m.s2 : m.s1;
-                    add(p, myS, oppS);
-                });
-            });
+             select2.innerHTML = sortedRivals.map(r => `<option value="${r}">${r}</option>`).join('');
         }
         
-        let rows = Object.keys(stats).map(k => {
-             const s = stats[k];
-             const totalRounds = s.rWon + s.rLost;
-             return {
-                 name: k,
-                 rWon: s.rWon,
-                 rLost: s.rLost,
-                 pWon: s.pWon,
-                 pLost: s.pLost,
-                 diff: s.rWon - s.rLost,
-                 totalRounds, // Nuevo para ordenar
-                 pct: totalRounds > 0 ? ((s.rWon / totalRounds) * 100).toFixed(1) : 0
-             };
-        });
-        
-        rows.sort((a,b) => b.pct - a.pct); 
-        
-        let html = `<div class="mus-table-wrapper"><table class="mus-table" style="font-size:0.85em">
-            <tr>
-                <th style="text-align:left">Nombre</th>
-                <th>Win Rate</th>
-                <th>R.J.</th>
-                <th>R.G.</th>
-                <th>R.P.</th>
-                <th>P.J.</th>
-                <th>P.G.</th>
-                <th>P.P.</th>
-            </tr>`;
-        
-        rows.forEach(r => {
-            const color = r.pct >= 55 ? '#2ed573' : (r.pct < 45 ? '#ff4757' : '#ffa502');
-            html += `<tr>
-                <td style="font-weight:bold; text-align:left">${r.name}</td>
-                <td style="color:${color}; font-weight:bold">${r.pct}%</td>
-                <td>${r.totalRounds}</td>
-                <td style="color:${color}; font-weight:bold"">${r.rWon}</td>
-                <td style="color:#aaa">${r.rLost}</td>
-                <td>${r.pWon + r.pLost}</td>
-                <td style="color:#2ed573">${r.pWon}</td>
-                <td style="color:#ff4757">${r.pLost}</td>
-            </tr>`;
-        });
-        html += `</table></div>`;
-        //Leyenda:
-        html += `<p style="margin-top:10px; font-size:0.9em; color:#aaa">
-            <span style="color:#aaa; font-weight:bold">R.J.</span>: Rondas Jugadas |
-            <span style="color:#aaa">R.G.</span>: Rondas Ganadas |
-            <span style="color:#aaa">R.P.</span>: Rondas Perdidas |</p>` +
-            `<p style="margin-top:10px; font-size:0.9em; color:#aaa">
-            <span style="color:#aaa">P.J.</span>: Partidas Jugadas |
-            <span style="color:#aaa">P.G.</span>: Partidas Ganadas |
-            <span style="color:#aaa">P.P.</span>: Partidas Perdidas
-        </p>`;
-        container.innerHTML = html;
+        // Ejecutar cálculo automáticamente con el primer rival
+        app.mus.runPairToPair();
     },
 
-    // --- ANÁLISIS COMPLEJO ---
+    runPairToPair: () => {
+        const pair1Str = document.getElementById('pair1vs').value;
+        const pair2Str = document.getElementById('pair2vs').value;
+        const container = document.getElementById('musStatsContainer');
+
+        if(!pair2Str || pair1Str === pair2Str) { 
+            container.innerHTML = "<p>Selecciona una pareja rival válida.</p>"; 
+            return; 
+        }
+
+        const matches = app.mus.getFilteredMatches();
+        let w1 = 0, w2 = 0, total = 0, r1 = 0, r2 = 0;
+        const pairMatches = [];
+
+        matches.forEach(m => {
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+
+            if ( (t1 === pair1Str && t2 === pair2Str) ) {
+                total++; 
+                w1 += (m.s1 > m.s2 ? 1 : 0); 
+                w2 += (m.s2 > m.s1 ? 1 : 0);
+                r1 += m.s1; r2 += m.s2;
+                pairMatches.push(m);
+            } 
+            else if ( (t1 === pair2Str && t2 === pair1Str) ) {
+                total++; 
+                w2 += (m.s1 > m.s2 ? 1 : 0); 
+                w1 += (m.s2 > m.s1 ? 1 : 0);
+                r2 += m.s1; r1 += m.s2;
+                pairMatches.push(m);
+            }
+        });
+
+        const topTableHtml = app.mus.renderTopMatchesTable(pairMatches);
+
+        container.innerHTML = `
+            <div class="vs-container">
+                <div style="font-size:0.9em; color:#aaa">RONDAS GANADAS</div>
+                <div class="vs-score">
+                    <span style="color:#74b9ff">${r1}</span> - <span style="color:#ff7675">${r2}</span>
+                </div>
+                <div style="font-size:0.9em; color:#aaa">${total} Partidas jugadas</div>
+                <div class="vs-detail">
+                    <span>${w1} Victorias</span>
+                    <span>${w2} Victorias</span>
+                </div>
+            </div>
+            ${topTableHtml}
+        `;
+    },
+
+    // --- ANÁLISIS EXAMINAR ---
     runAnalysis: () => {
         const mode = document.getElementById('musViewMode').value;
         const container = document.getElementById('musStatsContainer');
         const chartContainer = document.getElementById('musChartSection');
         const period = document.getElementById('musPeriodFilter').value;
+        
         container.innerHTML = "";
-
         let entity, type;
 
         if (mode === 'examinar_persona') {
-            document.getElementById('divExamPlayer').classList.remove('hidden');
-            document.getElementById('divExamPair').classList.add('hidden');
             entity = document.getElementById('musExamPlayer').value;
             type = document.getElementById('musExamTypeP').value;
         } else {
-            document.getElementById('divExamPlayer').classList.add('hidden');
-            document.getElementById('divExamPair').classList.remove('hidden');
             entity = document.getElementById('musExamPair').value;
             type = document.getElementById('musExamTypePair').value;
         }
         
         if (entity === 'all') return;
 
-        // Si es una estadística tabular compleja (Mejor compañero/rival), ocultamos gráfico y mostramos tabla
         if (['best_partner', 'best_rival', 'vs_pair_performance'].includes(type)) {
             chartContainer.classList.add('hidden');
             app.mus.renderDetailedAnalysis(container, entity, type);
         } else {
-            // Si es estadística temporal simple, mostramos gráfico
             chartContainer.classList.remove('hidden');
             app.mus.renderChart(entity, period);
         }
@@ -395,9 +532,8 @@ app.mus = {
 
     renderDetailedAnalysis: (container, entity, type) => {
         const matches = app.mus.getFilteredMatches();
-        const stats = {}; // Key: Nombre oponente/compañero -> { rWon, rLost, matches, pWon }
+        const stats = {}; 
         
-        // Helper
         const add = (k, myS, oppS) => {
             if(!stats[k]) stats[k] = {rWon:0, rLost:0, matches:0, pWon:0};
             stats[k].matches++;
@@ -407,19 +543,16 @@ app.mus = {
         };
 
         if (type === 'best_partner') {
-            // Buscamos partidas donde 'entity' jugó y agrupamos por su compañero
             matches.forEach(m => {
                 let partner = null, myS = 0, oppS = 0;
                 if (m.p1 === entity) { partner = m.p2; myS = m.s1; oppS = m.s2; }
                 else if (m.p2 === entity) { partner = m.p1; myS = m.s1; oppS = m.s2; }
                 else if (m.p3 === entity) { partner = m.p4; myS = m.s2; oppS = m.s1; }
                 else if (m.p4 === entity) { partner = m.p3; myS = m.s2; oppS = m.s1; }
-                
                 if (partner) add(partner, myS, oppS);
             });
         } 
         else if (type === 'best_rival') {
-            // Buscamos rivales individuales
             matches.forEach(m => {
                 let rivals = [], myS = 0, oppS = 0;
                 const t1Has = (m.p1 === entity || m.p2 === entity);
@@ -431,7 +564,7 @@ app.mus = {
                 rivals.forEach(r => add(r, myS, oppS));
             });
         }
-        else if (type === 'vs_pair_performance') { // Para examinar pareja
+        else if (type === 'vs_pair_performance') {
              const [pA, pB] = entity.split(' y ');
              matches.forEach(m => {
                  let oppPair = null, myS = 0, oppS = 0;
@@ -445,7 +578,6 @@ app.mus = {
              });
         }
 
-        // Renderizar tabla
         let rows = Object.keys(stats).map(k => {
             const s = stats[k];
             const totalR = s.rWon + s.rLost;
@@ -458,16 +590,15 @@ app.mus = {
             };
         });
 
-        // Ordenar por WinRate
         rows.sort((a,b) => b.pct - a.pct);
 
-        let html = `<div class="mus-table-wrapper"><table class="mus-table" style="font-size:0.9em">
-            <tr><th>Nombre</th><th>% Rondas</th><th>Ganadas</th><th>Perdidas</th><th>Partidas</th></tr>`;
+        let html = `<div class="mus-table-wrapper"><table class="mus-table">
+            <tr><th>Nombre</th><th>% Rondas</th><th>G</th><th>P</th><th>Partidas</th></tr>`;
             
         rows.forEach(r => {
             const color = r.pct >= 55 ? '#2ed573' : (r.pct < 45 ? '#ff4757' : '#ffa502');
             html += `<tr>
-                <td style="text-align:left; font-weight:bold">${r.name}</td>
+                <td style="text-align:left; font-weight:bold">${app.mus.getAvatar(r.name)} ${r.name}</td>
                 <td style="color:${color}">${r.pct}%</td>
                 <td>${r.rWon}</td>
                 <td style="color:#aaa">${r.rLost}</td>
@@ -551,27 +682,74 @@ app.mus = {
         });
     },
 
+    renderPlayerSelects: () => {
+        if (!app.mus.data) return;
+        const players = app.mus.data.players;
+        const opts = players.map(p => `<option value="${p}">${p}</option>`).join('');
+        
+        ['musP1', 'musP2', 'musP3', 'musP4', 'p1vs', 'p2vs'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.innerHTML = opts;
+        });
+        
+        const filterP = `<option value="all">-- Selecciona --</option>` + opts;
+        document.getElementById('musExamPlayer').innerHTML = filterP;
+
+        const pairs = app.mus.getUniquePairs();
+        const pairOpts = `<option value="all">-- Selecciona --</option>` + pairs.map(p => `<option value="${p}">${p}</option>`).join('');
+        ['pair1vs'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.innerHTML = pairOpts;
+        });
+        // pair2vs se llena dinámicamente, no aquí
+        document.getElementById('musExamPair').innerHTML = pairOpts;
+    },
+
     getUniquePairs: () => {
         if(!app.mus.data) return [];
+        const matches = app.mus.getRoomMatches();
         const stats = {};
-        app.mus.data.matches.forEach(m => {
+        matches.forEach(m => {
             stats[[m.p1, m.p2].sort().join(' y ')] = 1;
             stats[[m.p3, m.p4].sort().join(' y ')] = 1;
         });
         return Object.keys(stats).sort();
     },
     
-    renderFilteredStats: () => {
-        const mode = document.getElementById('musViewMode').value;
-        const container = document.getElementById('musStatsContainer');
-        container.innerHTML = "<p>Selecciona una opción del menú.</p>";
+    showPairGenerator: () => {
+        document.getElementById('musPairGenModal').classList.remove('hidden');
+        const container = document.getElementById('genPlayerList');
+        container.innerHTML = "";
+        if(!app.mus.data) return;
+        app.mus.data.players.forEach(p => {
+            const div = document.createElement('div');
+            div.className = "player-check-item";
+            div.innerHTML = `<input type="checkbox" value="${p}" id="chk_${p}"> <label for="chk_${p}" style="color:#fff">${p}</label>`;
+            container.appendChild(div);
+        });
+    },
+    
+    generatePairs: () => {
+        const checkboxes = document.querySelectorAll('#genPlayerList input:checked');
+        let selected = Array.from(checkboxes).map(c => c.value);
+        if(selected.length < 2) return alert("Selecciona al menos 2 jugadores.");
+        selected = selected.sort(() => Math.random() - 0.5);
+        let html = "<ul style='list-style:none; padding:0'>";
+        while(selected.length >= 2) {
+            const p1 = selected.pop();
+            const p2 = selected.pop();
+            html += `<li style="background:#2f3542; margin:5px; padding:10px; border-radius:5px; border-left:4px solid #e1b12c">${p1} y ${p2}</li>`;
+        }
+        if(selected.length === 1) html += `<li style="color:#aaa; font-style:italic; margin-top:10px">Sobró: ${selected[0]}</li>`;
+        html += "</ul>";
+        document.getElementById('genResults').innerHTML = html;
     }
 };
 
 // Listeners
 socket.on('mus_data', (d) => {
     app.mus.data = d;
-    app.mus.renderPlayerSelects();
+    app.mus.renderRoomSelector();
     app.mus.changeView(); 
 });
 socket.on('mus_msg', (msg) => alert(msg));

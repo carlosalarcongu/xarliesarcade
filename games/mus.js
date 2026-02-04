@@ -4,32 +4,84 @@ const path = require('path');
 const DB_FILE = path.join(__dirname, '../mus_database.json');
 const FEEDBACK_FILE = path.join(__dirname, '../feedback_log.txt');
 
+// Estructura por defecto
 let musData = {
+    rooms: ["Entre Nosotros (Las monjas)"],
     players: [],
-    matches: [] 
+    matches: [] // Ahora cada match tendrá una propiedad "roomId"
 };
 
-if (fs.existsSync(DB_FILE)) {
-    try {
-        musData = JSON.parse(fs.readFileSync(DB_FILE));
-        if(!musData.players) musData.players = [];
-        if(!musData.matches) musData.matches = [];
-    } catch (e) {
-        console.error("Error leyendo mus_database.json", e);
+const loadData = () => {
+    if (fs.existsSync(DB_FILE)) {
+        try {
+            const raw = fs.readFileSync(DB_FILE, 'utf8');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                
+                // --- MIGRACIÓN DE DATOS ANTIGUOS ---
+                // Si no hay array de rooms, es la versión vieja.
+                if (!parsed.rooms) {
+                    console.log("[MUS] Migrando base de datos a sistema de salas...");
+                    parsed.rooms = ["Entre Nosotros (Las monjas)"];
+                    // Asignar sala por defecto a todas las partidas antiguas
+                    if (parsed.matches) {
+                        parsed.matches.forEach(m => {
+                            if (!m.roomId) m.roomId = "Entre Nosotros (Las monjas)";
+                        });
+                    }
+                    musData = parsed;
+                    saveData(); // Guardar estructura nueva
+                } else {
+                    musData = parsed;
+                }
+            }
+        } catch (e) {
+            console.error("[MUS] Error DB:", e);
+        }
+    } else {
+        saveData();
     }
-} else {
-    fs.writeFileSync(DB_FILE, JSON.stringify(musData));
-}
+};
 
 const saveData = () => {
-    fs.writeFileSync(DB_FILE, JSON.stringify(musData, null, 2));
+    try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(musData, null, 2));
+    } catch (e) { console.error(e); }
 };
 
+// Carga inicial
+loadData();
+
+// Watcher
+let fsWait = false;
+fs.watch(DB_FILE, (event, filename) => {
+    if (filename && !fsWait) {
+        fsWait = setTimeout(() => { fsWait = false; }, 100);
+        console.log(`[MUS] DB cambiada externamente.`);
+        loadData();
+        // Nota: io se pasa en el export, aquí no lo tenemos accesible globalmente
+        // pero como module.exports es una función, el socket lo maneja abajo.
+    }
+});
+
 module.exports = (io, socket) => {
+    
+    // Al conectar o cambiar algo fuera, emitimos a todos (si se llamara desde watcher)
+    // Para simplificar, el watcher recarga RAM. El cliente pide datos al entrar.
+
     socket.on('mus_action', (action) => {
         
         if (action.type === 'getData') {
             socket.emit('mus_data', musData);
+        }
+
+        if (action.type === 'addRoom') {
+            const r = action.value.trim();
+            if (r && !musData.rooms.includes(r)) {
+                musData.rooms.push(r);
+                saveData();
+                io.emit('mus_data', musData);
+            }
         }
 
         if (action.type === 'addPlayer') {
@@ -44,13 +96,12 @@ module.exports = (io, socket) => {
 
         if (action.type === 'addMatch') {
             const m = action.value;
-            if(!m.addedBy) return;
-
-            const allP = [m.p1, m.p2, m.p3, m.p4];
-            if (new Set(allP).size !== 4) return;
+            // Validar que la sala exista o sea la default
+            if (!musData.rooms.includes(m.roomId)) return;
 
             musData.matches.push({
                 id: Date.now(),
+                roomId: m.roomId,
                 p1: m.p1, p2: m.p2, 
                 p3: m.p3, p4: m.p4, 
                 s1: parseInt(m.s1), 
@@ -62,13 +113,11 @@ module.exports = (io, socket) => {
             io.emit('mus_data', musData);
         }
 
-        // PERMISO ESTRICTO: Solo "Administrador de mus" puede borrar
         if (action.type === 'deleteMatch') {
-             const matchIndex = musData.matches.findIndex(m => m.id === action.id);
-             if(matchIndex !== -1) {
-                 // Verificación estricta del nombre
+             const idx = musData.matches.findIndex(m => m.id === action.id);
+             if(idx !== -1) {
                  if (action.user === "musero" || action.user === "Administrador de mus") {
-                     musData.matches.splice(matchIndex, 1);
+                     musData.matches.splice(idx, 1);
                      saveData();
                      io.emit('mus_data', musData);
                  }
@@ -76,9 +125,9 @@ module.exports = (io, socket) => {
         }
 
         if (action.type === 'backup') {
-            const logLine = `\n--- BACKUP MUS [${new Date().toISOString()}] ---\n${JSON.stringify(musData)}\n----------------\n`;
-            fs.appendFileSync(FEEDBACK_FILE, logLine);
-            socket.emit('mus_msg', 'Copia de seguridad guardada en feedback.');
+            const line = `\n--- BACKUP MUS ${new Date().toISOString()} ---\n${JSON.stringify(musData)}\n`;
+            fs.appendFileSync(FEEDBACK_FILE, line);
+            socket.emit('mus_msg', 'Backup OK');
         }
     });
 };

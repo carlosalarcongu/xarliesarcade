@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+
 /* --- RESET Y BASE --- */
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
 body { background-color: #1e272e; color: white; font-family: 'Poppins', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 15px; padding-bottom: 50px; }
@@ -499,9 +501,10 @@ canvas {
 /* 4. Tablas de Estadísticas (Elegantes) */
 .mus-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 8px; /* Separación entre filas */
+    border-collapse: collapse;
     margin-top: 10px;
+    font-size: 0.85em;
+    table-layout: fixed; /* CRÍTICO: Para controlar anchos exactos */
 }
 
 #musScreen select:active {
@@ -510,13 +513,16 @@ canvas {
 }
 
 .mus-table th {
-    font-family: 'Times New Roman', Times, serif;
-    color: #e1b12c; /* Dorado */
-    font-size: 1.1em;
-    text-align: center;
-    padding: 10px;
-    border-bottom: 2px solid #718093;
-    text-shadow: 1px 1px 0 #000;
+    text-align: center; /* Cabeceras centradas */
+    color: #a4b0be;
+    border-bottom: 1px solid #57606f;
+    padding: 8px 2px;
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 0.75em; /* Un poco más pequeño para que quepa todo */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .mus-table td {
@@ -652,4 +658,239 @@ canvas {
 .timeline-arrow {
     color: #555;
     font-size: 0.8em;
+}
+
+/* --- BARRA DE HERRAMIENTAS SUPERIOR (HUB) --- */
+.tool-bar {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+    justify-content: flex-start; /* Alineado a la izquierda */
+    margin-bottom: 10px;
+}
+
+.mini-card {
+    background-color: #2f3542;
+    padding: 8px 15px;
+    border-radius: 20px; /* Borde redondeado tipo botón */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #fff;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    border-left-width: 5px;
+    border-left-style: solid;
+    transition: transform 0.1s;
+}
+
+.mini-card:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+}
+
+.mini-card .hub-icon {
+    font-size: 1.2em; /* Icono más pequeño */
+    margin: 0;
+}
+
+/* --- ENCABEZADO HUB Y BOTONES SECUNDARIOS --- */
+.header-wrapper {
+    position: relative; /* Para poder posicionar los botones encima */
+    width: 100%;
+    margin-bottom: 25px;
+    padding-top: 10px;
+}
+
+.header-tools-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column; /* Uno debajo del otro o 'row' para lado a lado */
+    gap: 8px;
+    z-index: 10;
+}
+
+.ignored-btn {
+    background-color: transparent;
+    color: #636e72; /* Gris apagado para que parezca inactivo/ignorable */
+    border: 1px solid #2f3542;
+    border-radius: 4px; /* Cuadrado con esquinas muy poco redondeadas */
+    padding: 6px 10px;
+    font-size: 0.75em;
+    font-weight: normal;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: none; /* Sin sombra para que sea plano */
+    width: auto;
+}
+
+.ignored-btn:hover {
+    color: #b2bec3;
+    border-color: #57606f;
+    background-color: rgba(255,255,255,0.05);
+}
+
+.ignored-btn:active {
+    transform: translateY(1px);
+}
+
+/* Ajuste del emoji dentro del botón */
+.ignored-btn span {
+    font-size: 1.1em;
+    filter: grayscale(0.5); /* Apagar un poco el color del emoji */
+}
+
+#musScreen {
+    font-family: 'Cinzel', serif; /* Fuente estilo Naipes */
+    letter-spacing: 0.5px;
+}
+
+#musScreen h1, #musScreen h2, #musScreen h3, #musScreen h4 {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.6);
+    margin-bottom: 15px;
+}
+
+/* Header de Salas */
+.mus-room-header {
+    background: #2f3542;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #e1b12c;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.room-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#musScreen button {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+#musScreen button:active {
+    top: 3px;
+    box-shadow: none;
+    transform: translateY(3px);
+}
+
+/* Inputs y Selects Minimalistas */
+#musScreen select, #musScreen input {
+    background-color: #2f3640;
+    border: 1px solid #57606f;
+    border-radius: 4px;
+    padding: 8px;
+    color: #e1b12c; /* Dorado */
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+}
+
+/* Tablas Minimalistas de Mus */
+.mus-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.85em;
+    table-layout: auto; /* CAMBIO: Auto para adaptarse al contenido */
+}
+
+.mus-table th {
+    text-align: center;
+    color: #a4b0be;
+    border-bottom: 1px solid #57606f;
+    padding: 10px 8px; /* Más padding lateral */
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 0.75em;
+    white-space: nowrap; /* Encabezados en una línea */
+}
+
+/* Columna de Nombre (Identificador) */
+.mus-table th:first-child, .mus-table td:first-child {
+    text-align: left;
+    padding-left: 10px;
+    white-space: nowrap; /* CAMBIO: Nunca romper el nombre en dos líneas */
+    width: 1%; /* Truco CSS: Intenta ser lo más pequeño posible, pero el nowrap lo fuerza a abrirse lo necesario */
+}
+
+.mus-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: #fff;
+    text-align: center;
+    white-space: nowrap; /* Datos numéricos en una línea */
+}
+
+.mus-table tr:last-child td { border-bottom: none; }
+
+/* Emoji del jugador */
+.player-avatar {
+    margin-right: 8px;
+    font-size: 1.3em;
+    vertical-align: middle;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+}
+
+/* Wrapper para scroll horizontal suave */
+.mus-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 1px solid #57606f;
+    background: rgba(0,0,0,0.2);
+}
+
+
+/* Enfrentamientos VS */
+.vs-container {
+    background: rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.vs-score {
+    font-size: 2.5em;
+    font-weight: 900;
+    margin: 10px 0;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.vs-detail {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    color: #aaa;
+    border-top: 1px solid #444;
+    padding-top: 10px;
+    margin-top: 10px;
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xarlie's Arcade</title>
-    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="css/style.css?v=7">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -15,15 +15,21 @@
     <audio id="youDiedSound" src="https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3"></audio>
 
     <div id="hubScreen">
-        <h1 style="color:#ffa502; font-size: 2.8em; margin-bottom: 5px; line-height: 1;">XARLIE'S<br>ARCADE</h1>
-        <p style="color:#7f8fa6; margin-bottom: 25px;">Selecciona una sala:</p>
-        
-        <div class="hub-grid">
-            <div class="hub-card" onclick="app.selectRoom('mus')" style="border-left-color: #ffa502;">
-                <div class="hub-icon">🐄</div>
-                <div class="hub-info"><div class="hub-title">Registro Mus</div><div class="hub-desc">Estadísticas y resultados.</div></div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
+        <div class="header-wrapper">
+            <div class="header-tools-left">
+                <button class="ignored-btn" onclick="app.selectRoom('mus')">
+                    <span>🐄</span> Mus
+                </button>
+                <button class="ignored-btn" onclick="app.showScreen('giveScreen')">
+                    <span>🎁</span> Give
+                </button>
             </div>
+
+            <h1 style="color:#ffa502; font-size: 2.8em; margin: 0; line-height: 1;">XARLIE'S<br>ARCADE</h1>
+        </div>
+
+        <p style="color:#7f8fa6; margin-bottom: 25px;">Selecciona una sala:</p>
+        <div class="hub-grid">
             <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #3301c7;">
                 <div class="hub-icon">🕵️</div>
                 <div class="hub-info"><div class="hub-title">El Impostor</div><div class="hub-desc">Palabras ocultas y espías.</div></div>
@@ -49,22 +55,7 @@
                 <div class="hub-info"><div class="hub-title">Anécdotas</div><div class="hub-desc">Historias verdaderas (o no).</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.showScreen('giveScreen')" style="border-left-color: #00cec9;">
-                <div class="hub-icon">🎁</div>
-                <div class="hub-info">
-                    <div class="hub-title">/give MC</div>
-                    <div class="hub-desc">Consigue objetos para el server.</div>
-                </div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
-            </div>
-            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
-                <div class="hub-icon">A+</div>
-                <div class="hub-info">
-                    <div class="hub-title">Cifras y letras</div>
-                    <div class="hub-desc">Mitico programa de La2</div>
-                </div>
-                <div style="font-size:1.5em; color:#57606f">🔒</div>
-            </div>
+            
             <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
                 <div class="hub-icon">🎨</div>
                 <div class="hub-info">
@@ -74,7 +65,6 @@
                 <div style="font-size:1.5em; color:#57606f">🔒</div>
             </div>
             
-            <!-- <div class="hub-card" onclick="window.location.href='https://skill-fruits-troops-corresponding.trycloudflare.com/'" style="border-left-color: #e74c3c;"> -->
             <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #e74c3c;">
                 <div class="hub-icon">⚔️</div>
                 <div class="hub-info">
@@ -83,6 +73,15 @@
                 </div>
                 <div style="font-size:1.5em; color:#57606f">🔒</div>
             </div>
+             <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
+                <div class="hub-icon">A+</div>
+                <div class="hub-info">
+                    <div class="hub-title">Cifras y letras</div>
+                    <div class="hub-desc">Mitico programa de La2</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">🔒</div>
+            </div>
+
             <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #416348; margin-top: 15px;">
                 <div class="hub-icon">💌</div>
                 <div class="hub-info"><div class="hub-title">Feedback</div><div class="hub-desc">Sugerencias y errores.</div></div>
@@ -93,11 +92,7 @@
     </div>
 
     <div id="loginScreen" class="hidden">
-        <div class="back-nav" style="display:flex; gap:5px;">
-            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
-            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
-            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>        
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
         <h1 style="color:#ffa502">Juego</h1>
         <div class="card">
             <p style="margin-bottom:10px;">Nombre:</p>
@@ -116,12 +111,9 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <h2 style="color:#ffa502">🕵️ Impostor Lobby</h2>
-        
         <div id="impostorAdminPanel" class="hidden admin-panel">
             <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #444;">
-                
                 <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
                     <span>Impostores:</span>
                     <div style="display:flex; align-items:center; gap:5px;">
@@ -130,24 +122,18 @@
                         <button onclick="app.impostor.changeImpostors(1)" style="width:30px; height:30px; padding:0;">+</button>
                     </div>
                 </div>
-
                 <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
                     <span>Categoría:</span>
-                    <select id="impostorCategory" style="width:120px; border-radius:5px; padding:2px;">
-                        </select>
+                    <select id="impostorCategory" style="width:120px; border-radius:5px; padding:2px;"></select>
                 </div>
-                
                 <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
                     <span>Pistas:</span>
                     <input type="checkbox" id="impostorHints" style="width:20px; height:20px;">
                 </div>
             </div>
-
             <button class="start-btn" onclick="app.impostor.startGame()">▶️ EMPEZAR PARTIDA</button>
         </div>
-
         <p id="waitMsg" style="color:#aaa; font-style:italic;">Esperando al administrador...</p>
-        
         <h3>Jugadores (<span id="playerCount">0</span>)</h3>
         <ul id="playerList"></ul>
     </div>
@@ -157,44 +143,34 @@
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>        
-        
+        </div>    
         <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
             <h2 style="margin:0">En Curso</h2>
         </div>
-
         <div id="observerMsg" class="hidden" style="background:#e67e22; color:white; padding:10px; border-radius:5px; margin-bottom:15px; font-weight:bold; border:2px solid #d35400;">
             👁️ Solo eres un observador en esta partida, espera a la siguiente...
         </div>
-
         <div id="roleCard" class="blur-content" onclick="app.impostor.toggleRole()">
             <h1 id="myRoleTitle">...</h1>
             <p id="myRoleWord" style="font-size: 2em; font-weight: 900; color: #ffeaa7; margin: 10px 0;">...</p>
             <p id="myRoleInfo" style="font-size: 0.9em; color: #ccc;">...</p>
         </div>
         <div class="card-note">👆 Clicar o mantener para ver rol</div>
-
         <div style="font-size: 0.8em; color:#888; margin-bottom: 20px;">
             Iniciador: <span id="starterName" style="color:white">...</span> | Cat: <span id="catsPlayed" style="color:white">...</span>
         </div>
-
         <div id="voteSection" class="hidden" style="width:100%">
             <h3 style="color:#ff4757">🗳️ ¡VOTAR AL IMPOSTOR!</h3>
-            
             <div style="display:flex; justify-content:flex-end; margin-bottom:10px; gap: 5px;">
                  <button id="btnShowResults" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px; background:#ffa502;" onclick="app.impostor.revealResults()">👁️ Resultados</button>
-                 
                  <button id="btnEndVoting" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px;" onclick="app.impostor.resetGame()">⏹️ Finalizar</button>
                  <button id="btnClearVotes" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px; background:#555;" onclick="app.impostor.clearVotes()">Limpiar Votos</button>
             </div>
-            
             <div id="voteGrid" class="vote-grid"></div>
         </div>
-        
         <div id="countdownOverlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; display:flex; justify-content:center; align-items:center;">
             <div id="countdownNumber" style="font-size:10em; color:#ff4757; font-weight:900;">3</div>
         </div>
-        
         <div id="summaryModal" class="hidden modal-overlay">
             <h1 style="color:#e17055; font-size:3em;">RESUMEN</h1>
             <h2 id="sumWord" style="color:#ffeaa7; font-size:2.5em; margin:10px 0;"></h2>
@@ -213,9 +189,7 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <h2 style="color:#74b9ff">🐺 Sala El Lobo</h2>
-        
         <div id="loboAdminPanel" class="admin-panel hidden">
             <div class="control-row">
                 <button onclick="app.lobo.adj('wolvesCount',-1)">-</button>
@@ -232,7 +206,6 @@
             </div>
             <button class="start-btn" onclick="app.lobo.start()">🌙 EMPEZAR</button>
         </div>
-        
         <p id="loboWaitMsg" style="color:#aaa">Esperando al admin...</p>
         <h3>Aldeanos (<span id="loboPlayerCount">0</span>)</h3>
         <ul id="loboPlayerList" style="margin-top:20px"></ul>
@@ -244,12 +217,10 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <div style="text-align:center; margin-bottom:15px; background:#2f3542; padding:10px; border-radius:10px; border:2px solid #74b9ff">
             <h2 id="loboPhaseTitle" style="margin:0; color:#fff">...</h2>
             <p id="loboPhaseDesc" style="margin:5px 0 0 0; color:#aaa; font-size:0.9em">...</p>
         </div>
-
         <div id="loboCard" class="blur-content" onclick="app.lobo.toggleRole()" style="margin-bottom: 20px;">
             <h1>Tu Rol</h1>
             <div id="loboRoleTitle" style="font-size:2.5em; font-weight:bold; color:white;">...</div>
@@ -260,16 +231,12 @@
             </div>
         </div>
         <div class="card-note">👆 Toca para ver tu rol discretamente</div>
-
         <div id="loboNightActionArea" class="hidden" style="width:100%; margin-bottom:20px; border: 2px dashed #a29bfe; padding:10px; border-radius:10px;"></div>
-
         <button id="btnLoboPhaseAction" onclick="app.lobo.sendPhaseAction()" class="main-btn" style="background:#6c5ce7; margin-bottom:10px;">
             Me duermo 💤
         </button>
         <p id="loboWaitingText" style="text-align:center; color:#aaa; display:none; margin-bottom:10px;">Esperando al resto...</p>
-
         <div id="loboTimeline" class="timeline-container"></div>
-
         <div id="loboDaySection" class="hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h3 style="color:#74b9ff; margin:0">🗳️ Pueblo</h3>
@@ -277,28 +244,14 @@
             </div>
             <div id="loboVoteGrid" class="vote-grid"></div>
         </div>
-
         <button onclick="app.lobo.reset()" class="kick-btn hidden" id="loboResetBtn" style="margin-top:20px; width:100%;">Resetear Partida</button>
-    
         <div id="loboWinModal" class="hidden modal-overlay" style="justify-content: flex-start; padding-top: 50px; overflow-y: auto;">
             <h1 id="loboWinTitle" style="font-size:3em; margin-bottom: 20px;">VICTORIA</h1>
-            
             <div style="background:#2f3542; padding:15px; border-radius:10px; width:100%; max-width: 400px; border: 2px solid #57606f;">
                 <h3>Resumen de la Partida</h3>
-                <div id="loboWinList" style="text-align:left; margin-top: 15px;">
-                    </div>
+                <div id="loboWinList" style="text-align:left; margin-top: 15px;"></div>
             </div>
-
             <button onclick="app.lobo.reset()" class="main-btn" style="margin-top:20px; width: auto; padding: 15px 30px;">Nueva Partida</button>
-        </div>
-    </div>
-
-        <button onclick="app.lobo.reset()" class="kick-btn hidden" id="loboResetBtn" style="margin-top:20px; width:100%;">Resetear Partida</button>
-    
-        <div id="loboWinModal" class="hidden modal-overlay">
-            <h1 id="loboWinTitle" style="font-size:3em; color:#ffeaa7">VICTORIA</h1>
-            <div id="loboWinList" style="text-align:left; background:#222; padding:20px; border-radius:10px; width:100%; max-height:60vh; overflow-y:auto;"></div>
-            <button onclick="app.lobo.reset()" class="main-btn" style="margin-top:20px;">Nueva Partida</button>
         </div>
     </div>
 
@@ -308,7 +261,6 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <h2 style="color:#ff9ff3">📜 Anécdotas</h2>
         <div class="card" style="background:#dfe6e9; border:none;">
             <h3 style="color:#2d3436">Tu historia:</h3>
@@ -325,15 +277,12 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
-
         <div id="anecdotasRevealModal" class="hidden modal-overlay">
             <h2 style="color:#ccc">El autor era...</h2>
             <h1 style="color:#2ed573; font-size:3.5em; margin:20px 0;" id="revealAuthor">...</h1>
             <div id="revealVoters" style="color:#fff; font-weight:bold;"></div>
             <p style="color:#aaa; margin-top:30px;">Siguiente en 5s...</p>
         </div>
-        
         <div id="anecdotasPodiumModal" class="hidden modal-overlay">
             <h1 style="color:#f1c40f; margin-bottom:30px;">🏆 GANADORES</h1>
             <div class="podium-container">
@@ -343,7 +292,6 @@
             </div>
             <button onclick="app.anecdotas.reset()" class="main-btn" style="margin-top:30px">Volver al Lobby</button>
         </div>
-
         <h3 id="roundCounter" style="color:#aaa">Ronda 1</h3>
         <div class="anecdota-card">
             <p id="currentAnecdotaText">...</p>
@@ -360,16 +308,16 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <h2 style="color:#ff9f43">🏆 El MÁS...</h2>
         <div id="elmasAdminPanel" class="admin-panel hidden">
-            <div class="control-row">
+            <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
                 <span>Rondas:</span>
                 <input type="number" id="elmasRoundsInput" value="5" min="3" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center; color:#000;">
             </div>
-            <button class="start-btn" onclick="app.elmas.start()">▶️ EMPEZAR</button>
+            <button id="btnStartElMas" class="start-btn" onclick="app.elmas.start()">▶️ EMPEZAR</button>
         </div>
         <ul id="elmasList" style="margin-top:20px;"></ul>
+        <p id="elmasWaitMsg" style="color:#aaa">Esperando al admin...</p>
     </div>
 
     <div id="elmasGame" class="hidden">
@@ -378,33 +326,24 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
-
         <h4 id="elmasRoundCount" style="color:#aaa">Ronda 1/5</h4>
-        
         <div class="card" style="background:#ff9f43; color:#2d3436; border:none; margin-bottom: 20px;">
             <p id="elmasQuestionText" style="font-size:1.5em; font-weight:900; margin: 10px 0;">...</p>
         </div>
-
         <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-bottom:20px; color:#aaa; font-size:0.9em;">
             <span>¿Te gustó la pregunta? (Opcional)</span>
             <button id="btnLike" onclick="app.elmas.rateQuestion('like')" style="background:none; border:none; font-size:1.5em; padding:0;">👍</button>
             <button id="btnDislike" onclick="app.elmas.rateQuestion('dislike')" style="background:none; border:none; font-size:1.5em; padding:0;">👎</button>
         </div>
-        
         <div id="elmasVotingGrid" class="vote-grid"></div>
-        
         <br>
-        
         <button id="elmasNextBtn" class="main-btn hidden" onclick="app.elmas.next()">📊 Ver Votos</button>
         <button id="elmasContinueBtn" class="main-btn hidden" onclick="app.elmas.continue()">➡️ Siguiente Pregunta</button>
-        
         <button onclick="app.elmas.reset()" class="kick-btn hidden" style="margin-top:30px">Reset Total (Admin)</button>
     </div>
 
     <div id="elmasPodiumModal" class="hidden modal-overlay">
         <h1 style="color:#ff9f43; margin-bottom:30px">🏆 RESULTADOS 🏆</h1>
-        
         <div class="podium-container">
             <div class="podium-bar p-silver"><span class="p-name" id="podium2">...</span>🥈</div>
             <div class="podium-bar p-gold"><span class="p-name" id="podium1">...</span>🥇</div>
@@ -420,7 +359,6 @@
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
         <h2 style="color:#00b894">🚫 Sala Tabú</h2>
-        
         <div style="display:flex; gap:10px; margin-bottom:20px; width:100%">
             <div style="flex:1">
                 <button id="btnTeamBLUE" class="team-btn team-blue" onclick="app.tabu.joinTeam('BLUE')" style="width:100%">AZUL 🔵</button>
@@ -431,43 +369,35 @@
                 <ul id="listRed" style="margin-top:5px; min-height:50px; background:rgba(214, 48, 49, 0.2)"></ul>
             </div>
         </div>
-        
         <h4 style="color:#aaa">Espectadores:</h4>
         <ul id="listSpectators"></ul>
-
         <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
             <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px; border: 1px solid #444;">
-                
                 <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
                     <span>Rondas:</span>
                     <input type="number" id="tabuRounds" value="3" min="1" 
                            style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
                 </div>
-                
                 <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
                     <span>Tiempo (s):</span>
                     <input type="number" id="tabuDuration" value="60" step="10" min="10" 
                            style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
                 </div>
-                
                 <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
                     <span>Saltos:</span>
                     <input type="number" id="tabuSkips" value="3" min="0" 
                            style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
                 </div>
-
                 <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
                     <span>Pausa/Ronda:</span>
                     <input type="checkbox" id="tabuPause" style="width:20px; height:20px;">
                 </div>
             </div>
-            
             <div style="display:flex; gap:10px;">
                 <button id="btnRandomTeams" onclick="app.tabu.randomize()" class="kick-btn" style="background:#a55eea; font-size:0.9em; width:auto; padding:15px;">🎲 Random</button>
                 <button id="btnStartTabu" class="start-btn" onclick="app.tabu.start()" style="flex:1;">▶️ EMPEZAR</button>
             </div>
         </div>
-        
         <p id="tabuWaitMsg" style="color:#aaa">Esperando al admin...</p>
     </div>
 
@@ -477,7 +407,6 @@
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <div style="display:flex; justify-content:space-between; background:#2f3542; padding:10px; border-radius:10px; border:2px solid #57606f; margin-bottom:20px;">
             <div style="color:#0984e3; font-weight:bold; font-size:1.5em">🔵 <span id="scoreBlue">0</span></div>
             <div style="text-align:center">
@@ -486,23 +415,17 @@
             </div>
             <div style="color:#d63031; font-weight:bold; font-size:1.5em"><span id="scoreRed">0</span> 🔴</div>
         </div>
-
         <div id="tabuCardArea" style="width:100%"></div>
-
         <div id="tabuActionButtons" class="hidden" style="position:fixed; bottom:20px; left:0; width:100%; padding:20px; display:flex; gap:10px;">
             <button onclick="app.tabu.taboo()" style="background:#ff4757; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #c0392b">🚫 MAL</button>
-            
             <button id="btnSkip" onclick="app.tabu.skip()" style="background:#ffa502; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #e67e22; color:#000;">⏭️ SALTAR</button>
-            
             <button onclick="app.tabu.correct()" style="background:#2ed573; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #218c74">✅ BIEN</button>
         </div>
-        
         <div id="tabuGameOverModal" class="hidden modal-overlay">
             <h1 id="winnerText" style="color:#a55eea; font-size:3em">...</h1>
             <h2 id="finalScoreText" style="color:#fff">0 - 0</h2>
             <h3 style="margin-top:20px; color:#aaa">Estadísticas (Aciertos)</h3>
             <ul id="mvpList" style="max-height:300px; overflow-y:auto; text-align:left;"></ul>
-            
             <button id="tabuAdminResetBtn" onclick="app.tabu.reset()" class="main-btn hidden" style="margin-top:20px">Volver al Lobby (Admin)</button>
             <p id="tabuWaitingMsg" class="waiting-text hidden">Esperando al admin...</p>
         </div>
@@ -536,28 +459,13 @@
         </div>
     </div>
 
-    <div id="giveScreen" class="hidden">
-        <h2 style="color:#00cec9">🎁 Recompensas</h2>
-        <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">
-            Elige tu recompensa.<br>
-            <span style="color:#ff7675">Espera 15s entre regalos.</span>
-        </p>
-
-        <div class="card" style="background:#2d3436; border:none;">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            </div>
-        </div>
-    </div>
-
     <div id="pinturilloImpLobby" class="hidden">
         <div class="back-nav" style="display:flex; gap:5px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <h2 style="color:#7830ff">🎨 El Falso Artista</h2>
-        
         <div id="pintuImpAdminControls" class="admin-panel hidden">
             <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #444;">
                 <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
@@ -568,12 +476,10 @@
                         <button onclick="app.pinturilloImp.changeImpostors(1)" style="width:30px; height:30px; padding:0;">+</button>
                     </div>
                 </div>
-                
                 <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
                     <span>Vueltas:</span>
                     <input type="number" id="pintuRounds" value="1" min="1" max="5" style="width:50px; text-align:center; border-radius:5px;">
                 </div>
-
                 <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
                     <span>Categoría:</span>
                     <select id="pintuCategory" style="width:100px; border-radius:5px;">
@@ -583,51 +489,41 @@
                         <option value="ACCION">Acciones</option>
                     </select>
                 </div>
-
                 <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
                     <span>Pistas:</span>
                     <input type="checkbox" id="pintuHints" style="width:20px; height:20px;">
                 </div>
             </div>
-
             <button class="start-btn" onclick="app.pinturilloImp.start()">▶️ EMPEZAR</button>
         </div>
-
         <p id="pintuImpWaitMsg" style="color:#aaa">Esperando al admin...</p>
         <h3>Jugadores (<span id="pintuImpCount">0</span>)</h3>
         <ul id="pintuImpList"></ul>
     </div>
 
     <div id="pinturilloImpGame" class="hidden">
-        <div class="back-nav" style="display:flex; gap:5px;">
+        <div class="back-nav" style="display:flex; gap:5px; margin-bottom:10px;">
             <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
             <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
         </div>        
-        
         <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.9em; text-align:center; margin-bottom:5px;"></div>
-
         <div class="card-note">👆 Toca la tarjeta para ver tu rol</div>
-
         <div id="pintuImpRoleCard" class="blur-content" onclick="app.pinturilloImp.toggleRole()" style="margin-bottom: 20px; background: #2f3542; padding: 20px; border-radius: 10px; border: 2px solid #57606f;">
             <h1 id="pintuImpRoleTitle" style="margin:0;">...</h1>
             <p id="pintuImpRoleWord" style="font-size:1.5em; color:#e1b12c; margin:5px 0;">...</p>
             <p id="pintuImpHint" style="font-size:0.9em; color:#74b9ff; margin:0; display:none;">...</p>
         </div>
-
         <div id="pintuImpDrawArea" class="hidden" style="width:100%">
             <div id="drawStatus" class="draw-status">...</div>
-            
             <div class="canvas-container">
                 <canvas id="pintuImpCanvas" width="300" height="300"></canvas>
             </div>
-
             <div class="canvas-controls hidden" id="myDrawControls">
                 <button onclick="app.pinturilloImp.undo()" style="width:48%; background:#eb4d4b">Deshacer</button>
                 <button id="btnPassTurn" onclick="app.pinturilloImp.passTurn()" style="width:48%; background:#6ab04c" disabled>Pasar</button>
             </div>
         </div>
-
         <div id="pintuImpVoteSection" class="hidden" style="width:100%; margin-top:20px;">
             <h3 style="color:#ff4757">🗳️ ¡VOTACIÓN!</h3>
             <div style="display:flex; justify-content:flex-end; margin-bottom:10px; gap:5px;">
@@ -637,7 +533,6 @@
             </div>
             <div id="pintuImpVoteGrid" class="vote-grid"></div>
         </div>
-        
         <div id="pintuImpSummaryModal" class="hidden modal-overlay">
             <h1 style="color:#e17055; font-size:3em;">RESUMEN</h1>
             <h2 id="pintuImpSumWord" style="color:#ffeaa7; font-size:2.5em; margin:10px 0;"></h2>
@@ -655,12 +550,18 @@
     </div>
 
     <div id="musScreen" class="hidden">
-        <div class="back-nav" style="display:flex; gap:5px;">
-            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
-            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
-            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>        
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
         <h2 style="color:#e1b12c; margin-bottom:5px;">🐄 Registro de Mus</h2>
+        
+        <div class="mus-room-header">
+            <label style="color:#aaa; font-size:0.8em; text-transform:uppercase;">Sala de Juego:</label>
+            <div class="room-controls">
+                <select id="musRoomSelect" onchange="app.mus.changeRoom()" style="flex:1; font-size:1em;">
+                    </select>
+                <button onclick="app.mus.createRoom()" style="background:#27ae60; width:auto;">+</button>
+            </div>
+        </div>
+
         
         <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
             <button class="kick-btn" style="width:auto; font-size:0.8em; background:#44bd32" onclick="app.mus.addPlayer()">+ Jugador</button>
@@ -669,8 +570,8 @@
             <button class="kick-btn" style="width:auto; font-size:1.2em; background:#d63031; padding: 5px 15px;" onclick="app.mus.backup()">💾</button>
         </div>
 
-        <div class="card" style="padding:10px; margin-bottom:15px; background:#222;">
-            <div style="display:flex; gap:10px;">
+        <div class="card" style="padding:10px; margin-bottom:15px; background:#222; border: 1px solid #444;">
+            <div style="display:flex; gap:10px; margin-bottom: 10px;">
                 <div style="flex:1">
                     <label style="color:#aaa; font-size:0.8em;">Periodo:</label>
                     <select id="musPeriodFilter" onchange="app.mus.changeView()" style="width:100%; font-size:0.9em;">
@@ -686,91 +587,143 @@
                         <option value="ranking_pair" selected>🏆 Ranking Parejas</option>
                         <option value="ranking_player">👤 Ranking Individual</option>
                         <option value="top_improvement">🚀 Mayor Mejora WinRate</option>
-                        <option value="recent_log">📝 Últimos Registros</option>
+                        <option value="1vs1">⚔️ 1 vs 1 (Cara a Cara)</option>
+                        <option value="2vs2">⚔️ 2 vs 2 (Duelo Parejas)</option>
+                        <option value="recent_log">📝 Historial Partidas</option>
                         <option value="examinar_persona">🔬 Examinar Persona</option>
                         <option value="examinar_pareja">🔬 Examinar Pareja</option>
                     </select>
                 </div>
             </div>
-
-            <div id="musFilterControls" class="hidden" style="margin-top:10px;">
-                <div id="divFilterPair" class="hidden">
-                    <label>Pareja:</label>
-                    <select id="musFilterPair" onchange="app.mus.changeView()" style="width:100%"></select>
-                </div>
-                <div id="divFilterPlayer" class="hidden">
-                    <label>Jugador:</label>
-                    <select id="musFilterPlayer" onchange="app.mus.changeView()" style="width:100%"></select>
+            <div id="div1vs1" class="hidden" style="margin-top:10px; background:#2f3542; padding:10px; border-radius:8px;">
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <select id="p1vs" onchange="app.mus.runHeadToHead()" style="flex:1"></select>
+                    <span style="font-weight:bold; color:#ff4757">VS</span>
+                    <select id="p2vs" onchange="app.mus.runHeadToHead()" style="flex:1"></select>
                 </div>
             </div>
-
-            <div id="musAnalysisContainer" class="hidden" style="margin-top:10px; border-top:1px solid #444; padding-top:10px;">
-                <div id="divExamPlayer" class="hidden">
-                    <label>Persona:</label>
+            <div id="div2vs2" class="hidden" style="margin-top:10px; background:#2f3542; padding:10px; border-radius:8px;">
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <select id="pair1vs" onchange="app.mus.updateRivalSelector()" style="width:100%"></select>
+                    <div style="text-align:center; font-weight:bold; color:#ff4757">VS</div>
+                    <select id="pair2vs" onchange="app.mus.runPairToPair()" style="width:100%"></select>
+                </div>
+            </div>
+            <div id="divExamPlayer" class="hidden" style="margin-top:10px;">
+                <label>Persona:</label>
                     <select id="musExamPlayer" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
-                    <label>Analizar:</label>
+                <label>Analizar:</label>
                     <select id="musExamTypeP" onchange="app.mus.runAnalysis()" style="width:100%">
-                        <option value="vs_win">Evolución % Victorias (Gráfico)</option>
+                        <option value="vs_win">Evolución % Victorias</option>
                         <option value="best_partner">🤝 Mejor Compañero</option>
-                        <option value="best_rival">⚔️ Mejor Rival (Más ganado)</option>
+                        <option value="best_rival">⚔️ Mejor Rival</option>
                     </select>
-                </div>
-                <div id="divExamPair" class="hidden">
-                    <label>Pareja:</label>
-                    <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
-                    <label>Analizar:</label>
-                    <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width:100%">
-                        <option value="vs_pair_win">Evolución % Victorias (Gráfico)</option>
-                        <option value="vs_pair_performance">🆚 Desempeño vs Rivales</option>
-                    </select>
-                </div>
             </div>
-            
+            <div id="divExamPair" class="hidden" style="margin-top:10px;">
+                <label>Pareja:</label>
+                <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
+                <label>Analizar:</label>
+                <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width:100%">
+                    <option value="vs_pair_win">Evolución % Victorias</option>
+                    <option value="vs_pair_performance">🆚 Desempeño vs Rivales</option>
+                </select>
+            </div>
             <div id="musChartSection" class="hidden" style="margin-top:15px; height:200px;">
                 <canvas id="musChartCanvas"></canvas>
             </div>
         </div>
 
-        <div id="musStatsContainer" style="text-align:center;"></div>
-        <div id="musLogContainer" class="hidden"></div>
         
+        <div id="musFilterControls" class="hidden" style="margin-top:10px;">
+            <div id="divFilterPair" class="hidden">
+                <label>Pareja:</label>
+                <select id="musFilterPair" onchange="app.mus.changeView()" style="width:100%"></select>
+            </div>
+            <div id="divFilterPlayer" class="hidden">
+                <label>Jugador:</label>
+                <select id="musFilterPlayer" onchange="app.mus.changeView()" style="width:100%"></select>
+            </div>
         </div>
 
+        <div id="musAnalysisContainer" class="hidden" style="margin-top:10px; border-top:1px solid #444; padding-top:10px;">
+            <div id="divExamPlayer" class="hidden">
+                <label>Persona:</label>
+                <select id="musExamPlayer" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
+                <label>Analizar:</label>
+                <select id="musExamTypeP" onchange="app.mus.runAnalysis()" style="width:100%">
+                    <option value="vs_win">Evolución % Victorias (Gráfico)</option>
+                    <option value="best_partner">🤝 Mejor Compañero</option>
+                    <option value="best_rival">⚔️ Mejor Rival (Más ganado)</option>
+                </select>
+            </div>
+            <div id="divExamPair" class="hidden">
+                <label>Pareja:</label>
+                <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>
+                <label>Analizar:</label>
+                <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width:100%">
+                    <option value="vs_pair_win">Evolución % Victorias (Gráfico)</option>
+                    <option value="vs_pair_performance">🆚 Desempeño vs Rivales</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="musChartSection" class="hidden" style="margin-top:15px; height:200px;">
+            <canvas id="musChartCanvas"></canvas>
+        </div>
+
+        <div id="musStatsContainer" style="text-align:center;"></div>
+
+        <div id="musLogContainer" class="hidden"></div>
+        
         <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:center; padding-top:50px; overflow-y:auto;">
-            <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:400px; border:2px solid #57606f;">
-                <h3 style="margin-top:0;">Nueva Partida</h3>
+            <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:400px; border:2px solid #e1b12c;">
+                <h3 style="margin-top:0; color:#e1b12c">Anotar Partida</h3>
+                <p id="matchRoomIndicator" style="color:#aaa; font-size:0.8em; margin-bottom:10px;">Sala: ...</p>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="flex:1; text-align:center; background:rgba(9, 132, 227, 0.2); padding:5px; border-radius:5px;">
-                        <h4 style="margin:0; color:#74b9ff">Pareja 1</h4>
-                        <select id="musP1" style="width:90%; margin:5px 0;"></select>
-                        <select id="musP2" style="width:90%; margin:5px 0;"></select>
-                        <input type="number" id="musS1" placeholder="Rondas" style="width:100px; text-align:center;">
+                    <div style="flex:1; text-align:center; background:rgba(9, 132, 227, 0.1); padding:5px; border-radius:5px;">
+                        <h4 style="margin:0; color:#74b9ff; font-size:0.9em">Pareja 1</h4>
+                        <select id="musP1" style="width:95%; margin:2px 0;"></select>
+                        <select id="musP2" style="width:95%; margin:2px 0;"></select>
+                        <input type="number" id="musS1" placeholder="0" style="width:60px; text-align:center; margin-top:5px;">
                     </div>
-                    <div style="font-weight:bold; padding:0 5px;">VS</div>
-                    <div style="flex:1; text-align:center; background:rgba(214, 48, 49, 0.2); padding:5px; border-radius:5px;">
-                        <h4 style="margin:0; color:#ff7675">Pareja 2</h4>
-                        <select id="musP3" style="width:90%; margin:5px 0;"></select>
-                        <select id="musP4" style="width:90%; margin:5px 0;"></select>
-                        <input type="number" id="musS2" placeholder="Rondas" style="width:100px; text-align:center;">
+                    <div style="font-weight:bold; padding:0 5px; color:#aaa">VS</div>
+                    <div style="flex:1; text-align:center; background:rgba(214, 48, 49, 0.1); padding:5px; border-radius:5px;">
+                        <h4 style="margin:0; color:#ff7675; font-size:0.9em">Pareja 2</h4>
+                        <select id="musP3" style="width:95%; margin:2px 0;"></select>
+                        <select id="musP4" style="width:95%; margin:2px 0;"></select>
+                        <input type="number" id="musS2" placeholder="0" style="width:60px; text-align:center; margin-top:5px;">
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" class="main-btn" style="flex:1; color:#e0e0e0; background:#ff5f5f">Cancelar</button>
-                    <button onclick="app.mus.submitMatch()" class="main-btn-aux" style="flex:1; color:rgb(171, 171, 171); background:#5fff6a; box-shadow: #44b54b 0 4px 0 #44b54b">Guardar</button>
+                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" class="main-btn" style="flex:1; background:#57606f">Cancelar</button>
+                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1; background:#e1b12c; color:#222">Guardar</button>
                 </div>
             </div>
         </div>
         
         <div id="musPairGenModal" class="hidden modal-overlay">
             <div style="background:#2f3542; padding:20px; border-radius:10px; width:90%; max-width:350px; border:2px solid #e1b12c;">
-                <h3 style="color:#e1b12c">🎲 Generar Parejas</h3>
-                <p style="color:#aaa; font-size:0.9em">Selecciona jugadores presentes:</p>
+                <h3 style="color:#e1b12c">🎲 Sorteo</h3>
                 <div id="genPlayerList" style="text-align:left; max-height:200px; overflow-y:auto; background:#222; padding:10px; border-radius:5px; margin-bottom:15px;"></div>
                 <div id="genResults" style="margin-bottom:15px; font-weight:bold;"></div>
                 <div style="display:flex; gap:10px;">
                     <button onclick="document.getElementById('musPairGenModal').classList.add('hidden')" style="background:#555; flex:1">Cerrar</button>
                     <button onclick="app.mus.generatePairs()" class="main-btn" style="flex:1">Barajar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="giveScreen" class="hidden">
+        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
+        <h2 style="color:#00cec9">🎁 Recompensas</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">
+            Elige tu recompensa.<br>
+            <span style="color:#ff7675">Espera 15s entre regalos.</span>
+        </p>
+
+        <div class="card" style="background:#2d3436; border:none;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
             </div>
         </div>
     </div>
