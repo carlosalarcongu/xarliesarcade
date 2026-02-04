@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const questionsDB = require('./preguntas_elmas'); 
@@ -6,23 +5,55 @@ const Utils = require('./utils');
 
 const FEEDBACK_FILE = path.join(__dirname, '../feedback_log.txt');
 
-// --- 1. VARIABLES GLOBALES ---
-let players = [];
-let gameInProgress = false;
-let questionsQueue = [];
-let currentRoundIndex = 0;
-let settings = { maxRounds: 5 }; // Configuración sincronizada
+// Almacén de salas
+const rooms = {};
 
-let roundStage = 'LOBBY'; // LOBBY, VOTING, REVEAL, PODIUM
+// Configuración por defecto
+const defaultSettings = { maxRounds: 5 }; 
 
-// Almacén temporal de Feedback de preguntas (Likes/Dislikes)
-// Estructura: { "Texto Pregunta": { likes: 0, dislikes: 0 } }
-let sessionFeedback = {};
+function createRoom(roomId) {
+    rooms[roomId] = {
+        id: roomId,
+        players: [],
+        gameInProgress: false,
+        settings: { ...defaultSettings },
+        questionsQueue: [],
+        currentRoundIndex: 0,
+        roundStage: 'LOBBY', // LOBBY, VOTING, REVEAL, PODIUM
+        sessionFeedback: {}, // Almacén de feedback por sala
+        inactivityTimer: null
+    };
+    return rooms[roomId];
+}
 
-// --- 2. HELPERS ---
-function broadcast(io) {
-    const playersPublic = players.map(p => {
-        const votesReceivedCount = players.filter(voter => voter.votedFor === p.id).length;
+function destroyRoom(roomId) {
+    if (rooms[roomId]) {
+        delete rooms[roomId];
+    }
+}
+
+function checkRoomInactivity(roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+    const activePlayers = room.players.filter(p => p.connected);
+    
+    if (activePlayers.length === 0) {
+        if (room.inactivityTimer) clearTimeout(room.inactivityTimer);
+        room.inactivityTimer = setTimeout(() => destroyRoom(roomId), 20 * 60 * 1000); 
+    } else {
+        if (room.inactivityTimer) {
+            clearTimeout(room.inactivityTimer);
+            room.inactivityTimer = null;
+        }
+    }
+}
+
+function broadcastRoom(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const playersPublic = room.players.map(p => {
+        const votesReceivedCount = room.players.filter(voter => voter.votedFor === p.id).length;
         return {
             id: p.id,
             name: p.name,
@@ -30,33 +61,33 @@ function broadcast(io) {
             score: p.score,
             connected: p.connected,
             voted: !!p.votedFor, 
-            votesInThisRound: (roundStage === 'REVEAL') ? votesReceivedCount : null 
+            votesInThisRound: (room.roundStage === 'REVEAL') ? votesReceivedCount : null 
         };
     });
 
     let roundInfo = null;
-    if (gameInProgress && questionsQueue[currentRoundIndex]) {
+    if (room.gameInProgress && room.questionsQueue[room.currentRoundIndex]) {
         roundInfo = {
-            text: questionsQueue[currentRoundIndex],
-            current: currentRoundIndex + 1,
-            total: settings.maxRounds
+            text: room.questionsQueue[room.currentRoundIndex],
+            current: room.currentRoundIndex + 1,
+            total: room.settings.maxRounds
         };
     }
 
-    io.to('elmas').emit('updateElMasList', {
+    io.to('elmas_' + roomId).emit('updateElMasList', {
         players: playersPublic,
-        gameInProgress,
-        roundStage,
+        gameInProgress: room.gameInProgress,
+        roundStage: room.roundStage,
         roundInfo,
-        settings // Enviamos config a todos
+        settings: room.settings
     });
 }
 
-function saveFeedback() {
-    if (Object.keys(sessionFeedback).length === 0) return;
+function saveFeedback(room) {
+    if (!room || Object.keys(room.sessionFeedback).length === 0) return;
     
-    let content = `\n--- EL MAS FEEDBACK [${new Date().toISOString()}] ---\n`;
-    for (const [q, data] of Object.entries(sessionFeedback)) {
+    let content = `\n--- EL MAS FEEDBACK [${new Date().toISOString()}] SALA: ${room.id} ---\n`;
+    for (const [q, data] of Object.entries(room.sessionFeedback)) {
         content += `"${q}": 👍${data.likes} | 👎${data.dislikes}\n`;
     }
     content += "--------------------------------------\n";
@@ -65,195 +96,221 @@ function saveFeedback() {
         if (err) console.error("Error guardando feedback auto:", err);
     });
     
-    sessionFeedback = {}; // Limpiar tras guardar
+    room.sessionFeedback = {}; 
 }
 
-// --- 3. GESTIÓN (Persistencia) ---
+function performReset(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
 
-const handleJoin = (socket, name) => {
-    const existing = players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase());
-    if (existing) {
-        if(!existing.connected) return handleRejoin(socket, existing.id);
-        return socket.emit('joinError', 'Nombre en uso.');
-    }
-
-    const basePlayer = Utils.createPlayer(socket.id, name);
-    // Si es el primero, es Admin
-    if (players.length === 0) basePlayer.isAdmin = true;
-
-    const newPlayer = { ...basePlayer, votedFor: null, timeout: null };
+    room.gameInProgress = false;
+    room.roundStage = 'LOBBY';
+    saveFeedback(room); 
+    room.players.forEach(p => { p.score = 0; p.votedFor = null; });
     
-    players.push(newPlayer);
-    socket.join('elmas');
-    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'elmas' });
-    
-    broadcast(socket.server);
-};
+    io.to('elmas_' + roomId).emit('gameEnded');
+    broadcastRoom(io, roomId);
+}
 
-const handleRejoin = (socket, savedId) => {
-    const p = players.find(x => x.id === savedId);
-    if (p) {
-        if(p.timeout) { clearTimeout(p.timeout); p.timeout = null; }
-        p.socketId = socket.id;
-        p.connected = true;
-        socket.join('elmas');
-        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'elmas', isRejoin: true });
-        broadcast(socket.server);
-    } else { 
-        socket.emit('sessionExpired'); 
-    }
-};
-
-const handleLeave = (id, io) => { 
-    const p = players.find(x => x.id === id);
-    if(p) {
-        if(p.timeout) clearTimeout(p.timeout);
-        const wasAdmin = p.isAdmin;
-        players = players.filter(x => x.id !== id);
-        
-        // Heredar admin si queda alguien
-        if (wasAdmin && players.length > 0) players[0].isAdmin = true;
-        
-        // Reset si vacío
-        if (players.length === 0) {
-            gameModule.resetInternalState();
-        } else {
-            // Limpiar votos hacia él
-            players.forEach(voter => { if(voter.votedFor === id) voter.votedFor = null; });
-            if(io) broadcast(io);
-        }
-    }
-};
-
-const handleDisconnect = (socket) => { 
-    Utils.handleDisconnect(socket.id, players, () => {
-        gameModule.resetInternalState();
-    });
-    if (socket.server) broadcast(socket.server);
-};
-
-// --- 4. LÓGICA DE JUEGO ---
-
-const gameModule = (io, socket) => {
+const handleSocket = (io, socket) => {
     socket.on('elmas_action', (action) => {
-        const me = players.find(p => p.socketId === socket.id);
+        const roomId = socket.data.roomId;
+        const room = rooms[roomId];
+        if (!room) return socket.emit('error', 'Sala no encontrada.');
+
+        const me = room.players.find(p => p.socketId === socket.id);
         if (!me) return;
 
-        // FEEDBACK INVISIBLE (Cualquiera puede enviar, 1 vez por pregunta controlada en front)
+        // FEEDBACK
         if (action.type === 'rateQuestion') {
-            if (!gameInProgress || !questionsQueue[currentRoundIndex]) return;
-            const q = questionsQueue[currentRoundIndex];
+            if (!room.gameInProgress || !room.questionsQueue[room.currentRoundIndex]) return;
+            const q = room.questionsQueue[room.currentRoundIndex];
             
-            if (!sessionFeedback[q]) sessionFeedback[q] = { likes: 0, dislikes: 0 };
+            if (!room.sessionFeedback[q]) room.sessionFeedback[q] = { likes: 0, dislikes: 0 };
             
-            if (action.vote === 'like') sessionFeedback[q].likes++;
-            else if (action.vote === 'dislike') sessionFeedback[q].dislikes++;
-            return; // No hace falta broadcast
+            if (action.vote === 'like') room.sessionFeedback[q].likes++;
+            else if (action.vote === 'dislike') room.sessionFeedback[q].dislikes++;
+            return; 
         }
 
-        // --- ACCIONES ADMIN ---
+        // ACCIONES DE ADMIN
         if (me.isAdmin) {
-            // Sincronizar Configuración
             if (action.type === 'updateSettings') {
-                if(action.rounds) settings.maxRounds = parseInt(action.rounds);
-                broadcast(io);
+                if(action.rounds) room.settings.maxRounds = parseInt(action.rounds);
+                broadcastRoom(io, roomId);
             }
 
             if (action.type === 'kick') {
-                const t = players.find(p => p.id === action.targetId);
-                if(t) {
-                    if(t.socketId) io.to(t.socketId).emit('sessionExpired');
-                    players = players.filter(p => p.id !== action.targetId);
-                    broadcast(io);
-                }
+                handleLeave(action.targetId, roomId, io, true);
             }
 
             if (action.type === 'start') {
-                // Usamos la config ya sincronizada
                 let qData = ["¿Quién sobreviviría a un apocalipsis?", "¿Quién liga más?"];
                 
-                // Cargar preguntas (array simple o objeto json)
                 if(questionsDB && Array.isArray(questionsDB)) qData = questionsDB;
                 else if(questionsDB && questionsDB.questions) qData = questionsDB.questions;
                 
-                questionsQueue = [...qData].sort(() => Math.random() - 0.5).slice(0, settings.maxRounds);
+                room.questionsQueue = [...qData].sort(() => Math.random() - 0.5).slice(0, room.settings.maxRounds);
                 
-                currentRoundIndex = 0;
-                gameInProgress = true;
-                roundStage = 'VOTING';
-                players.forEach(p => { p.score = 0; p.votedFor = null; });
+                room.currentRoundIndex = 0;
+                room.gameInProgress = true;
+                room.roundStage = 'VOTING';
+                room.players.forEach(p => { p.score = 0; p.votedFor = null; });
                 
-                sessionFeedback = {}; // Reiniciar feedback sesión
-                broadcast(io);
+                room.sessionFeedback = {}; 
+                broadcastRoom(io, roomId);
             }
 
-            if (action.type === 'next' && gameInProgress) {
+            if (action.type === 'next' && room.gameInProgress) {
                 // Calcular puntos
-                players.forEach(voter => {
+                room.players.forEach(voter => {
                     if (voter.votedFor) {
-                        const votes = players.filter(p => p.votedFor === voter.votedFor).length;
+                        const votes = room.players.filter(p => p.votedFor === voter.votedFor).length;
                         if (votes === 1) voter.score = Math.max(0, voter.score - 1);
                         else voter.score += votes;
                     }
                 });
-                roundStage = 'REVEAL';
-                broadcast(io);
+                room.roundStage = 'REVEAL';
+                broadcastRoom(io, roomId);
             }
 
             if (action.type === 'continue') {
-                currentRoundIndex++;
-                players.forEach(p => p.votedFor = null);
+                room.currentRoundIndex++;
+                room.players.forEach(p => p.votedFor = null);
 
-                if (currentRoundIndex >= questionsQueue.length) {
-                    roundStage = 'PODIUM';
-                    saveFeedback(); // Guardar feedback al acabar partida
+                if (room.currentRoundIndex >= room.questionsQueue.length) {
+                    room.roundStage = 'PODIUM';
+                    saveFeedback(room); 
                     
-                    const sorted = [...players].sort((a,b) => b.score - a.score).slice(0, 3);
-                    io.to('elmas').emit('showPodium', sorted);
-                    broadcast(io);
+                    const sorted = [...room.players].sort((a,b) => b.score - a.score).slice(0, 3);
+                    io.to('elmas_' + roomId).emit('showPodium', sorted);
+                    broadcastRoom(io, roomId);
 
                     setTimeout(() => {
-                        gameInProgress = false;
-                        roundStage = 'LOBBY';
-                        players.forEach(p => p.score = 0);
-                        io.to('elmas').emit('gameEnded');
-                        broadcast(io);
+                        // Solo resetear si sigue siendo PODIUM (el admin podría haber reseteado manual)
+                        if (room && room.roundStage === 'PODIUM') {
+                            performReset(io, roomId);
+                        }
                     }, 10000);
 
                 } else {
-                    roundStage = 'VOTING';
-                    broadcast(io);
+                    room.roundStage = 'VOTING';
+                    broadcastRoom(io, roomId);
                 }
             }
 
             if (action.type === 'reset') {
-                gameInProgress = false;
-                roundStage = 'LOBBY';
-                saveFeedback(); // Guardar lo que haya hasta ahora
-                players.forEach(p => { p.score = 0; p.votedFor = null; });
-                broadcast(io);
+                performReset(io, roomId);
             }
         }
 
-        // --- ACCIONES JUGADOR ---
-        if (action.type === 'vote' && gameInProgress && roundStage === 'VOTING') {
+        // ACCIONES JUGADOR
+        if (action.type === 'vote' && room.gameInProgress && room.roundStage === 'VOTING') {
             me.votedFor = action.targetId;
-            broadcast(io);
+            broadcastRoom(io, roomId);
         }
     });
 
-    socket.on('disconnect', () => handleDisconnect(socket));
+    socket.on('disconnect', () => {
+        const rId = socket.data.roomId;
+        if (rId && rooms[rId]) {
+            const changed = Utils.handleDisconnect(socket.id, rooms[rId].players, () => {
+                checkRoomInactivity(rId);
+            });
+            if (changed) broadcastRoom(io, rId);
+        }
+    });
 };
 
-gameModule.handleJoin = handleJoin;
-gameModule.handleRejoin = handleRejoin;
-gameModule.handleLeave = handleLeave;
-gameModule.handleDisconnect = handleDisconnect;
-gameModule.resetInternalState = () => {
-    players = [];
-    gameInProgress = false;
-    currentRoundIndex = 0;
-    sessionFeedback = {};
+const handleJoin = (socket, nameRaw, targetRoomId) => {
+    const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
+    let room;
+
+    if (!targetRoomId || targetRoomId === 'NEW') {
+        if (Object.keys(rooms).length >= 4) return socket.emit('joinError', 'Máximo de salas alcanzado.');
+        const newId = Utils.getRandomCapital(Object.keys(rooms));
+        room = createRoom(newId);
+    } else {
+        room = rooms[targetRoomId];
+        if (!room) {
+             if (Object.keys(rooms).length < 4) room = createRoom(targetRoomId);
+             else return socket.emit('joinError', 'La sala no existe.');
+        }
+    }
+
+    socket.join('elmas_' + room.id);
+    socket.data.roomId = room.id;
+
+    const existing = room.players.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
+    if (existing) {
+        if (!existing.connected) return handleRejoin(socket, existing.id, room.id);
+        return socket.emit('joinError', 'Nombre en uso.');
+    }
+
+    const basePlayer = Utils.createPlayer(socket.id, cleanName);
+    const newPlayer = { ...basePlayer, votedFor: null, score: 0 };
+    
+    if (room.players.length === 0 || cleanName.toLowerCase() === 'admin') newPlayer.isAdmin = true;
+    
+    room.players.push(newPlayer);
+    
+    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'elmas', roomId: room.id });
+    
+    checkRoomInactivity(room.id);
+    broadcastRoom(socket.server, room.id);
 };
 
-module.exports = gameModule;
+const handleRejoin = (socket, savedId, savedRoomId) => {
+    const room = rooms[savedRoomId];
+    if (!room) return socket.emit('sessionExpired');
+
+    const p = room.players.find(x => x.id === savedId);
+    if (p) {
+        if(p.timeout) clearTimeout(p.timeout);
+        p.socketId = socket.id;
+        p.connected = true;
+        
+        socket.join('elmas_' + room.id);
+        socket.data.roomId = room.id;
+        
+        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'elmas', roomId: room.id, isRejoin: true });
+        broadcastRoom(socket.server, room.id);
+    } else {
+        socket.emit('sessionExpired');
+    }
+};
+
+const handleLeave = (playerId, roomId, io, forced = false) => { 
+    const room = rooms[roomId];
+    if (!room) return;
+
+    if (forced) {
+        const p = room.players.find(x => x.id === playerId);
+        if(p && p.socketId) io.to(p.socketId).emit('sessionExpired');
+    }
+
+    const wasAdmin = room.players.find(p => p.id === playerId)?.isAdmin;
+    room.players = room.players.filter(x => x.id !== playerId);
+    
+    // Limpiar votos hacia él
+    room.players.forEach(voter => { if(voter.votedFor === playerId) voter.votedFor = null; });
+
+    if (wasAdmin && room.players.length > 0) room.players[0].isAdmin = true;
+    
+    checkRoomInactivity(roomId);
+
+    if (room.players.length === 0) {
+        performReset(io, roomId);
+    } else {
+        broadcastRoom(io, roomId);
+    }
+};
+
+module.exports = {
+    init: (io) => {},
+    handleSocket,
+    handleJoin,
+    handleRejoin,
+    handleLeave,
+    getRooms: () => Object.values(rooms).map(r => ({ id: r.id, players: r.players.length, state: r.gameInProgress ? 'JUGANDO' : 'LOBBY' }))
+};

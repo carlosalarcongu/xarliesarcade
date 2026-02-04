@@ -6,7 +6,6 @@ app.elmas = {
     
     send: (type, payload) => socket.emit('elmas_action', { type, ...payload }),
     
-    // Función para enviar cambios de configuración en tiempo real
     syncSettings: () => {
         const r = document.getElementById('elmasRoundsInput').value;
         app.elmas.send('updateSettings', { rounds: r });
@@ -48,17 +47,17 @@ app.elmas = {
     }
 };
 
-// LISTENERS DE INPUTS PARA SINCRONIZACIÓN
 document.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('elmasRoundsInput');
     if (inp) {
-        // Solo enviamos si somos admin (aunque el servidor también valida)
         inp.addEventListener('input', () => { if(app.elmas.iAmAdmin) app.elmas.syncSettings(); });
         inp.addEventListener('change', () => { if(app.elmas.iAmAdmin) app.elmas.syncSettings(); });
     }
 });
 
 socket.on('updateElMasList', (data) => {
+    if (app.currentRoom !== 'elmas') return;
+
     const { players, gameInProgress, roundStage, roundInfo, settings } = data;
     
     const me = players.find(p => p.id === app.myPlayerId);
@@ -94,24 +93,20 @@ socket.on('updateElMasList', (data) => {
         // --- SINCRONIZACIÓN DE INPUTS ---
         const inp = document.getElementById('elmasRoundsInput');
         if (inp) {
-            // Si hay settings del servidor, actualizamos
             if (settings) {
-                // Solo sobrescribimos si NO soy el admin (para no molestar mientras escribe)
-                // O si soy admin pero el valor es diferente (por si otro admin cambió algo)
                 if (!app.elmas.iAmAdmin || document.activeElement !== inp) {
                     inp.value = settings.maxRounds;
                 }
             }
 
-            // Habilitar/Deshabilitar según rol
             if (app.elmas.iAmAdmin) {
                 inp.disabled = false;
                 document.getElementById('elmasAdminPanel').classList.remove('hidden');
                 document.getElementById('elmasWaitMsg').classList.add('hidden');
                 document.getElementById('btnStartElMas').classList.remove('hidden');
             } else {
-                inp.disabled = true; // El usuario ve el valor pero no lo cambia
-                document.getElementById('elmasAdminPanel').classList.remove('hidden'); // Panel visible
+                inp.disabled = true; 
+                document.getElementById('elmasAdminPanel').classList.remove('hidden'); 
                 document.getElementById('elmasWaitMsg').classList.remove('hidden');
                 document.getElementById('btnStartElMas').classList.add('hidden');
             }
@@ -179,6 +174,7 @@ socket.on('updateElMasList', (data) => {
 });
 
 socket.on('showPodium', (winners) => {
+    if (app.currentRoom !== 'elmas') return;
     app.elmas.myLocalVote = null;
     const modal = document.getElementById('elmasPodiumModal');
     modal.classList.remove('hidden');
@@ -188,6 +184,7 @@ socket.on('showPodium', (winners) => {
 });
 
 socket.on('gameEnded', () => {
+    if (app.currentRoom !== 'elmas') return;
     app.elmas.myLocalVote = null;
     app.showScreen('elmasLobby');
     document.getElementById('elmasPodiumModal').classList.add('hidden');
