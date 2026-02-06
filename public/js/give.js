@@ -358,6 +358,8 @@ app.give = {
             'cob:cap_gold', 
             'cob:patch'
         ];
+        //Excepciones (comoo ente ball):
+        if (id.includes("ball:beast") && !expensive.includes(id)) return 10;
         return expensive.includes(id) ? 30 : 1;
     },
 
