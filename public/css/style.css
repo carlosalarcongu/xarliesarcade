@@ -894,3 +894,77 @@ canvas {
     padding-top: 10px;
     margin-top: 10px;
 }
+
+/* --- ESTILOS NUEVA TIENDA GIVE (XP) --- */
+
+.give-main-container {
+    padding: 5px;
+    text-align: center;
+}
+
+.give-section-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 Columnas forzadas */
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.give-item-btn {
+    background-color: #353b48;
+    border: 1px solid #57606f;
+    border-radius: 8px;
+    padding: 8px 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 90px;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+}
+
+.give-item-btn:hover {
+    background-color: #3d4655;
+    transform: translateY(-2px);
+    border-color: #74b9ff;
+}
+
+.give-item-btn:active {
+    transform: translateY(1px);
+    box-shadow: none;
+}
+
+.give-icon {
+    font-size: 2em;
+    margin-bottom: 5px;
+}
+
+.give-name {
+    font-size: 0.7em;
+    color: #dfe6e9;
+    line-height: 1.1;
+    margin-bottom: 5px;
+    font-weight: bold;
+    word-break: break-word; /* Evitar que textos largos rompan la columna */
+}
+
+.give-cost {
+    font-size: 0.75em;
+    color: #2ed573; /* Verde XP */
+    font-weight: 900;
+    background: rgba(46, 213, 115, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    width: 100%;
+}
+
+/* Ajustes Responsive para móviles muy pequeños */
+@media (max-width: 400px) {
+    .give-section-grid {
+        grid-template-columns: repeat(3, 1fr); /* Bajar a 3 si la pantalla es muy estrecha */
+    }
+    .give-icon {
+        font-size: 1.5em;
+    }
+}

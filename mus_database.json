@@ -2,6 +2,7 @@
   "players": [
     "Acebo",
     "Carlos",
+    "Emilio",
     "Japa",
     "Javi",
     "Lucas",
@@ -346,9 +347,82 @@
       "date": "2026-02-02T23:01:26.260Z",
       "addedBy": "Japa",
       "roomId": "Entre Nosotros (Las monjas)"
+    },
+    {
+      "id": 1770231528165,
+      "roomId": "Entre Nosotros (Las monjas)",
+      "p1": "Japa",
+      "p2": "Acebo",
+      "p3": "Lucas",
+      "p4": "Nacho",
+      "s1": 1,
+      "s2": 3,
+      "date": "2026-02-04T18:58:48.165Z",
+      "addedBy": "carlos"
+    },
+    {
+      "id": 1770233422062,
+      "roomId": "Entre Nosotros (Las monjas)",
+      "p1": "Acebo",
+      "p2": "Carlos",
+      "p3": "Japa",
+      "p4": "Lucas",
+      "s1": 3,
+      "s2": 0,
+      "date": "2026-02-04T19:30:22.062Z",
+      "addedBy": "carlos"
+    },
+    {
+      "id": 1770235864264,
+      "roomId": "Entre Nosotros (Las monjas)",
+      "p1": "Acebo",
+      "p2": "Lucas",
+      "p3": "Japa",
+      "p4": "Carlos",
+      "s1": 1,
+      "s2": 3,
+      "date": "2026-02-04T20:11:04.264Z",
+      "addedBy": "Japa"
+    },
+    {
+      "id": 1770239029397,
+      "roomId": "Entre Nosotros (Las monjas)",
+      "p1": "Acebo",
+      "p2": "Lucas",
+      "p3": "Japa",
+      "p4": "Carlos",
+      "s1": 1,
+      "s2": 4,
+      "date": "2026-02-04T21:03:49.397Z",
+      "addedBy": "Japa"
+    },
+    {
+      "id": 1770240468730,
+      "roomId": "Bar La Plaza",
+      "p1": "Lucas",
+      "p2": "Emilio",
+      "p3": "Japa",
+      "p4": "Carlos",
+      "s1": 1,
+      "s2": 1,
+      "date": "2026-02-04T21:27:48.730Z",
+      "addedBy": "carlos"
+    },
+    {
+      "id": 1770330502255,
+      "roomId": "Entre Nosotros (Las monjas)",
+      "p1": "Japa",
+      "p2": "Nacho",
+      "p3": "Carlos",
+      "p4": "Acebo",
+      "s1": 3,
+      "s2": 4,
+      "date": "2026-02-05T22:28:22.255Z",
+      "addedBy": "musero"
     }
   ],
   "rooms": [
-    "Entre Nosotros (Las monjas)"
+    "Entre Nosotros (Las monjas)",
+    "Bar La Plaza"
   ]
 }
