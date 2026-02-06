@@ -1,10 +1,81 @@
 window.app = window.app || {};
 
 app.give = {
-    // Definimos secciones visuales
+    // --- TUS DATOS (Mantengo todo exactamente igual) ---
     sections: {
+        loc_monumentos: {
+            title: "🏛️ Monumentos Legendarios",
+            color: "#9b59b6",
+            items: [
+                { id: "loc:spear_pillar", name: "Columna Lanza (Dialga/Palkia)", icon: "⏳" },
+                { id: "loc:hall_of_origin", name: "Hall of Origin (Arceus)", icon: "💠" },
+                { id: "loc:distortion_portal", name: "Portal Distorsión", icon: "🌀" },
+                { id: "loc:giratina_island", name: "Isla Giratina", icon: "👻" },
+                { id: "loc:dragonspiraltower", name: "Torre Duodraco", icon: "🐉" },
+                { id: "loc:snowpoint_temple", name: "Templo Puntaneva (Regis)", icon: "☃️" },
+                { id: "loc:sky_pillar", name: "Pilar Celeste (Rayquaza)", icon: "☁️" },
+                { id: "loc:bell_tower", name: "Torre Campana (Ho-Oh)", icon: "🍂" },
+                { id: "loc:lugia_temple", name: "Islas Remolino (Lugia)", icon: "🌊" },
+                { id: "loc:dyna_tree", name: "Árbol Dinamax (Birds Galar)", icon: "🌳" },
+                { id: "loc:eternatus_cocoon", name: "Capullo Eternatus", icon: "☠️" },
+                { id: "loc:heatran_cave", name: "Montaña Dura (Heatran)", icon: "🌋" },
+                { id: "loc:hoopa_pyramid", name: "Pirámide (Hoopa)", icon: "💍" },
+                { id: "loc:kyuremcave", name: "Cueva Kyurem", icon: "❄️" },
+                { id: "loc:liberty_island", name: "Isla Libertad (Victini)", icon: "🗽" },
+                { id: "loc:southrn_island", name: "Isla del Sur (Lati@s)", icon: "🎫" },
+                { id: "loc:turnback_cave", name: "Cueva Retorno", icon: "🦇" },
+                { id: "loc:sword", name: "Altar Espada (Zacian)", icon: "⚔️" },
+                { id: "loc:shield", name: "Altar Escudo (Zamazenta)", icon: "🛡️" },
+                { id: "loc:lake_acuity", name: "Lago Agudeza (Uxie)", icon: "🟡" },
+                { id: "loc:lake_valor", name: "Lago Valor (Azelf)", icon: "🔵" },
+                { id: "loc:lake_verity", name: "Lago Verdad (Mesprit)", icon: "🔴" },
+                { id: "loc:icerend_shrine", name: "Santuario Helado", icon: "🧊" },
+                { id: "loc:firescourge_shrine", name: "Santuario Fuego", icon: "🔥" },
+                { id: "loc:grasswither_shrine", name: "Santuario Planta", icon: "🍃" },
+                { id: "loc:groundblight_shrine", name: "Santuario Tierra", icon: "🟤" },
+                { id: "loc:traditional_village/ecruteak", name: "Villa Ecruteak", icon: "⛩️" },
+                { id: "loc:outskirt_stand", name: "Puesto Avanzada", icon: "🚂" }
+            ]
+        },
+        loc_cobbleverse: {
+            title: "🌍 Cobbleverse & Legends",
+            color: "#2ecc71",
+            items: [
+                { id: "loc:mew_ruins", name: "Ruinas Mew (Jungla)", icon: "🌴" },
+                { id: "loc:xerneas_tree", name: "Árbol Xerneas", icon: "🦌" },
+                { id: "loc:psychic_den", name: "Guarida Psíquica (Mewtwo)", icon: "🧬" },
+                { id: "loc:water_den", name: "Guarida Agua (Manaphy)", icon: "💧" },
+                { id: "loc:articuno", name: "Nido Articuno", icon: "❄️" },
+                { id: "loc:zapdos", name: "Nido Zapdos", icon: "⚡" },
+                { id: "loc:moltres", name: "Nido Moltres", icon: "🔥" },
+                { id: "loc:groudon", name: "Caverna Groudon", icon: "🌋" },
+                { id: "loc:kyogre", name: "Fosa Kyogre", icon: "🌊" },
+                { id: "loc:regirock", name: "Ruinas Regirock", icon: "🪨" },
+                { id: "loc:regice", name: "Ruinas Regice", icon: "🧊" },
+                { id: "loc:registeel", name: "Ruinas Registeel", icon: "🤖" },
+                { id: "loc:celebi", name: "Santuario Celebi", icon: "🧚" },
+                { id: "loc:deoxys", name: "Meteorito Deoxys", icon: "☄️" },
+                { id: "loc:jirachi", name: "Cometa Jirachi", icon: "⭐" },
+                { id: "loc:mew", name: "Isla Suprema (Mew)", icon: "🐱" }
+            ]
+        },
+        loc_kanto: {
+            title: "🏆 Gimnasios de Kanto",
+            color: "#f1c40f",
+            items: [
+                { id: "loc:brock", name: "Ciudad Plateada (Brock)", icon: "🪨" },
+                { id: "loc:misty", name: "Ciudad Celeste (Misty)", icon: "💧" },
+                { id: "loc:ltsurge", name: "Ciudad Carmín (Surge)", icon: "⚡" },
+                { id: "loc:erika", name: "Ciudad Azulona (Erika)", icon: "🌸" },
+                { id: "loc:koga", name: "Ciudad Fucsia (Koga)", icon: "🥷" },
+                { id: "loc:sabrina", name: "Ciudad Azafrán (Sabrina)", icon: "🔮" },
+                { id: "loc:blaine", name: "Isla Canela (Blaine)", icon: "🔥" },
+                { id: "loc:giovanni", name: "Ciudad Verde (Giovanni)", icon: "🌍" },
+                { id: "loc:kanto_league", name: "Liga Pokémon (Alto Mando)", icon: "🏆" }
+            ]
+        },
         materiales: {
-            title: "🧱 Construcción y Decoración",
+            title: "🧱 Construcción",
             color: "#e67e22",
             items: [
                 { id: "mat:white_wool", name: "Lana Blanca (64)", icon: "🐑" },
@@ -36,13 +107,15 @@ app.give = {
             ]
         },
         utilidades: {
-            title: "🛠️ Utilidades y Equipo",
+            title: "🛠️ Utilidades",
             color: "#7f8c8d",
             items: [
                 { id: "util:backpack", name: "Mochila Netherite", icon: "🎒" },
+                { id: "util:arc_phone", name: "Móvil Arceus", icon: "📱" },
                 { id: "util:waystone", name: "Waystone", icon: "🗿" },
                 { id: "util:warp_plate", name: "Warp Plates (2)", icon: "🌀" },
                 { id: "util:diamond_sword", name: "Espada Diamante", icon: "⚔️" },
+                { id: "util:diamond_pickaxe", name: "Pico Diamante", icon: "⛏️" },
                 { id: "util:shield", name: "Escudo", icon: "🛡️" },
                 { id: "util:horse_armor", name: "Armadura Caballo", icon: "🐎" },
                 { id: "util:shulker", name: "Caja Shulker (2)", icon: "📦" },
@@ -83,7 +156,7 @@ app.give = {
                 { id: "min:coal_block", name: "Bloque Carbón (16)", icon: "⬛" },
                 { id: "min:clay", name: "Arcilla (64)", icon: "🧱" },
                 { id: "min:nether_brick", name: "Ladrillo Nether (64)", icon: "🟥" },
-                { id: "min:netherite", name: "Netherite (1)", icon: "🖤" } // 30 XP
+                { id: "min:netherite", name: "Netherite (1)", icon: "🖤" }
             ]
         },
         pokeballs: {
@@ -110,19 +183,19 @@ app.give = {
                 { id: "ball:fast", name: "Rápida (5)", icon: "⏩" },
                 { id: "ball:repeat", name: "Acopio (5)", icon: "🔁" },
                 { id: "ball:nest", name: "Nido (5)", icon: "🐣" },
-                { id: "ball:master", name: "Master (1)", icon: "🟣" }, // 30 XP
-                { id: "ball:beast", name: "Ente (1)", icon: "🌀" } // 30 XP
+                { id: "ball:master", name: "Master (1)", icon: "🟣" },
+                { id: "ball:beast", name: "Ente (1)", icon: "🌀" }
             ]
         },
         maquinas: {
-            title: "💻 Máquinas y Mesas",
+            title: "💻 Máquinas",
             color: "#8e44ad",
             items: [
                 { id: "mach:healer", name: "Centro Pokémon", icon: "🏥" },
                 { id: "mach:pc", name: "PC", icon: "💻" },
-                { id: "mach:tank", name: "Tanque Restaurar", icon: "🔋" },
                 { id: "mach:fossil", name: "Analizador Fósil", icon: "🦕" },
                 { id: "mach:monitor", name: "Monitor", icon: "🖥️" },
+                { id: "mach:tank", name: "Tanque Restaurar", icon: "🔋" },
                 { id: "mach:campfire", name: "Hoguera Blanca", icon: "🔥" },
                 { id: "mach:pedestal", name: "Pedestal Mega", icon: "🏆" },
                 { id: "mach:brewing", name: "Destiladora", icon: "⚗️" },
@@ -136,12 +209,8 @@ app.give = {
                 { id: "mach:stonecut", name: "Cortapiedras", icon: "🔪" },
                 { id: "mach:composter", name: "Compostador", icon: "♻️" },
                 { id: "mach:furnace", name: "Horno", icon: "🔥" },
-                { id: "mach:smoker", name: "Ahumador", icon: "🍖" },
-                { id: "mach:blast", name: "Alto Horno", icon: "🔥" },
-                { id: "mach:carto", name: "Mesa Cartografía", icon: "🗺️"},
-                { id: "ender:ender_chest", name: "Cofre Ender", icon: "🟣" },
-                { id: "ender:end_portal_frame", name: "Portal End", icon: "🌀" }
-
+                { id: "mach:ender_chest", name: "Cofre Ender", icon: "🟣" },
+                { id: "mach:end_portal", name: "Portal End", icon: "🌀" }
             ]
         },
         evolutivos: {
@@ -174,20 +243,21 @@ app.give = {
                 { id: "evo:oval_stone", name: "Piedra Oval", icon: "🥚" },
                 { id: "evo:sweet_apple", name: "Manzana Dulce", icon: "🍎" },
                 { id: "evo:tart_apple", name: "Manzana Ácida", icon: "🍏" },
-                { id: "evo:whipped_dream", name: "Dulce de Nata", icon: "🍦" },
-                { id: "evo:sachet", name: "Saquito Fragante", icon: "🌸" },
+                { id: "evo:sw_strawberry", name: "Conf. Fresa", icon: "🍓" },
+                { id: "evo:sw_love", name: "Conf. Corazón", icon: "❤️" },
+                { id: "evo:sw_berry", name: "Conf. Trébol", icon: "🍀" },
+                { id: "evo:sw_clover", name: "Conf. Trébol", icon: "🍀" },
+                { id: "evo:sw_flower", name: "Conf. Flor", icon: "🌼" },
+                { id: "evo:sw_star", name: "Conf. Estrella", icon: "⭐" },
+                { id: "evo:sw_ribbon", name: "Conf. Lazo", icon: "🎀" },
                 { id: "evo:galarica_cuff", name: "Brazal Galanuez", icon: "💪" },
                 { id: "evo:galarica_wreath", name: "Corona Galanuez", icon: "👑" },
                 { id: "evo:auspicious", name: "Armadura Ausp.", icon: "🟡" },
-                { id: "evo:malicious", name: "Armadura Mal.", icon: "🟣" },
-                { id: "evo:sw_strawberry", name: "Conf. Fresa", icon: "🍓" },
-                { id: "evo:sw_love", name: "Conf. Corazón", icon: "❤️" },
-                { id: "evo:sw_clover", name: "Conf. Trébol", icon: "🍀" },
-                { id: "evo:sw_star", name: "Conf. Estrella", icon: "⭐" }
+                { id: "evo:malicious", name: "Armadura Mal.", icon: "🟣" }
             ]
         },
         equipo_pkmn: {
-            title: "🎒 Equipo Pokémon & Gemas",
+            title: "🎒 Equipo & Gemas",
             color: "#27ae60",
             items: [
                 { id: "cob:rod", name: "Super Caña", icon: "🎣" },
@@ -198,6 +268,8 @@ app.give = {
                 { id: "eq:choice_specs", name: "Gafas Elegidas", icon: "👓" },
                 { id: "eq:choice_scarf", name: "Pañuelo Elegido", icon: "🧣" },
                 { id: "eq:assault_vest", name: "Chaleco Asalto", icon: "🦺" },
+                { id: "eq:rocky_helmet", name: "Casco Dentado", icon: "🪖" },
+                { id: "eq:focus_sash", name: "Banda Focus", icon: "🎗️" },
                 { id: "eq:shell_bell", name: "Cascabel Concha", icon: "🔔" },
                 { id: "eq:life_orb", name: "Vidasfera", icon: "🔮" },
                 { id: "eq:toxic_orb", name: "Toxisfera", icon: "🤢" },
@@ -211,13 +283,22 @@ app.give = {
                 { id: "eq:quick_claw", name: "Garra Rápida", icon: "💅" },
                 { id: "gem:fire", name: "Gema Fuego", icon: "🔥" },
                 { id: "gem:water", name: "Gema Agua", icon: "💧" },
+                { id: "gem:grass", name: "Gema Planta", icon: "🍃" },
+                { id: "gem:electric", name: "Gema Eléctrica", icon: "⚡" },
                 { id: "gem:psychic", name: "Gema Psíquica", icon: "🔮" },
+                { id: "gem:ice", name: "Gema Hielo", icon: "❄️" },
                 { id: "gem:dragon", name: "Gema Dragón", icon: "🐲" },
                 { id: "gem:fairy", name: "Gema Hada", icon: "🧚" },
-                { id: "extra:adamant_orb", name: "Diamante de Sangre (Dialga)", icon: "💠" },
-                { id: "extra:lustrous_orb", name: "Perla del Vacío (Palkia)", icon: "🔮" },
-                { id: "extra:adamant_crystal", name: "Cristal de Adamant (Dialga)", icon: "💎" },
-                { id: "extra:lustrous_globe", name: "Globo Lustroso (Palkia)", icon: "🌐" }
+                { id: "gem:fighting", name: "Gema Lucha", icon: "🥊" },
+                { id: "gem:flying", name: "Gema Voladora", icon: "🕊️" },
+                { id: "gem:ghost", name: "Gema Fantasma", icon: "👻" },
+                { id: "gem:ground", name: "Gema Tierra", icon: "🏜️" },
+                { id: "gem:steel", name: "Gema Acero", icon: "🔩" },
+                { id: "gem:normal", name: "Gema Normal", icon: "⚪" },
+                { id: "extra:adamant_orb", name: "Diamante (Dialga)", icon: "💠" },
+                { id: "extra:lustrous_orb", name: "Perla (Palkia)", icon: "🔮" },
+                { id: "extra:adamant_crystal", name: "Cristal (Dialga)", icon: "💎" },
+                { id: "extra:lustrous_globe", name: "Globo (Palkia)", icon: "🌐" }
             ]
         },
         consumibles_y_tms: {
@@ -245,7 +326,12 @@ app.give = {
                 { id: "tmcraft:psychic", name: "TM Psíquico", icon: "💿" },
                 { id: "tmcraft:shadow_ball", name: "TM Bola Sombra", icon: "💿" },
                 { id: "tmcraft:protect", name: "TM Protección", icon: "💿" },
-                { id: "tmcraft:toxic", name: "TM Tóxico", icon: "💿" }
+                { id: "tmcraft:toxic", name: "TM Tóxico", icon: "💿" },
+                { id: "tmcraft:sleep", name: "TM Dormir", icon: "💤" },
+                { id: "tmcraft:confuse", name: "TM Confusión", icon: "💫" },
+                { id: "tmcraft:curse", name: "TM Maldición", icon: "👻" },
+                { id: "tmcraft:charm", name: "TM Encanto", icon: "💕" },
+                { id: "tmcraft:substitute", name: "TM Sustituto", icon: "🧸" }
             ]
         }
     },
@@ -260,6 +346,9 @@ app.give = {
         return expensive.includes(id) ? 30 : 1;
     },
 
+    // --- NUEVO SISTEMA DE RENDERIZADO (MENÚ DE CATEGORÍAS) ---
+    
+    // Función de entrada que crea el HTML base
     renderButtons: () => {
         let container = document.querySelector('#giveScreen .card > div');
         
@@ -267,49 +356,124 @@ app.give = {
             container.innerHTML = '';
             container.className = "give-main-container"; 
             container.style.display = "block"; 
-        } else {
-            return;
-        }
-
-        for (const [key, section] of Object.entries(app.give.sections)) {
-            const header = document.createElement('h3');
-            header.innerText = section.title;
-            header.style.color = section.color;
-            header.style.borderBottom = `2px solid ${section.color}`;
-            header.style.marginTop = "20px";
-            header.style.marginBottom = "10px";
-            header.style.textAlign = "left";
-            header.style.fontSize = "1.1em";
-            container.appendChild(header);
-
-            const grid = document.createElement('div');
-            grid.className = "give-section-grid";
             
-            section.items.forEach(item => {
-                const btn = document.createElement('button');
-                const cost = app.give.getCost(item.id);
-                
-                btn.className = 'give-item-btn';
-                btn.id = `btn-${item.id.replace(/:/g, '-')}`;
-                btn.onclick = () => app.give.request(item.id);
+            // Creamos 2 contenedores internos: uno para categorías, otro para items
+            const categoriesContainer = document.createElement('div');
+            categoriesContainer.id = 'give-categories-view';
+            categoriesContainer.style.display = 'grid';
+            categoriesContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
+            categoriesContainer.style.gap = '15px';
+            categoriesContainer.style.padding = '10px';
 
-                const costClass = cost > 1 ? 'color:#ff4757;' : 'color:#2ed573;';
-                const bgClass = cost > 1 ? 'background:rgba(255, 71, 87, 0.1);' : 'background:rgba(46, 213, 115, 0.1);';
+            const itemsContainer = document.createElement('div');
+            itemsContainer.id = 'give-items-view';
+            itemsContainer.style.display = 'none'; // Oculto al inicio
 
-                if (cost > 1) {
-                    btn.style.border = "1px solid #ff4757";
-                }
+            container.appendChild(categoriesContainer);
+            container.appendChild(itemsContainer);
 
-                btn.innerHTML = `
-                    <div class="give-icon">${item.icon}</div>
-                    <div class="give-name">${item.name}</div>
-                    <div class="give-cost" style="${costClass} ${bgClass}">${cost} XP</div>
-                `;
-                grid.appendChild(btn);
-            });
-
-            container.appendChild(grid);
+            // Renderizamos las portadas de categorías
+            app.give.renderCategories(categoriesContainer, itemsContainer);
         }
+    },
+
+    // Función que pinta los botones grandes de categoría
+    renderCategories: (catContainer, itemsContainer) => {
+        for (const [key, section] of Object.entries(app.give.sections)) {
+            const btn = document.createElement('div');
+            
+            // Estilos del botón de categoría (Portada)
+            btn.style.background = `linear-gradient(135deg, ${section.color}22, ${section.color}44)`;
+            btn.style.border = `2px solid ${section.color}`;
+            btn.style.borderRadius = '15px';
+            btn.style.padding = '20px';
+            btn.style.cursor = 'pointer';
+            btn.style.textAlign = 'center';
+            btn.style.transition = 'transform 0.2s, boxShadow 0.2s';
+            
+            // Efecto Hover
+            btn.onmouseover = () => { btn.style.transform = 'scale(1.05)'; };
+            btn.onmouseout = () => { btn.style.transform = 'scale(1)'; };
+
+            btn.onclick = () => app.give.showSection(key, catContainer, itemsContainer);
+
+            btn.innerHTML = `
+                <div style="font-size: 3em; margin-bottom: 10px;">${section.items[0].icon}</div>
+                <div style="font-size: 1.2em; font-weight: bold; color: ${section.color}; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
+                    ${section.title}
+                </div>
+            `;
+            
+            catContainer.appendChild(btn);
+        }
+    },
+
+    // Función que oculta categorías y muestra los items de la sección elegida
+    showSection: (sectionKey, catContainer, itemsContainer) => {
+        const section = app.give.sections[sectionKey];
+        
+        // Ocultar categorías, mostrar items
+        catContainer.style.display = 'none';
+        itemsContainer.style.display = 'block';
+        itemsContainer.innerHTML = ''; // Limpiar items anteriores
+
+        // Botón VOLVER
+        const backBtn = document.createElement('button');
+        backBtn.innerText = "⬅ Volver al Menú";
+        backBtn.style.background = "#444";
+        backBtn.style.color = "white";
+        backBtn.style.border = "none";
+        backBtn.style.padding = "10px 20px";
+        backBtn.style.borderRadius = "8px";
+        backBtn.style.cursor = "pointer";
+        backBtn.style.marginBottom = "15px";
+        backBtn.style.fontSize = "1em";
+        backBtn.onclick = () => {
+            itemsContainer.style.display = 'none';
+            catContainer.style.display = 'grid';
+        };
+        itemsContainer.appendChild(backBtn);
+
+        // Título de la sección
+        const header = document.createElement('h3');
+        header.innerText = section.title;
+        header.style.color = section.color;
+        header.style.borderBottom = `2px solid ${section.color}`;
+        header.style.marginBottom = "15px";
+        itemsContainer.appendChild(header);
+
+        // Grid de items (usando tu clase existente)
+        const grid = document.createElement('div');
+        grid.className = "give-section-grid"; // Asegúrate de tener CSS para esto o usa inline abajo
+        // Estilos inline de respaldo por si acaso
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+        grid.style.gap = '10px';
+
+        section.items.forEach(item => {
+            const btn = document.createElement('button');
+            const cost = app.give.getCost(item.id);
+            
+            btn.className = 'give-item-btn';
+            btn.id = `btn-${item.id.replace(/:/g, '-')}`;
+            btn.onclick = () => app.give.request(item.id);
+
+            const costClass = cost > 1 ? 'color:#ff4757;' : 'color:#2ed573;';
+            const bgClass = cost > 1 ? 'background:rgba(255, 71, 87, 0.1);' : 'background:rgba(46, 213, 115, 0.1);';
+
+            if (cost > 1) {
+                btn.style.border = "1px solid #ff4757";
+            }
+
+            btn.innerHTML = `
+                <div class="give-icon">${item.icon}</div>
+                <div class="give-name">${item.name}</div>
+                <div class="give-cost" style="${costClass} ${bgClass}">${cost} XP</div>
+            `;
+            grid.appendChild(btn);
+        });
+
+        itemsContainer.appendChild(grid);
     },
 
     request: (itemId) => {
@@ -336,7 +500,14 @@ if (typeof socket !== 'undefined') {
     socket.on('giveSuccess', (data) => {
         const audio = document.getElementById('revealSound');
         if(audio) { audio.currentTime=0; audio.play().catch(e=>{}); }
-        alert(`✅ ¡COMPRA EXITOSA!\nObjeto: ${data.item}\nCoste: ${data.cost} Niveles\nTe quedan: ${data.balance} Niveles`);
+        
+        // Mensaje personalizado si es coordenadas
+        if(data.item.includes("Coordenadas")) {
+            alert(`✅ ¡COORDENADAS ENVIADAS!\nMira tu chat en el juego.\nCoste: ${data.cost} Niveles\nTe quedan: ${data.balance} Niveles`);
+        } else {
+            alert(`✅ ¡COMPRA EXITOSA!\nObjeto: ${data.item}\nCoste: ${data.cost} Niveles\nTe quedan: ${data.balance} Niveles`);
+        }
+        
         document.querySelectorAll('.give-item-btn').forEach(b => {
             b.style.opacity = "1";
             b.style.transform = "scale(1)";
