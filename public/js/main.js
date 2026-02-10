@@ -159,6 +159,20 @@ Conseguir el número exacto o la palabra más larga.
    - Salen 12 letras. Tienes 60s para buscar la palabra más larga.
    - Puntuación: 1 punto por cada letra de tu palabra válida.`,
 
+   orden: `🔢 ORDEN
+--------------------------------
+🎯 OBJETIVO
+Ordenad a los jugadores en la lista según el valor de su carta oculta.
+
+🕹️ DINÁMICA
+1. Tu Carta: Toca la tarjeta superior para ver tu número o acción.
+2. Cooperación: 
+   - Usa las flechas ▲ ▼ para SUGERIR dónde debe ir cada jugador.
+   - El número bajo la flecha indica cuántos jugadores opinan lo mismo.
+3. El Admin: Es el único que puede MOVER realmente a los jugadores basándose en las sugerencias.
+4. Listo: Cuando creas que tu posición es correcta, pulsa LISTO.
+5. Resolución: El Admin finalizará la ronda. ¡Necesitáis un 80% de aciertos para ganar!`,
+
     tecnico: `🛠️ AYUDA TÉCNICA
 ================================
 
@@ -187,8 +201,9 @@ const ROOM_EMOJIS = {
     elmas: "🏆",
     tabu: "🚫",
     pinturilloImp: "🎨",
-    cifrasyletras: "🔢",
-    feedback: "💌"
+    cifrasyletras: "🔣",
+    feedback: "💌",
+    orden: "🎌", 
 };
 
 window.app = {
@@ -268,16 +283,67 @@ window.app = {
         window.addEventListener('touchend', endDrag);
     },
 
-    
+    // --- LIMPIEZA VISUAL AGRESIVA (NUEVO) ---
+    // Esta función cierra todo lo que se suele quedar abierto por error
+    resetVisuals: () => {
+        // 1. Cerrar todos los Modales Globales
+        document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden'));
+        
+        // 2. Paneles de Admin (volver al estado oculto por defecto hasta que el server diga lo contrario)
+        // document.querySelectorAll('.admin-panel').forEach(el => el.classList.add('hidden'));
+        
+        // 3. Resetear Cartas (quitar estado revelado)
+        document.querySelectorAll('.reveal-content').forEach(el => {
+            el.classList.remove('reveal-content');
+            el.classList.add('blur-content');
+        });
+
+        // 4. Limpiezas específicas por juego que suelen dar problemas
+        // Impostor
+        document.getElementById('voteSection')?.classList.add('hidden');
+        document.getElementById('roleCard')?.classList.remove('hidden'); // Asegurar que se ve la carta al volver
+        
+        // Lobo
+        document.getElementById('loboNightActionArea')?.classList.add('hidden');
+        document.getElementById('loboDaySection')?.classList.add('hidden');
+        
+        // Tabu
+        document.getElementById('tabuActionButtons')?.classList.add('hidden');
+        
+        // Cifras y Letras
+        document.getElementById('cylPodiumArea')?.classList.add('hidden');
+        document.getElementById('cylGameArea')?.classList.remove('hidden');
+        
+        // Orden
+        document.getElementById('ordenResultArea')?.classList.add('hidden');
+        document.getElementById('ordenControls')?.classList.remove('hidden');
+    },
+
     showScreen: (id) => {
-        // --- CAMBIO AQUÍ: AÑADIDOS 'cylLobby' y 'cylGame' ---
-        const screens = ['hubScreen', 'loginScreen', 'feedbackScreen', 'impostorLobby', 'impostorGame', 'loboLobby', 'loboGame', 'anecdotasLobby', 'anecdotasGame', 'elmasLobby', 'elmasGame', 'tabuLobby', 'tabuGame', 'pinturilloImpLobby', 'pinturilloImpGame', 'cylLobby', 'cylGame', 'giveScreen', 'musScreen'];
+        // Lista completa de pantallas
+        // --- CAMBIO AQUÍ: AÑADIDOS 'cylLobby', 'cylGame', 'ordenLobby', 'ordenGame' ---
+        const screens = [
+            'hubScreen', 'loginScreen', 'feedbackScreen', 
+            'impostorLobby', 'impostorGame', 
+            'loboLobby', 'loboGame', 
+            'anecdotasLobby', 'anecdotasGame', 
+            'elmasLobby', 'elmasGame', 
+            'tabuLobby', 'tabuGame', 
+            'pinturilloImpLobby', 'pinturilloImpGame', 
+            'cylLobby', 'cylGame', 
+            'ordenLobby', 'ordenGame',
+            'giveScreen', 'musScreen'
+        ];
         // ---------------------------------------------------
         
         screens.forEach(s => {
             const el = document.getElementById(s);
             if(el) el.classList.add('hidden');
         });
+
+        // 2. EJECUTAR LIMPIEZA VISUAL (Aquí está el truco)
+        app.resetVisuals();
+
         const target = document.getElementById(id);
         if(target) target.classList.remove('hidden');
 
@@ -299,7 +365,7 @@ window.app = {
     },
 
     findActiveSession: () => {
-        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp', 'cifrasyletras'];
+        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp', 'cifrasyletras', 'orden'];
         for (let r of rooms) {
             if (localStorage.getItem(r + '_playerId') && localStorage.getItem(r + '_roomId')) return r;
         }
@@ -468,7 +534,7 @@ window.app = {
         alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
     },
     
-    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}
+    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}
 };
 
 socket.on('hubRoomsUpdate', (rooms) => {
@@ -541,6 +607,7 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'tabu') app.showScreen('tabuLobby');
     else if (data.room === 'pinturilloImp') app.showScreen('pinturilloImpLobby');
     else if (data.room === 'cifrasyletras') app.showScreen('cylLobby');
+    else if (data.room === 'orden') app.showScreen('ordenLobby');
 });
 
 socket.on('joinError', (msg) => { alert("⛔ " + msg); });

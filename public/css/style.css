@@ -163,7 +163,7 @@ button:active { transform: scale(0.96); }
 }
 
 /* --- CARTA ROL (UNIFICADA - SIEMPRE AZUL) --- */
-#roleCard, #loboCard {
+#roleCard, #loboCard , #ordenCard{
     position: relative;
     cursor: pointer;
     background: #2f3542; /* Color neutro para todos */
@@ -967,4 +967,27 @@ canvas {
     .give-icon {
         font-size: 1.5em;
     }
+}
+
+
+.orden-item {
+    background: #2f3542;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #74b9ff;
+    transition: all 0.2s;
+}
+
+.pulse-anim {
+    animation: pulse-green 0.3s ease-in-out;
+}
+
+@keyframes pulse-green {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); filter: brightness(1.5); }
+    100% { transform: scale(1); }
 }
