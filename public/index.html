@@ -53,6 +53,14 @@
                 </div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
+            <div class="hub-card" onclick="app.selectRoom('contexto')" style="border-left-color: #a55eea;">
+                <div class="hub-icon">🧠</div>
+                <div class="hub-info">
+                    <div class="hub-title">Contexto</div>
+                    <div class="hub-desc">Semántica e IA. (+Ranking)</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
             <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-left-color: #1cff2f;">
                 <div class="hub-icon">🐺</div>
                 <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
@@ -855,6 +863,60 @@
             </div>
         </div>
     </div>
+    <div id="contextoScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.contexto.showRanking()" style="flex:1; background:#a55eea; color:#222; font-weight:bold;">🏆 Ranking</button>
+            <button onclick="app.goBackToHub()" style="flex:0.3; background:#eb4d4b;">⬅</button>
+        </div>
+        
+        <h2 style="color:#a55eea; margin-bottom:5px;">🧠 Contexto</h2>
+        
+        <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; display:flex; align-items:center; justify-content:center; gap:10px;">
+            <span style="color:#aaa; font-size:0.9em;">Juego N°:</span>
+            <input type="number" id="ctxGameId" style="width:80px; margin:0; padding:5px; height:auto;">
+            <button onclick="app.contexto.changeGameId()" style="background:#57606f; width:auto; padding:5px 10px; margin:0;">🔄</button>
+        </div>
+
+        <div id="contextoWinner" class="hidden" style="width:100%; text-align:center; padding:15px; background:#2ed573; color:#fff; border-radius:10px; margin-bottom:15px; font-weight:bold; animation:pulse 1s infinite;"></div>
+
+        <div class="contexto-input-area">
+            <input type="text" id="contextoInput" placeholder="Escribe una palabra..." style="margin:0;">
+            <button onclick="app.contexto.submit()" class="main-btn" style="width:auto; margin:0; padding:0 20px; background:#a55eea;">➜</button>
+        </div>
+
+        <p style="color:#aaa; font-size:0.8em; margin-bottom:5px; width:100%; text-align:left;">Tus intentos (Cercanía #1 es la meta):</p>
+        <div id="contextoList"></div>
+    </div>
+
+    <div id="contextoRankingModal" class="hidden modal-overlay" style="align-items: center; justify-content: flex-start; padding-top: 50px;">
+        <div class="card" style="width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; background:#2f3542; border: 2px solid #a55eea;">
+            <h2 style="color:#a55eea;">🏆 RANKING SEMANAL</h2>
+            <div style="text-align:left; font-size:0.8em; color:#aaa; margin-bottom:15px;">
+                🔴 Roja: +1 pts | 🟠 Naranja: +5 pts<br>
+                🟢 Verde: +20 pts | 🎉 Victoria: +500 pts
+            </div>
+            <div id="contextoRankingList" style="text-align:left;">Cargando...</div>
+            
+            <button id="btnWipeRanking" onclick="app.contexto.resetRanking()" class="kick-btn hidden" style="margin-top:20px; font-size:0.8em;">🗑️ Borrar Todo (Admin)</button>
+            <button onclick="app.contexto.closeRanking()" class="main-btn" style="margin-top:10px;">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="contextoRankingModal" class="hidden modal-overlay" style="align-items: center; justify-content: flex-start; padding-top: 50px;">
+        <div class="card" style="width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; background:#2f3542; border: 2px solid #a55eea;">
+            <h2 style="color:#a55eea;">🏆 RANKING SEMANAL</h2>
+            <div style="text-align:left; font-size:0.8em; color:#aaa; margin-bottom:15px;">
+                🔴 Roja: +1 pts<br>
+                🟠 Naranja: +5 pts<br>
+                🟢 Verde: +20 pts<br>
+                🎉 Victoria: +500 pts
+            </div>
+            <div id="contextoRankingList" style="text-align:left;">Loading...</div>
+            
+            <button id="btnWipeRanking" onclick="app.contexto.resetRanking()" class="kick-btn hidden" style="margin-top:20px; font-size:0.8em;">🗑️ Borrar Todo (Admin)</button>
+            <button onclick="app.contexto.closeRanking()" class="main-btn" style="margin-top:10px;">Cerrar</button>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -870,6 +932,7 @@
     <script src="js/give.js"></script>
     <script src="js/cifrasyletras.js"></script>
     <script src="js/orden.js"></script>
+    <script src="js/contexto.js"></script>
     
 </body>
 </html>

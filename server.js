@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const contexto = require('./games/contexto');
 
 const app = express();
 const server = http.createServer(app);
@@ -21,6 +22,7 @@ const gamesModules = {
     cifrasyletras: require('./games/cifrasyletras'),
     give: require('./games/give'),
     orden: require('./games/orden'),
+    contexto: require('./games/contexto')
 };
 
 // Inicializar juegos

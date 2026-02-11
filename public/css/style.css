@@ -991,3 +991,21 @@ canvas {
     50% { transform: scale(1.2); filter: brightness(1.5); }
     100% { transform: scale(1); }
 }
+
+
+/* --- CONTEXTO --- */
+.contexto-input-area { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
+#contextoList { width: 100%; display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; padding-bottom: 50px; }
+.contexto-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 8px; background: #2f3542; border-left: 8px solid #57606f; transition: transform 0.2s; animation: fadeIn 0.3s ease-out; }
+.ctx-word { font-size: 1.1em; color: white; font-weight: bold; text-transform: capitalize; }
+.ctx-dist { font-size: 1.3em; font-weight: 900; }
+
+/* Colores */
+.ctx-red { border-color: #ff4757; background: rgba(255, 71, 87, 0.05); } 
+.ctx-red .ctx-dist { color: #ff4757; }
+.ctx-orange { border-color: #ffa502; background: rgba(255, 165, 2, 0.1); } 
+.ctx-orange .ctx-dist { color: #ffa502; }
+.ctx-green { border-color: #2ed573; background: rgba(46, 213, 115, 0.15); } 
+.ctx-green .ctx-dist { color: #2ed573; }
+.ctx-win { border-color: #a55eea; background: rgba(165, 94, 234, 0.3); box-shadow: 0 0 15px #a55eea; }
+.ctx-win .ctx-dist { color: #fff; }

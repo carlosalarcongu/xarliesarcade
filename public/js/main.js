@@ -332,7 +332,8 @@ window.app = {
             'pinturilloImpLobby', 'pinturilloImpGame', 
             'cylLobby', 'cylGame', 
             'ordenLobby', 'ordenGame',
-            'giveScreen', 'musScreen'
+            'giveScreen', 'musScreen',
+            'contextoScreen'
         ];
         // ---------------------------------------------------
         
@@ -373,12 +374,22 @@ window.app = {
     },
 
     selectRoom: (room) => {
-        if (['feedback', 'mus', 'give'].includes(room)) {
+        // AÑADIR 'contexto' A ESTA LISTA ES LA CLAVE
+        if (['feedback', 'mus', 'give', 'contexto'].includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
+            
+            // LÓGICA DIRECTA PARA CONTEXTO
+            if(room === 'contexto') { 
+                app.showScreen('contextoScreen'); 
+                if(app.contexto.init) app.contexto.init(); 
+                return; 
+            }
+            
             if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
         }
         
+        // Lógica estándar para salas multijugador (Impostor, Lobo, etc.)
         const savedId = localStorage.getItem(room + '_playerId');
         const savedRoomId = localStorage.getItem(room + '_roomId');
         
@@ -392,7 +403,7 @@ window.app = {
         else {
             app.currentRoom = room;
             socket.emit('requestHubRooms'); 
-            app.renderLoginScreen(room);
+            app.renderLoginScreen(room); // ESTO ES LO QUE NO QUEREMOS QUE SALTE EN CONTEXTO
         }
     },
 
