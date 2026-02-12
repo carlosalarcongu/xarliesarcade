@@ -10,7 +10,9 @@ OUTPUT_FILE="estado_proyecto.txt"
 IGNORE_DIRS=("node_modules" ".git" ".pm2" "logs" "games_backup" "node_modules")
 
 # Ficheros a ignorar (puedes usar * como comodín)
-IGNORE_FILES=("package-lock.json" ".env" "*.png" "*.jpg" "*.jpeg" "*.ico" "dump_project.sh" "$OUTPUT_FILE" ".DS_Store" "url.sh" "cloudflared-linux-amd64" "cloudflared-linux-arm64.deb" "cloudflared-linux-arm64" "cloudflared.exe")
+IGNORE_FILES=("package-lock.json" ".env" "*.png" "*.jpg" "*.jpeg" "*.ico" "dump_project.sh" "$OUTPUT_FILE" ".DS_Store" "url.sh" "cloudflared-linux-amd64" "cloudflared-linux-arm64.deb" "cloudflared-linux-arm64" "cloudflared.exe" ".gitignore" "auto_start.sh" "debug_logger.sh" "preguntas_elmas.js" "tabu_words.js" "mus_database.json" "./package.json" "suggested_words.json")
+
+# --- FIN CONFIGURACIÓN --- 
 
 # ---------------------
 

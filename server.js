@@ -22,7 +22,9 @@ const gamesModules = {
     cifrasyletras: require('./games/cifrasyletras'),
     give: require('./games/give'),
     orden: require('./games/orden'),
-    contexto: require('./games/contexto')
+    contexto: require('./games/contexto'),
+    consejo: require('./games/consejo'),
+    fiesta: require('./games/fiesta')
 };
 
 // Inicializar juegos

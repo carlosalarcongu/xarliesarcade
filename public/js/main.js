@@ -173,6 +173,15 @@ Ordenad a los jugadores en la lista según el valor de su carta oculta.
 4. Listo: Cuando creas que tu posición es correcta, pulsa LISTO.
 5. Resolución: El Admin finalizará la ronda. ¡Necesitáis un 80% de aciertos para ganar!`,
 
+consejo: `🦉 CONSEJO DE SABIOS
+--------------------------------
+Herramienta para gestionar debates o decisiones.
+
+1. Añade a los "Sabios" (jugadores) en la lista superior.
+2. Elige un tema (Filosofía, Salseo, Dilemas...).
+3. Pulsa "Pregunta" para sacar un tema de conversación al azar.
+4. Pulsa "Elegido" para seleccionar aleatoriamente a uno de los sabios para que empiece a hablar.`,
+
     tecnico: `🛠️ AYUDA TÉCNICA
 ================================
 
@@ -195,15 +204,9 @@ No hay contraseñas.
 };
 
 const ROOM_EMOJIS = {
-    impostor: "🕵️",
-    lobo: "🐺",
-    anecdotas: "📜",
-    elmas: "🏆",
-    tabu: "🚫",
-    pinturilloImp: "🎨",
-    cifrasyletras: "🔣",
-    feedback: "💌",
-    orden: "🎌", 
+    impostor: "🕵️", lobo: "🐺", anecdotas: "📜", elmas: "🏆", tabu: "🚫",
+    pinturilloImp: "🎨", cifrasyletras: "🔣", feedback: "💌", orden: "🎌", 
+    consejo: "🦉", fiesta: "🎉"
 };
 
 window.app = {
@@ -214,8 +217,43 @@ window.app = {
     myPlayerName: null,
     categoriesCache: {},
 
+    // --- FUNCIÓN DE FUERZA BRUTA PARA FIESTA (NUEVO) ---
+    forceFiestaStyles: () => {
+        console.log("🚑 Forzando estilos de Fiesta...");
+        const menu = document.getElementById('fiestaMenu');
+        if (!menu) return;
+
+        // 1. Asegurar visibilidad del contenedor
+        menu.classList.remove('hidden');
+        menu.style.display = 'block';
+        menu.style.width = '100%';
+
+        // 2. Forzar el grid
+        const grid = menu.querySelector('.hub-grid');
+        if (grid) {
+            grid.style.cssText = "display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 15px !important; width: 100% !important;";
+        }
+
+        // 3. Forzar apariencia de las cartas
+        const cards = menu.querySelectorAll('.hub-card');
+        cards.forEach(card => {
+            card.style.cssText = "display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; min-height: 120px !important; background-color: #2f3542 !important; border-radius: 12px !important; padding: 15px !important; box-shadow: 0 4px 0 rgba(0,0,0,0.2) !important; cursor: pointer !important; opacity: 1 !important; visibility: visible !important;";
+            
+            // Asegurar que el borde de color se mantiene (recuperándolo del atributo style original si es posible, o reasignándolo)
+            const originalBorder = card.getAttribute('style');
+            if(originalBorder && originalBorder.includes('border-left')) {
+                // Extraer color
+                const colorMatch = originalBorder.match(/border-left:\s*4px\s*solid\s*(#[0-9a-fA-F]+)/);
+                if(colorMatch) {
+                    card.style.borderLeft = `4px solid ${colorMatch[1]}`;
+                }
+            }
+        });
+    },
+
     initFloatingWidget: () => {
         const widget = document.getElementById('floatingUserWidget');
+        if(!widget) return;
         let isDragging = false;
         let hasMoved = false; 
         let offsetX, offsetY;
@@ -226,7 +264,6 @@ window.app = {
             const rect = widget.getBoundingClientRect();
             offsetX = x - rect.left;
             offsetY = y - rect.top;
-            
             widget.style.cursor = 'grabbing';
             widget.style.transition = 'none';
         };
@@ -234,13 +271,10 @@ window.app = {
         const moveDrag = (x, y) => {
             if (!isDragging) return;
             hasMoved = true;
-            
             let newX = x - offsetX;
             let newY = y - offsetY;
-
             newX = Math.max(0, Math.min(window.innerWidth - widget.offsetWidth, newX));
             newY = Math.max(0, Math.min(window.innerHeight - widget.offsetHeight, newY));
-
             widget.style.left = `${newX}px`;
             widget.style.top = `${newY}px`;
             widget.style.right = 'auto';
@@ -250,78 +284,44 @@ window.app = {
             if (!isDragging) return;
             isDragging = false;
             widget.style.cursor = 'grab';
-            
-            if (!hasMoved) {
-                app.changeName(); 
-            }
+            if (!hasMoved) app.changeName(); 
         };
 
         widget.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
-        
-        window.addEventListener('mousemove', e => {
-            if(isDragging) {
-                e.preventDefault(); 
-                moveDrag(e.clientX, e.clientY);
-            }
-        });
-        
+        window.addEventListener('mousemove', e => { if(isDragging) { e.preventDefault(); moveDrag(e.clientX, e.clientY); } });
         window.addEventListener('mouseup', endDrag);
-
-        widget.addEventListener('touchstart', e => {
-            const t = e.touches[0];
-            startDrag(t.clientX, t.clientY);
-        }, { passive: false });
-
-        window.addEventListener('touchmove', e => {
-            if (isDragging) {
-                e.preventDefault(); 
-                const t = e.touches[0];
-                moveDrag(t.clientX, t.clientY);
-            }
-        }, { passive: false });
-
+        widget.addEventListener('touchstart', e => { startDrag(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+        window.addEventListener('touchmove', e => { if (isDragging) { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
         window.addEventListener('touchend', endDrag);
     },
 
-    // --- LIMPIEZA VISUAL AGRESIVA (NUEVO) ---
-    // Esta función cierra todo lo que se suele quedar abierto por error
     resetVisuals: () => {
-        // 1. Cerrar todos los Modales Globales
         document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden'));
-        
-        // 2. Paneles de Admin (volver al estado oculto por defecto hasta que el server diga lo contrario)
-        // document.querySelectorAll('.admin-panel').forEach(el => el.classList.add('hidden'));
-        
-        // 3. Resetear Cartas (quitar estado revelado)
         document.querySelectorAll('.reveal-content').forEach(el => {
             el.classList.remove('reveal-content');
             el.classList.add('blur-content');
         });
-
-        // 4. Limpiezas específicas por juego que suelen dar problemas
-        // Impostor
         document.getElementById('voteSection')?.classList.add('hidden');
-        document.getElementById('roleCard')?.classList.remove('hidden'); // Asegurar que se ve la carta al volver
-        
-        // Lobo
+        document.getElementById('roleCard')?.classList.remove('hidden'); 
         document.getElementById('loboNightActionArea')?.classList.add('hidden');
         document.getElementById('loboDaySection')?.classList.add('hidden');
-        
-        // Tabu
         document.getElementById('tabuActionButtons')?.classList.add('hidden');
-        
-        // Cifras y Letras
         document.getElementById('cylPodiumArea')?.classList.add('hidden');
         document.getElementById('cylGameArea')?.classList.remove('hidden');
-        
-        // Orden
         document.getElementById('ordenResultArea')?.classList.add('hidden');
         document.getElementById('ordenControls')?.classList.remove('hidden');
+        
+        // Limpieza de Fiesta
+        document.getElementById('fiestaScreen')?.classList.add('hidden');
+        if(app.fiesta && app.fiesta.hideAll) app.fiesta.hideAll(); // Usamos la nueva funcion de fiesta.js
+        else {
+             // Fallback manual si fiesta.js no cargó
+             const fIds = ['fiestaMenu', 'fiestaGameORACULO', 'fiestaGameRONDA', 'fiestaGamePUERTA', 'fiestaGameACUSADO', 'fiestaGameCONEXION', 'fiestaGameCADENA'];
+             fIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        }
     },
 
     showScreen: (id) => {
-        // Lista completa de pantallas
-        // --- CAMBIO AQUÍ: AÑADIDOS 'cylLobby', 'cylGame', 'ordenLobby', 'ordenGame' ---
         const screens = [
             'hubScreen', 'loginScreen', 'feedbackScreen', 
             'impostorLobby', 'impostorGame', 
@@ -333,22 +333,21 @@ window.app = {
             'cylLobby', 'cylGame', 
             'ordenLobby', 'ordenGame',
             'giveScreen', 'musScreen',
-            'contextoScreen'
+            'contextoScreen', 'consejoScreen',
+            'fiestaScreen'
         ];
-        // ---------------------------------------------------
         
         screens.forEach(s => {
             const el = document.getElementById(s);
             if(el) el.classList.add('hidden');
         });
 
-        // 2. EJECUTAR LIMPIEZA VISUAL (Aquí está el truco)
         app.resetVisuals();
 
         const target = document.getElementById(id);
         if(target) target.classList.remove('hidden');
 
-        // --- ACTUALIZAR WIDGET ---
+        // Widget Logic
         const widget = document.getElementById('floatingUserWidget');
         const widgetText = document.getElementById('floatingUserText');
         
@@ -360,7 +359,6 @@ window.app = {
             const roomName = app.currentRoom ? app.currentRoom.toUpperCase() : "HUB";
             const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
             const emoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
-            
             widgetText.innerHTML = `<span style="opacity:0.7">${emoji} ${roomName}${roomId}</span><br><strong>👤 ${name}</strong>`;
         }
     },
@@ -374,22 +372,28 @@ window.app = {
     },
 
     selectRoom: (room) => {
-        // AÑADIR 'contexto' A ESTA LISTA ES LA CLAVE
-        if (['feedback', 'mus', 'give', 'contexto'].includes(room)) {
+        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta'].includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
+            if(room === 'contexto') { app.showScreen('contextoScreen'); if(app.contexto.init) app.contexto.init(); return; }
+            if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
             
-            // LÓGICA DIRECTA PARA CONTEXTO
-            if(room === 'contexto') { 
-                app.showScreen('contextoScreen'); 
-                if(app.contexto.init) app.contexto.init(); 
+            if (room === 'fiesta') {
+                 const name = app.myPlayerName || "Fiestero";
+                 // Generar ID único para evitar problemas
+                 const uniqueRoomId = 'FIESTA-MAIN'; 
+                 socket.emit('joinRoom', { name, room: 'fiesta', roomId: uniqueRoomId }); 
+                 return;
+            }
+
+            if(room === 'consejo') { 
+                const autoName = app.myPlayerName || "Sabio";
+                const autoRoomId = 'CONSEJO-' + Math.floor(Math.random() * 10000);
+                socket.emit('joinRoom', { name: autoName, room: 'consejo', roomId: autoRoomId });
                 return; 
             }
-            
-            if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
         }
         
-        // Lógica estándar para salas multijugador (Impostor, Lobo, etc.)
         const savedId = localStorage.getItem(room + '_playerId');
         const savedRoomId = localStorage.getItem(room + '_roomId');
         
@@ -403,7 +407,7 @@ window.app = {
         else {
             app.currentRoom = room;
             socket.emit('requestHubRooms'); 
-            app.renderLoginScreen(room); // ESTO ES LO QUE NO QUEREMOS QUE SALTE EN CONTEXTO
+            app.renderLoginScreen(room);
         }
     },
 
@@ -470,12 +474,9 @@ window.app = {
         const nameInput = document.getElementById('username');
         let name = "";
 
-        // PRIORIDAD: 
-        // 1. Si el usuario escribió algo nuevo en el input, usamos eso.
         if (nameInput && nameInput.value.trim().length > 0) {
             name = nameInput.value.trim();
         } 
-        // 2. Si no, usamos el nombre guardado en memoria
         else if (app.myPlayerName) {
             name = app.myPlayerName;
         }
@@ -545,7 +546,8 @@ window.app = {
         alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
     },
     
-    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}
+    impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}, contexto: {}, consejo: {},
+    fiesta: {} // Placeholder por si falla carga
 };
 
 socket.on('hubRoomsUpdate', (rooms) => {
@@ -619,6 +621,24 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'pinturilloImp') app.showScreen('pinturilloImpLobby');
     else if (data.room === 'cifrasyletras') app.showScreen('cylLobby');
     else if (data.room === 'orden') app.showScreen('ordenLobby');
+    else if (data.room === 'consejo') app.showScreen('consejoScreen');
+    
+    // --- LÓGICA DE FIESTA REFORZADA ---
+    else if (data.room === 'fiesta') {
+        app.showScreen('fiestaScreen');
+        
+        // 1. Mostrar pantalla
+        const screen = document.getElementById('fiestaScreen');
+        screen.classList.remove('hidden');
+
+        // 2. Ejecutar Force Styles (Corrección CSS en tiempo real)
+        app.forceFiestaStyles();
+
+        // 3. Iniciar lógica de JS
+        setTimeout(() => {
+            if (app.fiesta && app.fiesta.init) app.fiesta.init();
+        }, 100);
+    }
 });
 
 socket.on('joinError', (msg) => { alert("⛔ " + msg); });

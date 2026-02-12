@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Xarlie's Arcade</title>
-    <link rel="stylesheet" href="css/style.css?v=7">
+    <link rel="stylesheet" href="css/style.css?v=7.1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -20,15 +20,15 @@
                 <button class="ignored-btn" onclick="app.selectRoom('mus')">
                     Mus
                 </button>
-                <button class="ignored-btn" onclick="app.showScreen('giveScreen')">
-                    Give
-                </button>
             </div>
 
             <h1 style="color:#ffa502; font-size: 2.8em; margin: 0; line-height: 1;">XARLIE'S<br>ARCADE</h1>
         </div>
 
-        <p style="color:#7f8fa6; margin-bottom: 25px;">Selecciona una sala:</p>
+        <hr class="shaded-divider">
+
+        <p style="color:#7f8fa6; margin-bottom: 15px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;">Salas de Juego</p>
+        
         <div class="hub-grid">
             <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #3301c7;">
                 <div class="hub-icon">🕵️</div>
@@ -53,19 +53,6 @@
                 </div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card" onclick="app.selectRoom('contexto')" style="border-left-color: #a55eea;">
-                <div class="hub-icon">🧠</div>
-                <div class="hub-info">
-                    <div class="hub-title">Contexto</div>
-                    <div class="hub-desc">Semántica e IA. (+Ranking)</div>
-                </div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
-            </div>
-            <div class="hub-card" onclick="app.selectRoom('lobo')" style="border-left-color: #1cff2f;">
-                <div class="hub-icon">🐺</div>
-                <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
-            </div>
             <div class="hub-card" onclick="app.selectRoom('anecdotas')" style="border-left-color: #ff9ff3;">
                 <div class="hub-icon">📜</div>
                 <div class="hub-info"><div class="hub-title">Anécdotas</div><div class="hub-desc">Historias verdaderas (o no).</div></div>
@@ -78,6 +65,11 @@
                     <div class="hub-title">Cifras y Letras</div>
                     <div class="hub-desc">Cálculo mental y vocabulario.</div>
                 </div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #1cff2f;">
+                <div class="hub-icon">🐺</div>
+                <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
             
@@ -99,14 +91,47 @@
                 <div style="font-size:1.5em; color:#57606f">🔒</div>
             </div>
 
-            <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #416348; margin-top: 15px;">
+            <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #416348; ">
                 <div class="hub-icon">💌</div>
                 <div class="hub-info"><div class="hub-title">Feedback</div><div class="hub-desc">Sugerencias y errores.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
         </div>
         <div id="activeRoomsList" style="margin-top: 30px; width: 100%;"></div>
-        <div style="margin-top: 30px; text-align: center; color: #555;"><div style="font-size: 2em;">🤠</div></div>    
+
+        <hr class="shaded-divider">
+
+        <div class="mini-grid">
+            <div class="mini-card" onclick="app.selectRoom('fiesta')" style="border-left: 3px solid #ff9ff3;">
+                <span class="mini-icon">🎉</span>
+                <span class="mini-title">Fiesta</span>
+            </div>
+
+            <div class="mini-card" onclick="app.selectRoom('consejo')" style="border-left: 3px solid #ecf0f1;">
+                <span class="mini-icon">🦉</span>
+                <span class="mini-title">Consejo</span>
+            </div>
+
+            <div class="mini-card" onclick="app.selectRoom('contexto')" style="border-left: 3px solid #a55eea;">
+                <span class="mini-icon">🧠</span>
+                <span class="mini-title">Contexto</span>
+            </div>
+
+            <div class="mini-card" onclick="app.showScreen('giveScreen')" style="border-left: 3px solid #00cec9;">
+                <span class="mini-icon">🎁</span>
+                <span class="mini-title">Give XP</span>
+            </div>
+        </div>
+        <div style="margin-top: 30px; text-align: center; color: #555;">
+            <a 
+                href="https://github.com/carlosalarcongu/xarliesarcade.git" 
+                target="_blank" 
+                style="font-size: 0.7em; text-decoration: none; color: inherit;"
+            >
+                🤠 Ver el proyecto en GitHub 🤠
+            </a>
+</div>
+  
     </div>
 
     <div id="loginScreen" class="hidden">
@@ -587,10 +612,10 @@
 
         
         <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
-            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#44bd32" onclick="app.mus.addPlayer()">+ Jugador</button>
-            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#0984e3" onclick="app.mus.showAddMatchModal()">+ Partida</button>
-            <button class="kick-btn" style="width:auto; font-size:0.8em; background:#8e44ad" onclick="app.mus.showPairGenerator()">🎲 Parejas</button>
-            <button class="kick-btn" style="width:auto; font-size:1.2em; background:#d63031; padding: 5px 15px;" onclick="app.mus.backup()">💾</button>
+            <button class="kick-btn" style="width:auto; font-size:0.7em; background:#44bd32" onclick="app.mus.addPlayer()">+ Jugador</button>
+            <button class="kick-btn" style="width:auto; font-size:0.7em; background:#0984e3" onclick="app.mus.showAddMatchModal()">+ Partida</button>
+            <button class="kick-btn" style="width:auto; font-size:0.7em; background:#8e44ad" onclick="app.mus.showPairGenerator()">🎲 Parejas</button>
+            <button class="kick-btn2" style="background:#27ae60;" onclick="app.mus.backup()">💾</button>
         </div>
 
         <div class="card" style="padding:10px; margin-bottom:15px; background:#222; border: 1px solid #444;">
@@ -865,8 +890,8 @@
     </div>
     <div id="contextoScreen" class="hidden">
         <div class="back-nav">
-            <button onclick="app.contexto.showRanking()" style="flex:1; background:#a55eea; color:#222; font-weight:bold;">🏆 Ranking</button>
             <button onclick="app.goBackToHub()" style="flex:0.3; background:#eb4d4b;">⬅</button>
+            <button onclick="app.contexto.showRanking()" style="flex:1; background:#a55eea; color:#222; font-weight:bold;">🏆 Ranking</button>
         </div>
         
         <h2 style="color:#a55eea; margin-bottom:5px;">🧠 Contexto</h2>
@@ -917,6 +942,213 @@
             <button onclick="app.contexto.closeRanking()" class="main-btn" style="margin-top:10px;">Cerrar</button>
         </div>
     </div>
+    <div id="consejoScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Salir</button>
+        </div>
+        
+        <h2 style="color:#ecf0f1; font-family:'Cinzel', serif;">🦉 Consejo de Sabios</h2>
+
+        <div class="admin-panel">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px;">
+                <h4 style="margin:0 0 10px 0; color:#aaa;">👥 Los Sabios</h4>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="consejoNameInput" placeholder="Nombre..." style="margin:0; text-align:left;">
+                    <button class="main-btn" onclick="app.consejo.addName()" style="width:auto; padding:0 20px; margin:0;">+</button>
+                </div>
+                <div id="consejoNamesList" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <h4 style="margin:0 0 10px 0; color:#aaa;">📜 El Tema</h4>
+                <div class="control-row">
+                    <span>Categoría:</span>
+                    <select id="consejoTopicSelect" style="width: 60%;"></select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button class="main-btn" onclick="app.consejo.spinQuestion()" style="background:#3498db; color:white;">❓ Pregunta</button>
+                <button class="main-btn" onclick="app.consejo.spinPlayer()" style="background:#9b59b6; color:white;">👉 Elegido</button>
+            </div>
+        </div>
+
+        <div id="consejoResultArea" class="hidden" style="width:100%; text-align:center;">
+            
+            <div id="consejoQuestionCard" class="card hidden" style="background: linear-gradient(135deg, #2c3e50, #000); border: 2px solid #3498db; min-height: 150px; display:flex; align-items:center; justify-content:center;">
+                <p id="consejoQuestionText" style="font-size: 1.4em; font-weight:bold; color: #ecf0f1; font-family: 'Poppins', sans-serif;">...</p>
+            </div>
+
+            <div id="consejoPlayerCard" class="card hidden" style="background: linear-gradient(135deg, #4a235a, #000); border: 2px solid #9b59b6; margin-top:15px;">
+                <div style="font-size:0.9em; color:#aaa; text-transform:uppercase;">El elegido es:</div>
+                <div id="consejoPlayerText" style="font-size: 2.5em; font-weight:900; color: #fff; margin-top:5px;">...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fiestaScreen" class="hidden" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center;">
+        
+        <div class="back-nav" style="width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <button onclick="app.goBackToHub(true)" style="background: #eb4d4b; border: none; padding: 8px 15px; color: white; border-radius: 20px; font-weight: bold; cursor: pointer;">🚪 Salir</button>
+            <span style="color:#aaa; font-size:0.9em;">👥 <span id="fiestaCount">0</span></span>
+        </div>
+        
+        <div id="fiestaContent" style="width:100%; max-width: 500px; text-align:center;">
+            
+            <div id="fiestaMenu">
+                <h3 style="color:#aaa; margin-bottom:20px;">Selecciona Actividad</h3>
+                
+                <div class="hub-grid">
+                    
+                    <div class="hub-card" onclick="app.fiesta.selectGame('ORACULO')" style="border-left: 4px solid #9b59b6;">
+                        <div class="hub-icon">🔮</div>
+                        <div class="hub-info">
+                            <div class="hub-title">El Oráculo</div>
+                        </div>
+                        <div style="font-size:1.5em; color:#57606f">➜</div>
+                    </div>
+
+                    <div class="hub-card" onclick="app.fiesta.selectGame('RONDA')" style="border-left: 4px solid #e74c3c;">
+                        <div class="hub-icon">⏱️</div>
+                        <div class="hub-info">
+                            <div class="hub-title">Ronda 5s</div>
+                        </div>
+                        <div style="font-size:1.5em; color:#57606f">➜</div>
+                    </div>
+
+                    <div class="hub-card" onclick="app.fiesta.selectGame('PUERTA')" style="border-left: 4px solid #34495e;">
+                        <div class="hub-icon">🚪</div>
+                        <div class="hub-info">
+                            <div class="hub-title">La Puerta</div>
+                        </div>
+                        <div style="font-size:1.5em; color:#57606f">➜</div>
+                    </div>
+
+                    <div class="hub-card" onclick="app.fiesta.selectGame('ACUSADO')" style="border-left: 4px solid #f1c40f;">
+                        <div class="hub-icon">⚖️</div>
+                        <div class="hub-info">
+                            <div class="hub-title">El Acusado</div>
+                        </div>
+                        <div style="font-size:1.5em; color:#57606f">➜</div>
+                    </div>
+
+                    <div class="hub-card" onclick="app.fiesta.selectGame('CONEXION')" style="border-left: 4px solid #e91e63;">
+                        <div class="hub-icon">💞</div>
+                        <div class="hub-info">
+                            <div class="hub-title">Conexión 7</div>
+                        </div>
+                        <div style="font-size:1.5em; color:#57606f">➜</div>
+                    </div>
+
+                    <div class="hub-card" onclick="app.fiesta.selectGame('CADENA')" style="border-left: 4px solid #2ecc71;">
+                        <div class="hub-icon">🧠</div>
+                        <div class="hub-info">
+                            <div class="hub-title">Cadena</div>
+                        </div>
+                        <div style="font-size:1.5em; color:#57606f">➜</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="fiestaGameORACULO" class="hidden">
+                <h2 style="color:#9b59b6">🔮 El Oráculo</h2>
+                <div class="card" style="min-height:150px; display:flex; align-items:center; justify-content:center; font-size:1.3em; padding:20px; background:#2f3542; margin:20px 0; border-radius:10px;">
+                    <p id="oraculoText">Invoca al oráculo...</p>
+                </div>
+                <button class="main-btn" onclick="app.fiesta.oraculoSpin()">INVOCAR</button>
+                <button class="kick-btn" style="margin-top:20px; background:#444" onclick="app.fiesta.selectGame('MENU')">Volver al Menú</button>
+            </div>
+
+            <div id="fiestaGameRONDA" class="hidden">
+                <h2 style="color:#e74c3c">⏱️ Ronda Mortal</h2>
+                <div id="rondaActive" class="hidden">
+                    <div id="rondaTimer" style="font-size:6em; font-weight:900; color:white; animation:pulse 0.5s infinite">5</div>
+                    <div class="card" style="background:#c0392b; color:white; padding:15px; border-radius:10px;">
+                        <h3 id="rondaCategory" style="margin:0">...</h3>
+                        <p>Juega: <strong id="rondaVictim">...</strong></p>
+                    </div>
+                </div>
+                <div id="rondaIdle">
+                    <div class="card" style="padding:20px; background:#2f3542; margin-bottom:15px; border-radius:10px;"><p style="color:#aaa">Pulsa para una nueva categoría</p></div>
+                    <button class="main-btn" onclick="app.fiesta.rondaSpin()">NUEVA RONDA</button>
+                </div>
+                <button class="kick-btn" style="margin-top:20px; background:#444" onclick="app.fiesta.selectGame('MENU')">Volver al Menú</button>
+            </div>
+
+            <div id="fiestaGamePUERTA" class="hidden">
+                <h2 style="color:#34495e">🚪 La Puerta</h2>
+                <div class="card" style="background:#ecf0f1; color:#2c3e50; border:4px solid #34495e; padding:20px; border-radius:10px; margin-bottom:15px;">
+                    <h3 id="puertaQuestion" style="font-family:'Times New Roman'">?</h3>
+                    <p style="text-align:right">- Responde: <strong id="puertaVictim">?</strong></p>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px;">
+                    <button id="btnVoteFake" onclick="app.fiesta.puertaVote('fake')" style="background:#e74c3c; padding:10px; border:none; color:white; border-radius:5px;">🤥 Falso</button>
+                    <button id="btnVoteHonest" onclick="app.fiesta.puertaVote('honest')" style="background:#f1c40f; padding:10px; border:none; color:black; border-radius:5px;">🙂 Honesto</button>
+                    <button id="btnVoteBrutal" onclick="app.fiesta.puertaVote('brutal')" style="background:#2ecc71; padding:10px; border:none; color:white; border-radius:5px;">🔥 Brutal</button>
+                </div>
+                <button class="main-btn" style="margin-top:10px;" onclick="app.fiesta.puertaOpen()">ABRIR OTRA</button>
+                <button class="kick-btn" style="margin-top:20px; background:#444" onclick="app.fiesta.selectGame('MENU')">Volver al Menú</button>
+            </div>
+
+            <div id="fiestaGameACUSADO" class="hidden">
+                <h2 style="color:#f1c40f">⚖️ El Acusado</h2>
+                <div class="card" style="border:2px dashed #f1c40f; background:#2f3542; padding:20px; border-radius:10px; margin-bottom:15px;">
+                    <div style="font-size:0.9em; color:#aaa; margin-bottom:10px;">ACUSADO:</div>
+                    <div id="acusadoVictim" style="font-size:2em; font-weight:bold; margin-bottom:20px;">?</div>
+                    <div id="acusadoTask" style="font-size:1.2em; color:#fff">...</div>
+                </div>
+                <button class="main-btn" onclick="app.fiesta.acusadoSpin()">JUZGAR A OTRO</button>
+                <button class="kick-btn" style="margin-top:20px; background:#444" onclick="app.fiesta.selectGame('MENU')">Volver al Menú</button>
+            </div>
+
+            <div id="fiestaGameCONEXION" class="hidden">
+                <div id="conexionGazing" class="hidden">
+                    <h2 style="color:#e91e63">💞 Conexión 7</h2>
+                    <p>¡Miráos fijamente!</p>
+                    <div id="conexionPlayers" style="font-size:1.5em; margin:20px 0;">... 👁️ ...</div>
+                    <div id="conexionTimer" style="font-size:5em; color:#e91e63; animation:pulse 1s infinite">7</div>
+                </div>
+
+                <div id="conexionVoting" class="hidden">
+                    <h2 style="color:#e91e63">💞 ¿Hubo Tensión?</h2>
+                    <div style="display:flex; gap:10px; margin-bottom:20px;">
+                        <button id="btnVoteTension" class="main-btn" onclick="app.fiesta.conexionVote('tension')" style="background:#e91e63">🔥 SÍ</button>
+                        <button id="btnVoteNada" class="main-btn" onclick="app.fiesta.conexionVote('nada')" style="background:#95a5a6">❄️ NO</button>
+                    </div>
+                    <button class="main-btn" onclick="app.fiesta.conexionStart()">Nueva Pareja</button>
+                </div>
+
+                <div id="conexionLobby">
+                    <h2 style="color:#e91e63">💞 Conexión 7</h2>
+                    <button class="main-btn" onclick="app.fiesta.conexionStart()">💘 BUSCAR PAREJA</button>
+                </div>
+                <button class="kick-btn" style="margin-top:20px; background:#444" onclick="app.fiesta.selectGame('MENU')">Volver al Menú</button>
+            </div>
+
+            <div id="fiestaGameCADENA" class="hidden">
+                <h2 style="color:#2ecc71">🧠 Cadena Mental</h2>
+                
+                <div id="cadenaPlaying" class="hidden">
+                    <div id="cadenaWord" style="font-size:3em; font-weight:bold; margin:20px 0;">...</div>
+                    <p>¡Rápido! Decid asociadas en sentido horario.</p>
+                    <button class="kick-btn" onclick="app.fiesta.cadenaFail()">💥 ¡FALLÓ!</button>
+                </div>
+
+                <div id="cadenaFailed" class="hidden">
+                    <div style="font-size:2em; color:#e74c3c; font-weight:bold;">¡EXPLOSIÓN!</div>
+                    <button class="main-btn" onclick="app.fiesta.cadenaStart()">Nueva Palabra</button>
+                </div>
+
+                <div id="cadenaStart">
+                     <button class="main-btn" onclick="app.fiesta.cadenaStart()">EMPEZAR CADENA</button>
+                </div>
+
+                <button class="kick-btn" style="margin-top:20px; background:#444" onclick="app.fiesta.selectGame('MENU')">Volver al Menú</button>
+            </div>
+            
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -933,6 +1165,8 @@
     <script src="js/cifrasyletras.js"></script>
     <script src="js/orden.js"></script>
     <script src="js/contexto.js"></script>
+    <script src="js/consejo.js"></script>
+    <script src="js/fiesta.js"></script>
     
 </body>
 </html>

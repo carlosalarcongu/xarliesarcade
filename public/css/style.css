@@ -1,15 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
 
-/* --- RESET Y BASE --- */
+/* =========================================
+   1. RESET, BASE Y LAYOUT GENERAL
+   ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
-body { background-color: #1e272e; color: white; font-family: 'Poppins', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 15px; padding-bottom: 50px; }
+
+body { 
+    background-color: #1e272e; 
+    color: white; 
+    font-family: 'Poppins', sans-serif; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    min-height: 100vh; 
+    padding: 15px; 
+    padding-bottom: 50px; 
+}
+
 h1, h2, h3 { text-align: center; margin-bottom: 15px; }
 .hidden { display: none !important; }
 
-/* --- CONTENEDORES --- */
-div[id$="Lobby"], div[id$="Game"], div[id$="Screen"] { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; padding-bottom: 80px; }
+/* Contenedores principales de pantallas */
+div[id$="Lobby"], div[id$="Game"], div[id$="Screen"] { 
+    width: 100%; 
+    max-width: 500px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    padding-bottom: 80px; 
+}
 
-/* --- TARJETAS GENERALES --- */
+/* Tarjetas Genéricas (Contenedores de info) */
 .card {
     background-color: #2f3542;
     padding: 20px;
@@ -21,8 +43,14 @@ div[id$="Lobby"], div[id$="Game"], div[id$="Screen"] { width: 100%; max-width: 5
     border: 2px solid #404856;
 }
 
-/* --- BOTONES PRINCIPALES (ROJOS ANCHOS) --- */
-button { cursor: pointer; border: none; outline: none; border-radius: 12px; font-weight: bold; font-size: 1rem; transition: transform 0.1s, filter 0.2s; font-family: 'Poppins', sans-serif;}
+/* =========================================
+   2. BOTONES GLOBALES (Estilo Arcade/Original)
+   ========================================= */
+button { 
+    cursor: pointer; border: none; outline: none; border-radius: 12px; 
+    font-weight: bold; font-size: 1rem; transition: transform 0.1s, filter 0.2s; 
+    font-family: 'Poppins', sans-serif;
+}
 button:active { transform: scale(0.96); }
 
 .main-btn, .start-btn, .kick-btn {
@@ -47,108 +75,253 @@ button:active { transform: scale(0.96); }
     letter-spacing: 1px;
 }
 
-/* Botones secundarios (Volver, etc) */
+/* Botones de navegación superior */
 .back-nav { width: 100%; display: flex; justify-content: space-between; margin-bottom: 15px; }
 .back-nav button { background: transparent; border: 2px solid #57606f; color: #a4b0be; padding: 8px 15px; font-size: 0.85em; box-shadow: none; border-radius: 20px;}
 .logout-btn { background: #57606f; color: white; padding: 8px 15px; width: auto; font-size: 0.8em; margin-bottom: 15px; box-shadow: 0 3px 0 #3a414c; }
 
-/* --- CONTROLES +/- (ESTILO BARRA ROJA) --- */
-.admin-panel { width: 100%; 
-    background-color: #222; 
-    padding: 15px; 
-    border-radius: 12px; 
+/* =========================================
+   3. PANELES DE ADMINISTRADOR (ESTILO SPOTIFY)
+   ========================================= */
+.admin-panel { 
+    width: 100%; 
+    background-color: #121212; /* Fondo Negro Spotify */
+    padding: 20px; 
+    border-radius: 8px; /* Bordes menos redondeados, más modernos */
     margin-bottom: 20px; 
-    border: 10px solid #444;
+    border: none; /* Sin borde de color, limpio */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Sombra difusa */
 }
 
+/* Filas de control dentro del admin panel */
 .control-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #ff4757; /* Fondo rojo */
-    padding: 8px 10px;
-    border-radius: 12px;
-    margin-bottom: 12px;
+    background-color: transparent; /* Fondo transparente */
+    padding: 12px 0;
+    border-bottom: 1px solid #282828; /* Línea separadora sutil */
+    margin-bottom: 5px;
     color: white;
-    font-weight: bold;
-    box-shadow: 0 4px 0 #c0392b;
+    font-weight: 600;
+    box-shadow: none;
     width: 100%;
 }
+.control-row:last-child { border-bottom: none; }
 
-/* Los botones circulares dentro de la barra */
+/* Botones circulares +/- minimalistas */
 .control-row button {
-    background: rgba(0,0,0,0.2);
-    color: white;
-    width: 40px;
-    height: 40px;
+    background: transparent;
+    color: #b3b3b3;
+    border: 2px solid #535353;
+    width: 32px; height: 32px;
     border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5em;
-    padding: 0;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 1.2em; padding: 0; margin: 0 5px;
+    transition: all 0.2s;
     box-shadow: none;
-    line-height: 1;
-    margin: 0; /* Reset margen */
 }
-.control-row button:active { background: rgba(0,0,0,0.4); transform: scale(0.9); }
-.control-row span { font-size: 1.1em; text-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+.control-row button:hover { border-color: #1db954; color: #1db954; transform: scale(1.1); }
+.control-row button:active { transform: scale(0.9); }
+.control-row span { font-size: 1.1em; color: #1db954; font-weight: bold; margin: 0 5px; text-shadow: none; }
 
-/* --- SELECCIÓN FORMATO LIBRO (2 COLUMNAS) - ESTILO FINO --- */
+/* Inputs numéricos limpios */
+.admin-panel input[type="number"] {
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid #1db954; /* Subrayado verde */
+    border-radius: 0;
+    color: white;
+    font-size: 1.2em;
+    height: 30px;
+    text-align: right;
+    padding: 0 5px;
+    width: 60px;
+    font-weight: bold;
+    margin: 0;
+}
+.admin-panel input[type="number"]:focus { outline: none; border-bottom-color: white; }
+
+/* Selectores dropdown estilo moderno */
+.admin-panel select {
+    background-color: #282828; 
+    color: white; 
+    border: none; 
+    padding: 8px 12px;
+    border-radius: 4px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    text-align: right;
+}
+
+/* Checkboxes estilo "Toggle Switch" (Interruptor) */
+.admin-panel input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    width: 42px; height: 24px;
+    background: #535353;
+    border-radius: 20px;
+    position: relative;
+    outline: none; cursor: pointer; border: none;
+    padding: 0; margin: 0;
+    transition: background 0.3s;
+}
+.admin-panel input[type="checkbox"]::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; background: white; border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.admin-panel input[type="checkbox"]:checked { background: #1db954; } /* Verde activo */
+.admin-panel input[type="checkbox"]:checked::after { left: 20px; }
+
+/* Botones de Categoría (Grid 2 columnas) */
 .category-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas exactas */
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
     width: 100%;
-    margin-bottom: 15px;
+    margin: 15px 0;
 }
-
 .cat-btn {
-    background-color: transparent;
-    color: #a4b0be; /* Gris claro */
-    padding: 10px 5px; 
-    border-radius: 8px; 
+    background-color: #282828;
+    color: #fff;
+    padding: 12px; 
+    border-radius: 4px; 
     font-size: 0.85em; 
-    border: 1px solid #57606f; /* Borde sutil */
+    border: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    display: flex; justify-content: center; align-items: center; text-align: center;
     min-height: 50px; 
+    font-weight: 600;
     box-shadow: none;
-    font-weight: normal;
 }
-
-.cat-btn:hover {
-    border-color: #7f8fa6;
-    background-color: rgba(255,255,255,0.02);
-}
-
-/* ESTADO SELECCIONADO (VERDE/AMARILLO FINO) */
+.cat-btn:hover { background-color: #3e3e3e; }
 .cat-btn.selected {
-    background-color: rgba(46, 213, 115, 0.1) !important; /* Fondo muy suave */
-    border: 1px solid #2ed573 !important; /* Borde verde fino */
-    color: #2ed573 !important; /* Texto verde */
-    font-weight: bold;
-    box-shadow: 0 0 8px rgba(46, 213, 115, 0.2); /* Resplandor sutil */
+    background-color: #1db954 !important; /* Verde fondo */
+    color: #000 !important; /* Texto negro */
+    font-weight: 800;
     transform: none; 
+    box-shadow: none;
+    border: none !important;
+}
+.cat-btn.selected::before { display: none; } /* Quitar el tick antiguo */
+
+/* =========================================
+   4. HUB (MENÚ PRINCIPAL - 2 COLUMNAS)
+   ========================================= */
+.header-wrapper { position: relative; width: 100%; margin-bottom: 25px; padding-top: 10px; }
+.header-tools-left { position: absolute; top: 0; left: 0; display: flex; flex-direction: column; gap: 8px; z-index: 10; }
+
+.ignored-btn {
+    background-color: rgba(255, 255, 255, 0.026); color: #b3b3b3a4; border: 1px solid #2f354280; border-radius: 4px;
+    padding: 6px 10px; font-size: 0.75em; font-weight: normal; text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s; text-align: left; display: flex; align-items: center; gap: 5px; box-shadow: none; width: auto;
+}
+.ignored-btn:hover { color: #b2bec3; border-color: #57606f; background-color: rgba(255,255,255,0.05); }
+.ignored-btn:active { transform: translateY(1px); }
+.ignored-btn span { font-size: 1.1em; filter: grayscale(0.5); }
+
+/* GRID DE 2 COLUMNAS */
+.hub-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; /* DOS COLUMNAS */
+    gap: 15px; 
+    width: 100%; 
 }
 
-/* Marca de verificación discreta */
-.cat-btn.selected::before {
-    content: "✓ ";
-    margin-right: 5px;
-    font-weight: bold;
+/* Tarjeta del Hub adaptada a rejilla */
+.hub-card {
+    background-color: #2f3542; 
+    border-left: 6px solid #ccc;
+    padding: 15px; 
+    border-radius: 12px; 
+    display: flex; 
+    flex-direction: column; /* Icono arriba */
+    align-items: center;
+    justify-content: center; 
+    cursor: pointer; 
+    transition: transform 0.2s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    text-align: center;
+    height: 100%;
+    min-height: 140px; 
+    position: relative;
 }
 
-/* --- ANÉCDOTAS (TIMES NEW ROMAN) --- */
+.hub-card:active { transform: scale(0.98); margin-top: 2px; box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+
+.hub-icon { 
+    font-size: 2.5em; 
+    margin-right: 0; 
+    margin-bottom: 10px; 
+}
+
+.hub-info { width: 100%; }
+.hub-title { font-weight: 900; font-size: 1.1em; display: block; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.hub-desc { font-size: 0.75em; color: #a4b0be; line-height: 1.2; display: none; }
+@media (min-width: 600px) { .hub-desc { display: block; } }
+
+/* Ocultar la flecha derecha en modo rejilla */
+.hub-card > div:last-child { display: none; } 
+
+/* Cartas deshabilitadas */
+.hub-card.disabled {
+    filter: grayscale(100%); opacity: 0.5; cursor: help; background-color: #202020; box-shadow: none; transition: none;
+}
+.hub-card.disabled:active { transform: none; margin-top: 0; }
+
+/* =========================================
+   5. COMPONENTES DE JUEGO (Listas, Inputs Login)
+   ========================================= */
+ul { list-style: none; width: 100%; padding: 0; }
+li {
+    background-color: #2f3542;
+    margin-bottom: 8px; padding: 12px 20px; border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 500; border-left: 4px solid #57606f;
+}
+
+input[type="text"] {
+    width: 100%; padding: 15px; border-radius: 10px;
+    border: 2px solid #57606f; background-color: #2f3542;
+    color: white; font-size: 1rem; margin-bottom: 15px; outline: none; text-align: center;
+}
+input[type="text"]:focus { border-color: #ff4757; }
+
+/* =========================================
+   6. CARTAS DE ROL Y JUEGO
+   ========================================= */
+#roleCard, #loboCard, #ordenCard, #pintuImpRoleCard {
+    position: relative; cursor: pointer; background: #2f3542; border: 3px dashed #57606f; overflow: hidden;
+    min-height: 250px; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    transition: all 0.3s; margin-bottom: 5px;
+}
+#pintuImpRoleCard { min-height: 150px; }
+
+#roleCard h1 { font-size: 2.5em; margin-bottom: 10px; }
+#roleCard p { font-size: 1.2em; }
+#myRoleWord { font-size: 3em !important; text-align: center !important; width: 100%; margin: 20px 0 !important; line-height: 1.1; }
+#myRoleTitle { width: 100%; text-align: left !important; padding-left: 15px; font-size: 1.5em !important; }
+#myRoleInfo { width: 100%; text-align: left !important; padding-left: 15px; }
+
+/* Efecto Blur */
+.blur-content > * { filter: blur(20px); opacity: 0.3; pointer-events: none; }
+.blur-content::after {
+    content: "🔒 TOCA PARA VER"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: white; font-weight: 900; font-size: 1.5em; text-shadow: 0 4px 10px rgba(0,0,0,1); pointer-events: none; z-index: 10;
+}
+.reveal-content { background: #2f3542; border: 3px solid #74b9ff; }
+.reveal-content > * { filter: none; opacity: 1; }
+.card-note { text-align: center; color: #aaa; font-size: 0.8em; margin-bottom: 5px; pointer-events: none; }
+
+/* =========================================
+   7. JUEGOS ESPECÍFICOS
+   ========================================= */
+
+/* --- ANÉCDOTAS --- */
 .anecdota-input, .anecdota-card, .anecdota-read {
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 1.3em;
-    line-height: 1.4;
-    font-style: italic;
+    font-family: 'Times New Roman', Times, serif; font-size: 1.3em; line-height: 1.4; font-style: italic;
 }
 .anecdota-input {
     width: 100%; height: 120px; padding: 15px; border-radius: 10px;
@@ -158,274 +331,48 @@ button:active { transform: scale(0.96); }
 .anecdota-card {
     background: #f1f2f6; color: #2d3436; padding: 25px;
     border: 1px solid #ccc; box-shadow: 5px 5px 0 #bdc3c7;
-    transform: rotate(-1deg); margin: 20px 0;
-    width: 100%;
+    transform: rotate(-1deg); margin: 20px 0; width: 100%;
 }
 
-/* --- CARTA ROL (UNIFICADA - SIEMPRE AZUL) --- */
-#roleCard, #loboCard , #ordenCard{
-    position: relative;
-    cursor: pointer;
-    background: #2f3542; /* Color neutro para todos */
-    border: 3px dashed #57606f;
-    overflow: hidden;
-    min-height: 250px; /* Más altura */
-    width: 100%; /* Todo el ancho */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.3s;
-    margin-bottom: 5px;
-}
-
-/* Forzamos que lo de dentro se vea grande y ocupe espacio */
-#roleCard h1 { font-size: 2.5em; margin-bottom: 10px; }
-#roleCard p { font-size: 1.2em; }
-
-/* El texto de la palabra grande */
-#myRoleWord {
-    font-size: 3em !important; 
-    text-align: center !important;
-    width: 100%;
-    margin: 20px 0 !important;
-    line-height: 1.1;
-}
-
-/* Opcional: Ajustar también el título (IMPOSTOR/CIUDADANO) si quieres que todo vaya a la izquierda */
-#myRoleTitle {
-    width: 100%;
-    text-align: left !important;
-    padding-left: 15px;
-    font-size: 1.5em !important; /* Ajuste opcional de tamaño */
-}
-
-/* Opcional: Ajustar la descripción */
-#myRoleInfo {
-    width: 100%;
-    text-align: left !important;
-    padding-left: 15px;
-}
-
-#pintuImpRoleCard {
-    position: relative; /* CRÍTICO: Para que lo de dentro se posicione respecto a esto */
-    overflow: hidden;   /* Para que el blur no se salga */
-    min-height: 150px;  /* Altura mínima para que quepa el texto */
-    cursor: pointer;
-}
-
-/* --- CLASES DE ESTADO VISIBLE/OCULTO --- */
-.blur-content > * {
-    filter: blur(20px);
-    opacity: 0.3;
-    pointer-events: none;
-}
-
-.blur-content::after {
-    content: "🔒 TOCA PARA VER";
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-weight: 900;
-    font-size: 1.5em;
-    text-shadow: 0 4px 10px rgba(0,0,0,1);
-    pointer-events: none;
-    z-index: 10;
-}
-
-.reveal-content {
-    background: #2f3542; /* Mismo fondo al revelar */
-    border: 3px solid #74b9ff; /* Borde sólido al revelar */
-}
-.reveal-content > * {
-    filter: none;
-    opacity: 1;
-}
-
-/* Nota pequeña bajo la carta */
-/* El texto "Tu Rol (Toca para ver)" externo */
-.card-note {
-    text-align: center;
-    color: #aaa;
-    font-size: 0.8em;
-    margin-bottom: 5px;
-    pointer-events: none; /* Para que el clic atraviese si se solapa */
-}
-
-/* --- VOTACIÓN Y TARJETAS REDONDEADAS --- */
-.vote-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    width: 100%;
-    
-}
-
-/* Forzar redondeo y estilo en las cartas de votación */
-.vote-card, .vote-btn, .elmas-vote-card {
-    background-color: #353b48;
-    color: white;
-    padding: 15px 5px;
-    border-radius: 20px !important; /* <--- MUY REDONDEADO */
-    font-size: 0.9em;
-    border: 3px solid transparent; 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    cursor: pointer;
-    transition: transform 0.1s;
-    min-height: 80px;
-    position: relative;
-}
-
-/* Tic verde de "Ya ha votado" */
-.voted-tick {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    color: #2ed573;
-    font-size: 1.2em;
-    font-weight: bold;
-    text-shadow: 0 2px 2px rgba(0,0,0,0.5);
-}
-
-/* Estado Eliminado/Muerto */
-.vote-btn.dead {
-    opacity: 0.7;
-    background-color: #2d3436;
-    border: 2px solid #ff4757;
-    pointer-events: none; /* No se puede clicar */
-}
-
-.eliminated-text {
-    color: #ff4757;
-    font-weight: bold;
-    font-size: 0.9em;
-    text-transform: uppercase;
-    margin-top: 5px;
-}
-
-.vote-card:active, .vote-btn:active, .elmas-vote-card:active {
-    transform: scale(0.95);
-}
-
-/* Estado Seleccionado (Impostor, Anécdotas, El Más) */
-.selected, .selected-vote {
-    border-color: #2ed573 !important;
-    background-color: rgba(46, 213, 115, 0.2) !important;
-    box-shadow: 0 0 15px #2ed573 !important;
-    transform: scale(1.05);
-}
-
-.vote-btn.dead, .vote-card.dead {
-    opacity: 0.5;
-    text-decoration: line-through;
-    pointer-events: none;
-    background-color: #2f3542;
-}
-
-/* --- INPUTS GENERALES --- */
-input[type="text"], input[type="number"] {
-    width: 100%; padding: 15px; border-radius: 10px;
-    border: 2px solid #57606f; background-color: #2f3542;
-    color: white; font-size: 1rem; margin-bottom: 15px; outline: none; text-align: center;
-}
-input:focus { border-color: #ff4757; }
-
-/* --- LISTAS --- */
-ul { list-style: none; width: 100%; padding: 0; }
-li {
-    background-color: #2f3542;
-    margin-bottom: 8px; padding: 12px 20px; border-radius: 8px;
-    display: flex; justify-content: space-between; align-items: center;
-    font-weight: 500; border-left: 4px solid #57606f;
-}
-
-/* --- HUB --- */
-.hub-grid { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; }
-.hub-card {
-    background-color: #2f3542; border-left: 6px solid #ccc;
-    padding: 20px; border-radius: 12px; display: flex; align-items: center;
-    justify-content: space-between; cursor: pointer; transition: transform 0.2s;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-}
-.hub-card:active { transform: scale(0.98); margin-top: 2px; box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
-.hub-icon { font-size: 2.2em; margin-right: 15px; }
-.hub-info { flex-grow: 1; text-align: left; }
-.hub-title { font-weight: 900; font-size: 1.3em; display: block; text-transform: uppercase; letter-spacing: 0.5px;}
-.hub-desc { font-size: 0.8em; color: #a4b0be; }
-
-/* --- TABU Y EL MAS --- */
-.team-btn { font-weight: bold; opacity: 0.6; transition: 0.3s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); border-radius: 10px;}
-.team-btn.selected { opacity: 1; transform: scale(1.05); }
-.team-blue { background: #0984e3; color: white; }
-.team-red { background: #d63031; color: white; }
-.elmas-question { font-size: 1.4em; font-weight: bold; color: white; margin: 20px 0; }
-
-/* Mensaje de espera en Tabú */
-.waiting-text {
-    color: #a4b0be;
-    font-style: italic;
-    margin-top: 20px;
-    animation: pulse 1.5s infinite;
-}
-
-/* --- MODALES --- */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
-.podium-container { display: flex; align-items: flex-end; gap: 10px; margin-top: 20px; }
-.podium-bar { width: 70px; border-radius: 5px 5px 0 0; color: #2d3436; font-weight: bold; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 5px; }
-.p-gold { height: 180px; background: #f1c40f; border: 2px solid white; box-shadow: 0 0 20px #f1c40f; order: 2; }
-.p-silver { height: 120px; background: #bdc3c7; order: 1; }
-.p-bronze { height: 90px; background: #cd6133; order: 3; }
-.p-name { font-size: 0.8em; margin-bottom: 5px; color:white; text-shadow: 1px 1px 0 #000; }
-
-@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-/* Corrección para inputs pequeños de configuración */
-.admin-panel input[type="number"] {
-    font-size: 1.2em; /* Número más grande */
-    height: 40px;     /* Altura fija cómoda */
-}
-
-/* ... AL FINAL DEL ARCHIVO ... */
-
+/* --- PINTURILLO --- */
 .canvas-container {
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    touch-action: none;
-    margin: 10px auto;
-    border: 4px solid #57606f;
-    position: relative;
-    width: 300px; 
-    height: 300px;
+    background: #fff; border-radius: 10px; overflow: hidden; touch-action: none;
+    margin: 10px auto; border: 4px solid #57606f; position: relative; width: 300px; height: 300px;
 }
-
-canvas {
-    display: block;
-    cursor: crosshair;
-}
-
-.canvas-controls {
-    display: flex;
-    justify-content: space-between;
-    width: 300px;
-    margin: 0 auto;
-}
-
+canvas { display: block; cursor: crosshair; }
+.canvas-controls { display: flex; justify-content: space-between; width: 300px; margin: 0 auto; }
 .draw-status {
-    background: #2f3542;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #74b9ff;
-    color: #74b9ff;
-    font-weight: bold;
+    background: #2f3542; padding: 10px; border-radius: 8px; margin-bottom: 10px;
+    border: 1px solid #74b9ff; color: #74b9ff; font-weight: bold;
 }
 
+/* --- CONTEXTO --- */
+.contexto-input-area { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
+#contextoList { width: 100%; display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; padding-bottom: 50px; }
+.contexto-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 8px; background: #2f3542; border-left: 8px solid #57606f; transition: transform 0.2s; animation: fadeIn 0.3s ease-out; }
+.ctx-word { font-size: 1.1em; color: white; font-weight: bold; text-transform: capitalize; }
+.ctx-dist { font-size: 1.3em; font-weight: 900; }
+.ctx-red { border-color: #ff4757; background: rgba(255, 71, 87, 0.05); } 
+.ctx-red .ctx-dist { color: #ff4757; }
+.ctx-orange { border-color: #ffa502; background: rgba(255, 165, 2, 0.1); } 
+.ctx-orange .ctx-dist { color: #ffa502; }
+.ctx-green { border-color: #2ed573; background: rgba(46, 213, 115, 0.15); } 
+.ctx-green .ctx-dist { color: #2ed573; }
+.ctx-win { border-color: #a55eea; background: rgba(165, 94, 234, 0.3); box-shadow: 0 0 15px #a55eea; }
+.ctx-win .ctx-dist { color: #fff; }
+
+/* --- ORDEN --- */
+.orden-item {
+    background: #2f3542; padding: 10px; margin-bottom: 5px; border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-left: 4px solid #74b9ff; transition: all 0.2s;
+}
+.pulse-anim { animation: pulse-green 0.3s ease-in-out; }
+@keyframes pulse-green { 
+    0% { transform: scale(1); } 50% { transform: scale(1.2); filter: brightness(1.5); } 100% { transform: scale(1); } 
+}
+
+ 
 /* =========================================
    ESTILOS EXCLUSIVOS PARA LA SALA DE MUS
    (Tipografía Clásica y Botones 3D)
@@ -569,8 +516,6 @@ canvas {
     cursor: pointer;
 }
 
-/* Añadir al final de public/css/style.css */
-
 /* Wrapper para hacer scroll horizontal en tablas Mus si no caben */
 .mus-table-wrapper {
     width: 100%;
@@ -580,294 +525,6 @@ canvas {
     border-radius: 8px;
     border: 1px solid #57606f;
 }
-
-/* Ajustes para celdas en móvil */
-@media (max-width: 600px) {
-    .mus-table th, .mus-table td {
-        padding: 8px 2px; /* Menos padding lateral */
-        font-size: 0.8em;
-    }
-}
-
-/* Añadir al final del archivo */
-
-#globalRulesText {
-    white-space: pre-wrap;       /* Respetar saltos de línea del JS */
-    font-family: 'Poppins', sans-serif; /* O la que uses */
-    font-size: 0.95em;
-    color: #e0e0e0;
-    line-height: 1.6;
-}
-
-#globalRulesModal .card {
-    max-width: 600px;
-    width: 95%;
-    background: #2f3542;
-    box-shadow: 0 0 50px rgba(0,0,0,0.8);
-}
-
-/* --- CARTAS EN DESARROLLO (DISABLED) --- */
-.hub-card.disabled {
-    filter: grayscale(100%); /* Lo pone en blanco y negro */
-    opacity: 0.5;            /* Lo hace semitransparente */
-    cursor: help;            /* Cambia el cursor para indicar duda/ayuda */
-    background-color: #202020; /* Un fondo un poco más oscuro */
-    box-shadow: none;
-    transition: none;
-}
-
-.hub-card.disabled:hover {
-    opacity: 0.7; /* Un pequeño efecto al pasar el ratón para ver que es interactivo */
-}
-
-.hub-card.disabled:active {
-    transform: none;      /* Quitar el efecto de hundirse al clicar */
-    margin-top: 0;
-    box-shadow: none;
-}
-
-/* --- LÍNEA DE TIEMPO DEL LOBO --- */
-.timeline-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 10px;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-}
-
-.timeline-step {
-    font-size: 0.8em;
-    color: #777;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid transparent;
-}
-
-.timeline-step.active {
-    color: #fff;
-    background-color: #6c5ce7;
-    border-color: #a29bfe;
-    font-weight: bold;
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(108, 92, 231, 0.5);
-}
-
-.timeline-arrow {
-    color: #555;
-    font-size: 0.8em;
-}
-
-/* --- BARRA DE HERRAMIENTAS SUPERIOR (HUB) --- */
-.tool-bar {
-    display: flex;
-    width: 100%;
-    gap: 10px;
-    justify-content: flex-start; /* Alineado a la izquierda */
-    margin-bottom: 10px;
-}
-
-.mini-card {
-    background-color: #2f3542;
-    padding: 8px 15px;
-    border-radius: 20px; /* Borde redondeado tipo botón */
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 0.85em;
-    font-weight: bold;
-    color: #fff;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-    border-left-width: 5px;
-    border-left-style: solid;
-    transition: transform 0.1s;
-}
-
-.mini-card:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
-}
-
-.mini-card .hub-icon {
-    font-size: 1.2em; /* Icono más pequeño */
-    margin: 0;
-}
-
-/* --- ENCABEZADO HUB Y BOTONES SECUNDARIOS --- */
-.header-wrapper {
-    position: relative; /* Para poder posicionar los botones encima */
-    width: 100%;
-    margin-bottom: 25px;
-    padding-top: 10px;
-}
-
-.header-tools-left {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: column; /* Uno debajo del otro o 'row' para lado a lado */
-    gap: 8px;
-    z-index: 10;
-}
-
-.ignored-btn {
-    background-color: transparent;
-    color: #636e72; /* Gris apagado para que parezca inactivo/ignorable */
-    border: 1px solid #2f3542;
-    border-radius: 4px; /* Cuadrado con esquinas muy poco redondeadas */
-    padding: 6px 10px;
-    font-size: 0.75em;
-    font-weight: normal;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    box-shadow: none; /* Sin sombra para que sea plano */
-    width: auto;
-}
-
-.ignored-btn:hover {
-    color: #b2bec3;
-    border-color: #57606f;
-    background-color: rgba(255,255,255,0.05);
-}
-
-.ignored-btn:active {
-    transform: translateY(1px);
-}
-
-/* Ajuste del emoji dentro del botón */
-.ignored-btn span {
-    font-size: 1.1em;
-    filter: grayscale(0.5); /* Apagar un poco el color del emoji */
-}
-
-#musScreen {
-    font-family: 'Cinzel', serif; /* Fuente estilo Naipes */
-    letter-spacing: 0.5px;
-}
-
-#musScreen h1, #musScreen h2, #musScreen h3, #musScreen h4 {
-    font-family: 'Cinzel', serif;
-    font-weight: 900;
-    text-transform: uppercase;
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.6);
-    margin-bottom: 15px;
-}
-
-/* Header de Salas */
-.mus-room-header {
-    background: #2f3542;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    border: 1px solid #e1b12c;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.room-controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-#musScreen button {
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    border: none;
-    border-radius: 4px;
-    padding: 10px 15px;
-    color: white;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    box-shadow: 0 3px 0 rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-#musScreen button:active {
-    top: 3px;
-    box-shadow: none;
-    transform: translateY(3px);
-}
-
-/* Inputs y Selects Minimalistas */
-#musScreen select, #musScreen input {
-    background-color: #2f3640;
-    border: 1px solid #57606f;
-    border-radius: 4px;
-    padding: 8px;
-    color: #e1b12c; /* Dorado */
-    font-family: 'Cinzel', serif;
-    font-weight: bold;
-}
-
-/* Tablas Minimalistas de Mus */
-.mus-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    font-size: 0.85em;
-    table-layout: auto; /* CAMBIO: Auto para adaptarse al contenido */
-}
-
-.mus-table th {
-    text-align: center;
-    color: #a4b0be;
-    border-bottom: 1px solid #57606f;
-    padding: 10px 8px; /* Más padding lateral */
-    font-weight: normal;
-    text-transform: uppercase;
-    font-size: 0.75em;
-    white-space: nowrap; /* Encabezados en una línea */
-}
-
-/* Columna de Nombre (Identificador) */
-.mus-table th:first-child, .mus-table td:first-child {
-    text-align: left;
-    padding-left: 10px;
-    white-space: nowrap; /* CAMBIO: Nunca romper el nombre en dos líneas */
-    width: 1%; /* Truco CSS: Intenta ser lo más pequeño posible, pero el nowrap lo fuerza a abrirse lo necesario */
-}
-
-.mus-table td {
-    padding: 12px 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    color: #fff;
-    text-align: center;
-    white-space: nowrap; /* Datos numéricos en una línea */
-}
-
-.mus-table tr:last-child td { border-bottom: none; }
-
-/* Emoji del jugador */
-.player-avatar {
-    margin-right: 8px;
-    font-size: 1.3em;
-    vertical-align: middle;
-    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
-}
-
-/* Wrapper para scroll horizontal suave */
-.mus-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    border: 1px solid #57606f;
-    background: rgba(0,0,0,0.2);
-}
-
 
 /* Enfrentamientos VS */
 .vs-container {
@@ -895,117 +552,416 @@ canvas {
     margin-top: 10px;
 }
 
-/* --- ESTILOS NUEVA TIENDA GIVE (XP) --- */
+/* Ajustes para celdas en móvil */
+@media (max-width: 600px) {
+    .mus-table th, .mus-table td {
+        padding: 8px 2px; /* Menos padding lateral */
+        font-size: 0.8em;
+    }
+}
+/* =========================================
+   8. GIVE (TIENDA XP) Y OTROS
+   ========================================= */
+.give-main-container { padding: 5px; text-align: center; }
+.give-section-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+.give-item-btn {
+    background-color: #353b48; border: 1px solid #57606f; border-radius: 8px;
+    padding: 8px 2px; cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    min-height: 90px; box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+}
+.give-item-btn:hover { background-color: #3d4655; transform: translateY(-2px); border-color: #74b9ff; }
+.give-item-btn:active { transform: translateY(1px); box-shadow: none; }
+.give-icon { font-size: 2em; margin-bottom: 5px; }
+.give-name { font-size: 0.7em; color: #dfe6e9; line-height: 1.1; margin-bottom: 5px; font-weight: bold; word-break: break-word; }
+.give-cost { font-size: 0.75em; color: #2ed573; font-weight: 900; background: rgba(46, 213, 115, 0.1); padding: 2px 6px; border-radius: 4px; width: 100%; }
+@media (max-width: 400px) { .give-section-grid { grid-template-columns: repeat(3, 1fr); } .give-icon { font-size: 1.5em; } }
 
-.give-main-container {
-    padding: 5px;
+/* =========================================
+   9. VOTACIÓN Y MODALES GLOBALES
+   ========================================= */
+.vote-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; width: 100%; }
+.vote-card, .vote-btn, .elmas-vote-card {
+    background-color: #353b48; color: white; padding: 15px 5px; border-radius: 20px !important;
+    font-size: 0.9em; border: 3px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; min-height: 80px; position: relative;
+}
+.voted-tick { position: absolute; top: 5px; right: 5px; color: #2ed573; font-size: 1.2em; font-weight: bold; text-shadow: 0 2px 2px rgba(0,0,0,0.5); }
+.vote-btn.dead { opacity: 0.7; background-color: #2d3436; border: 2px solid #ff4757; pointer-events: none; }
+.eliminated-text { color: #ff4757; font-weight: bold; font-size: 0.9em; text-transform: uppercase; margin-top: 5px; }
+.vote-card:active, .vote-btn:active, .elmas-vote-card:active { transform: scale(0.95); }
+.selected, .selected-vote { border-color: #2ed573 !important; background-color: rgba(46, 213, 115, 0.2) !important; box-shadow: 0 0 15px #2ed573 !important; transform: scale(1.05); }
+.vote-btn.dead, .vote-card.dead { opacity: 0.5; text-decoration: line-through; pointer-events: none; background-color: #2f3542; }
+
+/* Modales */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
+#globalRulesText { white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 0.95em; color: #e0e0e0; line-height: 1.6; }
+#globalRulesModal .card { max-width: 600px; width: 95%; background: #2f3542; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+
+/* Podio */
+.podium-container { display: flex; align-items: flex-end; gap: 10px; margin-top: 20px; }
+.podium-bar { width: 70px; border-radius: 5px 5px 0 0; color: #2d3436; font-weight: bold; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 5px; }
+.p-gold { height: 180px; background: #f1c40f; border: 2px solid white; box-shadow: 0 0 20px #f1c40f; order: 2; }
+.p-silver { height: 120px; background: #bdc3c7; order: 1; }
+.p-bronze { height: 90px; background: #cd6133; order: 3; }
+.p-name { font-size: 0.8em; margin-bottom: 5px; color:white; text-shadow: 1px 1px 0 #000; }
+
+/* Tabú Equipos */
+.team-btn { font-weight: bold; opacity: 0.6; transition: 0.3s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); border-radius: 10px;}
+.team-btn.selected { opacity: 1; transform: scale(1.05); }
+.team-blue { background: #0984e3; color: white; }
+.team-red { background: #d63031; color: white; }
+.elmas-question { font-size: 1.4em; font-weight: bold; color: white; margin: 20px 0; }
+.waiting-text { color: #a4b0be; font-style: italic; margin-top: 20px; animation: pulse 1.5s infinite; }
+
+/* Widget Flotante */
+#floatingUserWidget {
+    position: fixed; top: 10px; right: 10px; z-index: 99999;
+    background: rgba(44, 62, 80, 0.9); padding: 8px 15px; border-radius: 25px;
+    border: 1px solid #ffffff55; color: #fff; cursor: grab;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: right;
+    font-size: 0.85em; user-select: none; backdrop-filter: blur(5px);
+    min-width: 120px; touch-action: none; transition: transform 0.1s;
+}
+#floatingUserWidget:active { cursor: grabbing; transform: scale(0.98); } 
+
+/*Fin*/
+
+/* Forzar que el contenedor principal ocupe espacio */
+#fiestaContent {
+    width: 100%;
+    display: block;
+}
+
+/* --- CORRECCIONES FIESTA --- */
+/* =========================================
+   CORRECCIONES ESPECÍFICAS PARA FIESTA
+   ========================================= */
+
+/* 1. Forzar la cuadrícula de 2 columnas */
+#fiestaMenu .hub-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+/* 2. Arreglar las cartas para que sean cuadradas/verticales */
+#fiestaMenu .hub-card {
+    display: flex !important;
+    flex-direction: column !important; /* Icono arriba, texto abajo */
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 120px !important; /* Darles altura forzada */
+    height: auto !important;
+    background-color: #2f3542 !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2) !important;
+    opacity: 1 !important; /* Asegurar que se ven */
+    cursor: pointer !important;
+}
+
+/* Efecto al pulsar */
+#fiestaMenu .hub-card:active {
+    transform: scale(0.95) !important;
+}
+
+/* 3. Asegurar que el icono se ve y está centrado */
+#fiestaMenu .hub-icon {
+    font-size: 2.5em !important;
+    margin: 0 0 10px 0 !important; /* Quitar margen derecho, poner margen abajo */
+    display: block !important;
+    width: auto !important;
+}
+
+/* 4. Asegurar que el texto se ve */
+#fiestaMenu .hub-info {
+    width: 100% !important;
+    text-align: center !important;
+}
+
+#fiestaMenu .hub-title {
+    color: white !important;
+    font-weight: 900 !important;
+    font-size: 0.9em !important;
+    display: block !important;
+    white-space: normal !important; /* Permitir que el texto salte de línea si no cabe */
+}
+
+/* =========================================
+   ESTILOS MINIMALISTAS (NUEVO)
+   ========================================= */
+
+.mini-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 columnas */
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.mini-card {
+    background-color: #2f3542;
+    border-radius: 8px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.mini-card:active {
+    transform: scale(0.96);
+    background-color: #353b48;
+}
+
+.mini-icon {
+    font-size: 1.5em;
+    line-height: 1;
+}
+
+.mini-title {
+    font-weight: bold;
+    font-size: 0.95em;
+    color: #dfe6e9;
+    text-transform: uppercase;
+}
+
+/* Línea divisoria sombreada */
+.shaded-divider {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0));
+    margin: 25px 0 20px 0;
+    width: 80%;
+}
+
+/* =========================================
+   ESTILOS EXCLUSIVOS MUS: TEMA COMPLETO + TABLA COMPACTA
+   ========================================= */
+
+/* 1. FONDO Y TIPOGRAFÍA */
+#musScreen {
+    font-family: 'Cinzel', serif !important;
+    position: relative;
+    overflow-x: hidden;
+    background-color: #2d5a36 !important; /* Tapete Verde */
+    z-index: 1;
+    min-height: 100vh;
+}
+
+/* Patrón de fondo animado (Zoom + Movimiento Infinito) */
+#musScreen::before {
+    content: " ";
+    position: absolute;
+    
+    /* 1. TRUCO DEL TAMAÑO GIGANTE:
+       Hacemos que el fondo mida el 200% de la pantalla.
+       Así tenemos "imagen de sobra" por todos los lados. */
+    width: 200%;
+    height: 200%;
+    
+    /* 2. CENTRADO DESFASADO:
+       Al moverlo -50% a la izquierda y arriba, centramos ese
+       bloque gigante. Esto nos da margen de movimiento. */
+    top: -50%;
+    left: -50%;
+    
+    z-index: -1;
+    opacity: 0.15; /* Ajusta la transparencia a tu gusto */
+    pointer-events: none;
+    
+    /* Imagen local */
+    background-image: url('image.png');
+    background-repeat: repeat;
+    
+    /* 3. ZOOM INICIAL:
+       Aumenta este valor (ej: 150px) para más zoom, 
+       o bájalo (ej: 60px) para ver más cartas. */
+    background-size: 120px auto; 
+
+    /* Animación suave */
+    animation: floatingCards 60s linear infinite alternate;
+}
+
+@keyframes floatingCards {
+    /* Empezamos ya rotados y en el centro */
+    0% { 
+        transform: rotate(0deg) translate(0, 0); 
+    }
+    /* Nos movemos y rotamos LENTAMENTE.
+       Como el div es gigante (200%), podemos movernos 100px
+       sin riesgo de que se vea el borde. */
+    100% { 
+        transform: rotate(10deg) translate(80px, 40px); 
+    }
+}
+
+@keyframes floatingCards {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-50px, -50px) rotate(5deg); }
+}
+
+#musScreen * {
+    font-family: 'Cinzel', serif !important;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+
+/* 2. BOTONES: ESTILO BARAJA FRANCESA */
+/* Fondo blanco, bordes de color, sombra dura */
+#musScreen .kick-btn {
+    background-color: #f5f6fa !important; 
+    border: 2px solid #2d3436 !important;
+    border-radius: 6px !important;
+    padding: 10px 15px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    position: relative;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.5) !important;
+    transition: transform 0.1s !important;
+    min-width: 100px;
+    background-image: linear-gradient(135deg, transparent 90%, #2d3436 90%);
+}
+
+/* Alternar Rojo y Negro (Picas/Trébol vs Corazones/Diamantes) */
+#musScreen .kick-btn:nth-child(odd) { 
+    color: #2d3436 !important; 
+    border-color: #2d3436 !important; 
+} 
+#musScreen .kick-btn:nth-child(even) { 
+    color: #c0392b !important; 
+    border-color: #c0392b !important; 
+    background-image: linear-gradient(135deg, transparent 90%, #c0392b 90%); 
+}
+
+/* Botón Guardar (Cuadrado con icono) */
+#musScreen .kick-btn2 {
+    background-color: #f5f6fa !important;
+    color: #c0392b !important;
+    border: 2px solid #c0392b !important;
+    border-radius: 8px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.4em !important;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.5) !important;
+    background-image: none !important;
+}
+
+#musScreen button:active {
+    transform: translate(2px, 2px) !important;
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.5) !important;
+}
+
+/* 3. INPUTS Y SELECTORES: ESTILO PIEDRA */
+#musScreen select, #musScreen input {
+    background-color: #b2bec3 !important; /* Gris piedra */
+    background-image: none !important; 
+    color: #2d3436 !important;
+    border: 3px solid #636e72 !important;
+    border-radius: 2px !important;
+    padding: 10px !important;
+    font-weight: bold !important;
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2) !important;
+    cursor: pointer;
+    text-align: center;
+    /* Recorte irregular para efecto piedra */
+    clip-path: polygon(2% 0, 100% 2%, 98% 100%, 0 98%);
+}
+
+#musScreen select:focus, #musScreen input:focus {
+    background-color: #dfe6e9 !important;
+    border-color: #2d3436 !important;
+    outline: none;
+}
+
+/* 4. TABLA COMPACTA (Optimizada para Móvil) */
+.mus-table-wrapper {
+    width: 100%;
+    margin-bottom: 20px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 10px;
+    border: 2px solid #e1b12c; /* Borde Dorado */
+    overflow-x: auto;
+}
+
+.mus-table {
+    width: 100%;
+    /* Quitamos el ancho mínimo para que se comprima */
+    min-width: auto !important; 
+    border-collapse: collapse;
+    table-layout: auto; 
+}
+
+.mus-table th, .mus-table td {
+    white-space: nowrap;
+    /* Padding muy reducido para ganar espacio */
+    padding: 8px 2px !important; 
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.95em !important; /* Letra más pequeña */
     text-align: center;
 }
 
-.give-section-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 Columnas forzadas */
-    gap: 8px;
-    margin-bottom: 15px;
+.mus-table th {
+    background-color: rgba(0,0,0,0.5);
+    color: #e1b12c;
+    border-bottom: 2px solid #e1b12c;
 }
 
-.give-item-btn {
-    background-color: #353b48;
-    border: 1px solid #57606f;
-    border-radius: 8px;
-    padding: 8px 2px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 90px;
-    box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+/* Columna de Nombres (Izquierda Fija) */
+.mus-table th:first-child,
+.mus-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: #2f3640; 
+    border-right: 1px solid #e1b12c;
+    text-align: left;
+    padding-left: 5px !important;
+    
+    /* Ancho muy controlado */
+    width: auto;
+    /* max-width: 90px; */
+    
+    /* Cortar nombres largos con "..." */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.give-item-btn:hover {
-    background-color: #3d4655;
-    transform: translateY(-2px);
-    border-color: #74b9ff;
+.mus-table th:first-child {
+    background-color: #252a30; 
+    z-index: 3;
 }
 
-.give-item-btn:active {
-    transform: translateY(1px);
-    box-shadow: none;
+/* Ocultar avatares en móvil para ganar espacio */
+.player-avatar {
+    display: none;
 }
 
-.give-icon {
-    font-size: 2em;
-    margin-bottom: 5px;
-}
-
-.give-name {
-    font-size: 0.7em;
-    color: #dfe6e9;
-    line-height: 1.1;
-    margin-bottom: 5px;
-    font-weight: bold;
-    word-break: break-word; /* Evitar que textos largos rompan la columna */
-}
-
-.give-cost {
-    font-size: 0.75em;
-    color: #2ed573; /* Verde XP */
-    font-weight: 900;
-    background: rgba(46, 213, 115, 0.1);
-    padding: 2px 6px;
-    border-radius: 4px;
-    width: 100%;
-}
-
-/* Ajustes Responsive para móviles muy pequeños */
-@media (max-width: 400px) {
-    .give-section-grid {
-        grid-template-columns: repeat(3, 1fr); /* Bajar a 3 si la pantalla es muy estrecha */
+/* Estilos para Pantallas Grandes (PC) */
+@media (min-width: 600px) {
+    .mus-table th, .mus-table td {
+        padding: 12px 8px !important;
+        font-size: 0.9em !important;
     }
-    .give-icon {
-        font-size: 1.5em;
+    .mus-table th:first-child, .mus-table td:first-child {
+        width: 150px;
+        max-width: 150px;
+    }
+    .player-avatar {
+        display: inline;
     }
 }
 
-
-.orden-item {
-    background: #2f3542;
-    padding: 10px;
-    margin-bottom: 5px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-left: 4px solid #74b9ff;
-    transition: all 0.2s;
+/* Cajas de Modales estilo Mus */
+#musScreen .card, #musAddMatchModal > div, #musPairGenModal > div {
+    background-color: #2f3640 !important;
+    border: 2px solid #e1b12c !important;
 }
-
-.pulse-anim {
-    animation: pulse-green 0.3s ease-in-out;
-}
-
-@keyframes pulse-green {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); filter: brightness(1.5); }
-    100% { transform: scale(1); }
-}
-
-
-/* --- CONTEXTO --- */
-.contexto-input-area { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
-#contextoList { width: 100%; display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; padding-bottom: 50px; }
-.contexto-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 8px; background: #2f3542; border-left: 8px solid #57606f; transition: transform 0.2s; animation: fadeIn 0.3s ease-out; }
-.ctx-word { font-size: 1.1em; color: white; font-weight: bold; text-transform: capitalize; }
-.ctx-dist { font-size: 1.3em; font-weight: 900; }
-
-/* Colores */
-.ctx-red { border-color: #ff4757; background: rgba(255, 71, 87, 0.05); } 
-.ctx-red .ctx-dist { color: #ff4757; }
-.ctx-orange { border-color: #ffa502; background: rgba(255, 165, 2, 0.1); } 
-.ctx-orange .ctx-dist { color: #ffa502; }
-.ctx-green { border-color: #2ed573; background: rgba(46, 213, 115, 0.15); } 
-.ctx-green .ctx-dist { color: #2ed573; }
-.ctx-win { border-color: #a55eea; background: rgba(165, 94, 234, 0.3); box-shadow: 0 0 15px #a55eea; }
-.ctx-win .ctx-dist { color: #fff; }
