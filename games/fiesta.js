@@ -3,18 +3,12 @@ const DATA = require('./fiesta_data');
 
 const rooms = {};
 
-// --- HELPER: FORZAR SALA ---
-// Si la sala no existe, la crea. Si el jugador no tiene ID de sala, se lo asigna.
+// Helper: Asegurar sala
 function ensureRoomAndPlayer(socket, targetRoomId = null) {
-    // 1. Determinar ID de sala (Recuperar del socket, del argumento, o Default)
     let rId = targetRoomId || socket.data.roomId || 'FIESTA-MAIN';
-    
-    // 2. Guardar en el socket por si se había perdido
     socket.data.roomId = rId;
 
-    // 3. Crear sala si no existe en memoria
     if (!rooms[rId]) {
-        console.log(`[FIESTA] 🛠️ Creando sala ${rId} automáticamente.`);
         rooms[rId] = {
             id: rId,
             players: [],
@@ -24,27 +18,27 @@ function ensureRoomAndPlayer(socket, targetRoomId = null) {
         };
     }
 
-    // 4. Asegurar que el socket está unido al canal de Socket.IO
     socket.join('fiesta_' + rId);
 
-    // 5. Asegurar que el jugador está en la lista de la sala
     const room = rooms[rId];
+    // Limpiar timeout de destrucción si alguien entra
+    if (room.destroyTimer) {
+        clearTimeout(room.destroyTimer);
+        room.destroyTimer = null;
+    }
+
     const playerExists = room.players.find(p => p.socketId === socket.id);
     if (!playerExists) {
-        // Nombre genérico si no lo sabemos
         const pName = "Fiestero"; 
         const newP = Utils.createPlayer(socket.id, pName);
         room.players.push(newP);
     }
-
     return room;
 }
 
 function broadcast(io, roomId) {
     const room = rooms[roomId];
     if (!room) return;
-    
-    // console.log(`[FIESTA] 📡 Enviando update a ${roomId}. Juego: ${room.currentGame}`);
     
     io.to('fiesta_' + roomId).emit('fiestaUpdate', {
         players: room.players,
@@ -55,14 +49,8 @@ function broadcast(io, roomId) {
 
 const handleSocket = (io, socket) => {
     socket.on('fiesta_action', (action) => {
-        // console.log(`[FIESTA] Acción recibida: ${action.type}`);
-
-        // 1. RECUPERACIÓN MÁGICA DE SALA
-        // Esto garantiza que 'room' NUNCA sea null
         const room = ensureRoomAndPlayer(socket); 
         const roomId = room.id;
-
-        // --- MANEJO DE ACCIONES ---
 
         if (action.type === 'requestState') {
             broadcast(io, roomId);
@@ -70,7 +58,6 @@ const handleSocket = (io, socket) => {
         }
 
         if (action.type === 'changeGame') {
-            console.log(`[FIESTA] Cambiando juego a ${action.game}`);
             room.currentGame = action.game; 
             room.gameState = {}; 
             broadcast(io, roomId);
@@ -81,10 +68,8 @@ const handleSocket = (io, socket) => {
             const template = DATA.ORACULO[Math.floor(Math.random() * DATA.ORACULO.length)];
             const target = room.players[Math.floor(Math.random() * room.players.length)];
             const player = room.players.find(p => p.socketId === socket.id) || room.players[0];
-            
             let text = template.replace('{target}', `<strong>${target.name}</strong>`);
             text = text.replace('{player}', `<strong>${player.name}</strong>`);
-
             room.gameState = { text: text, type: 'RESULT' };
             broadcast(io, roomId);
         }
@@ -93,7 +78,6 @@ const handleSocket = (io, socket) => {
         if (action.type === 'ronda_spin') {
             const cat = DATA.RONDA_5S[Math.floor(Math.random() * DATA.RONDA_5S.length)];
             const victim = room.players[Math.floor(Math.random() * room.players.length)];
-            
             room.gameState = { category: cat, victim: victim.name, timer: 5, active: true };
             broadcast(io, roomId);
 
@@ -140,7 +124,6 @@ const handleSocket = (io, socket) => {
             const p1 = room.players[Math.floor(Math.random() * room.players.length)];
             let p2 = room.players[Math.floor(Math.random() * room.players.length)];
             while (p1.id === p2.id) p2 = room.players[Math.floor(Math.random() * room.players.length)];
-
             room.gameState = { p1: p1.name, p2: p2.name, timer: 7, status: 'GAZING' };
             broadcast(io, roomId);
 
@@ -179,11 +162,16 @@ const handleSocket = (io, socket) => {
     });
 
     socket.on('disconnect', () => {
-        // Lógica de desconexión estándar
         const rId = socket.data.roomId;
         if (rId && rooms[rId]) {
+            // Usamos handleDisconnect con un callback para limpiar si queda vacía
             Utils.handleDisconnect(socket.id, rooms[rId].players, () => {
-                if(rooms[rId].players.length === 0) delete rooms[rId];
+                // Si la sala se queda sin jugadores CONECTADOS, programar destrucción rápida
+                const anyConnected = rooms[rId].players.some(p => p.connected);
+                if (!anyConnected) {
+                    delete rooms[rId];
+                    console.log(`[FIESTA] Sala ${rId} eliminada por desconexión total.`);
+                }
             });
             broadcast(io, rId);
         }
@@ -191,31 +179,50 @@ const handleSocket = (io, socket) => {
 };
 
 const handleJoin = (socket, name, targetRoomId) => {
-    // Si no viene ID, usamos FIESTA-MAIN
     const roomId = targetRoomId === 'NEW' ? 'FIESTA-MAIN' : targetRoomId;
-    
-    // Usamos el helper para crear o recuperar
     const room = ensureRoomAndPlayer(socket, roomId);
-
-    // Actualizar nombre real si viene
+    
+    // Actualizar nombre
     const p = room.players.find(pl => pl.socketId === socket.id);
     if(p && name) p.name = name;
-
-    // Confirmar al cliente
-    socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'fiesta', roomId: roomId });
     
-    // ENVIAR ESTADO AL INSTANTE
+    socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'fiesta', roomId: roomId });
     io.to(socket.id).emit('fiestaUpdate', {
         players: room.players,
         currentGame: room.currentGame,
         gameState: room.gameState
     });
-
-    // Avisar al resto
     broadcast(io, roomId);
 };
 
 const handleRejoin = (socket, savedId, savedRoomId) => { handleJoin(socket, "Fiestero", savedRoomId); };
-const handleLeave = () => {};
+
+// --- CORRECCIÓN CLAVE: Función handleLeave IMPLEMENTADA ---
+const handleLeave = (playerId, roomId, io) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    console.log(`[FIESTA] Jugador ${playerId} abandona sala ${roomId}`);
+
+    // 1. Eliminar al jugador de la lista
+    const idx = room.players.findIndex(p => p.id === playerId);
+    if (idx !== -1) {
+        room.players.splice(idx, 1);
+    }
+
+    // 2. Comprobar si la sala está vacía
+    if (room.players.length === 0) {
+        // Si no queda nadie, borrar la sala de memoria
+        delete rooms[roomId];
+        console.log(`[FIESTA] Sala ${roomId} eliminada (Vacía).`);
+    } else {
+        // Si quedan, avisarles
+        io.to('fiesta_' + roomId).emit('fiestaUpdate', {
+            players: room.players,
+            currentGame: room.currentGame,
+            gameState: room.gameState
+        });
+    }
+};
 
 module.exports = { init: (io)=>{}, handleSocket, handleJoin, handleRejoin, handleLeave };

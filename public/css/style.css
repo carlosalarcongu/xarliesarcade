@@ -746,11 +746,21 @@ canvas { display: block; cursor: crosshair; }
 /* 1. FONDO Y TIPOGRAFÍA */
 #musScreen {
     font-family: 'Cinzel', serif !important;
-    position: relative;
-    overflow-x: hidden;
-    background-color: #2d5a36 !important; /* Tapete Verde */
-    z-index: 1;
-    min-height: 100vh;
+    
+    /* --- CAMBIOS PARA QUITAR EL MARCO --- */
+    position: fixed;      /* Se desvincula del flujo normal para ignorar el padding del body */
+    top: 0;               /* Pegado arriba */
+    left: 0;              /* Pegado a la izquierda */
+    /*width: 100%;          /* Ocupar todo el ancho */
+    /*height: 100%;         /* Ocupar todo el alto */
+    overflow-y: auto;     /* Permitir hacer scroll DENTRO de esta pantalla */
+    margin: 0;            /* Sin márgenes externos */
+    padding: 15px;        /* Relleno interno para que el contenido no toque el borde */
+    padding-bottom: 80px; /* Espacio extra abajo para que no se corte el final */
+    z-index: 9999;        /* Asegurar que se pone encima de todo */
+    
+    /* --- TUS ESTILOS DE FONDO --- */
+    background-color: #2d5a36 !important; 
 }
 
 /* Patrón de fondo animado (Zoom + Movimiento Infinito) */
@@ -895,8 +905,8 @@ canvas { display: block; cursor: crosshair; }
 .mus-table {
     width: 100%;
     /* Quitamos el ancho mínimo para que se comprima */
-    min-width: auto !important; 
-    border-collapse: collapse;
+    /* min-width: auto !important;  */
+    /* border-collapse: collapse; */
     table-layout: auto; 
 }
 

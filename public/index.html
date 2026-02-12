@@ -598,24 +598,35 @@
     </div>
 
     <div id="musScreen" class="hidden">
-        <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
-        <h2 style="color:#e1b12c; margin-bottom:5px;">🐄 Registro de Mus</h2>
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Volver</button>
+            <button onclick="app.mus.toggleControls()" align-items:center>🖊️</span>
+            </button>
+        </div>
         
-        <div class="mus-room-header">
-            <label style="color:#aaa; font-size:0.8em; text-transform:uppercase;">Sala de Juego:</label>
-            <div class="room-controls">
-                <select id="musRoomSelect" onchange="app.mus.changeRoom()" style="flex:1; font-size:1em;">
-                    </select>
-                <button onclick="app.mus.createRoom()" style="background:#27ae60; width:auto;">+</button>
-            </div>
+        <h2 style="color:#e1b12c; margin-bottom:5px;">🐄 Registro de Mus</h2>
+
+        <div style="width:100%; text-align:center; margin-bottom:15px;">
+            
         </div>
 
+        <div class="mus-room-header" style="margin-bottom: 10px;">
+                <label style="color:#aaa; font-size:0.8em; text-transform:uppercase;">Sala de Juego:</label>
+                <div class="room-controls">
+                    <select id="musRoomSelect" onchange="app.mus.changeRoom()" style="flex:1; font-size:1em;">
+                    </select>
+                    <button onclick="app.mus.createRoom()" style="background:#27ae60; width:auto;">+</button>
+                </div>
+            </div>
         
-        <div style="display:flex; gap:5px; margin-bottom:15px; overflow-x:auto;">
-            <button class="kick-btn" style="width:auto; font-size:0.7em; background:#44bd32" onclick="app.mus.addPlayer()">+ Jugador</button>
-            <button class="kick-btn" style="width:auto; font-size:0.7em; background:#0984e3" onclick="app.mus.showAddMatchModal()">+ Partida</button>
-            <button class="kick-btn" style="width:auto; font-size:0.7em; background:#8e44ad" onclick="app.mus.showPairGenerator()">🎲 Parejas</button>
-            <button class="kick-btn2" style="background:#27ae60;" onclick="app.mus.backup()">💾</button>
+        <div id="musControlsArea" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; border: 1px dashed #e1b12c; margin-bottom: 15px;">
+
+            <div style="display:flex; gap:5px; overflow-x:auto; padding-bottom: 5px;">
+                <button class="kick-btn" style="width:auto; font-size:0.8em;" onclick="app.mus.addPlayer()">+ Jugador</button>
+                <button class="kick-btn" style="width:auto; font-size:0.8em;" onclick="app.mus.showAddMatchModal()">+ Partida</button>
+                <button class="kick-btn" style="width:auto; font-size:0.8em;" onclick="app.mus.showPairGenerator()">🎲 Parejas</button>
+                <button class="kick-btn2" onclick="app.mus.backup()">💾</button>
+            </div>
         </div>
 
         <div class="card" style="padding:10px; margin-bottom:15px; background:#222; border: 1px solid #444;">

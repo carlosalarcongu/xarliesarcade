@@ -64,6 +64,13 @@ app.mus = {
         app.mus.changeView(); 
     },
 
+    toggleControls: () => {
+        const area = document.getElementById('musControlsArea');
+        if (area) {
+            area.classList.toggle('hidden');
+        }
+    },
+
     createRoom: () => {
         const name = prompt("Nombre de la nueva sala:");
         if(name) socket.emit('mus_action', { type: 'addRoom', value: name });
