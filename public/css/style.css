@@ -315,6 +315,83 @@ input[type="text"]:focus { border-color: #ff4757; }
 .reveal-content > * { filter: none; opacity: 1; }
 .card-note { text-align: center; color: #aaa; font-size: 0.8em; margin-bottom: 5px; pointer-events: none; }
 
+/* --- CHAT PINTURILLO FLOTANTE --- */
+#pintuChatContainer {
+    position: fixed; /* CAMBIO IMPORTANTE: Fixed para arrastre suave */
+    bottom: 15px;    /* Posición inicial */
+    right: 15px;     /* Posición inicial */
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    z-index: 2000;   /* Muy por encima */
+    pointer-events: none;
+}
+
+/* Caja de mensajes */
+#pintuChatBox {
+    width: 220px;
+    max-height: 150px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 5px;
+    font-size: 0.75em;
+    color: #eee;
+    pointer-events: auto;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* Ocultamos la barra de scroll visualmente pero permitimos scroll */
+    scrollbar-width: none; 
+}
+#pintuChatBox::-webkit-scrollbar { display: none; }
+
+/* Grupo de Input */
+#pintuChatInputGroup {
+    width: 220px;
+    display: flex;
+    gap: 5px;
+    pointer-events: auto;
+    background: rgba(0,0,0,0.85);
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #57606f;
+}
+
+#pintuChatInput {
+    flex: 1;
+    padding: 5px;
+    border-radius: 4px;
+    border: none;
+    background: #2f3542;
+    color: white;
+    font-size: 0.8em;
+    outline: none;
+}
+
+/* Botón flotante (El "Handle" para arrastrar) */
+#btnOpenChat {
+    background: rgba(9, 132, 227, 0.9);
+    color: white;
+    border: 2px solid white;
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    font-size: 1.3em;
+    cursor: grab; /* Icono de mano */
+    pointer-events: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    display: flex; justify-content: center; align-items: center;
+    transition: transform 0.1s;
+    touch-action: none; /* Crítico para arrastrar en móvil */
+}
+
+#btnOpenChat:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
 /* =========================================
    7. JUEGOS ESPECÍFICOS
    ========================================= */
@@ -379,10 +456,10 @@ canvas { display: block; cursor: crosshair; }
    ========================================= */
 
 /* 1. Tipografía Global del Mus */
-#musScreen {
+/* #musScreen {
     font-family: 'Times New Roman', Times, serif;
     letter-spacing: 0.5px;
-}
+} */
 
 #musScreen h1, #musScreen h2, #musScreen h3, #musScreen h4 {
     font-family: 'Times New Roman', Times, serif;
@@ -713,6 +790,10 @@ canvas { display: block; cursor: crosshair; }
     transition: transform 0.1s, background-color 0.2s;
 }
 
+.mini-card.disabled {
+    filter: grayscale(100%); opacity: 0.5; cursor: help; background-color: #202020; box-shadow: none; transition: none;
+}
+
 .mini-card:active {
     transform: scale(0.96);
     background-color: #353b48;
@@ -744,70 +825,65 @@ canvas { display: block; cursor: crosshair; }
    ========================================= */
 
 /* 1. FONDO Y TIPOGRAFÍA */
+
+/* =========================================
+   ESTILOS EXCLUSIVOS MUS
+   ========================================= */
+
 #musScreen {
     font-family: 'Cinzel', serif !important;
     
-    /* --- CAMBIOS PARA QUITAR EL MARCO --- */
-    position: fixed;      /* Se desvincula del flujo normal para ignorar el padding del body */
-    top: 0;               /* Pegado arriba */
-    left: 0;              /* Pegado a la izquierda */
-    /*width: 100%;          /* Ocupar todo el ancho */
-    /*height: 100%;         /* Ocupar todo el alto */
-    overflow-y: auto;     /* Permitir hacer scroll DENTRO de esta pantalla */
-    margin: 0;            /* Sin márgenes externos */
-    padding: 15px;        /* Relleno interno para que el contenido no toque el borde */
-    padding-bottom: 80px; /* Espacio extra abajo para que no se corte el final */
-    z-index: 9999;        /* Asegurar que se pone encima de todo */
+    /* 1. OCUPAR PANTALLA COMPLETA (Fixed robusto) */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0; 
+    bottom: 0;
+    width: auto;
+    height: auto;
+    max-width: none !important;
     
-    /* --- TUS ESTILOS DE FONDO --- */
+    /* 2. CENTRADO PERFECTO */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Esto centra los hijos horizontalmente */
+    
+    /* 3. SCROLL CONTROLADO */
+    overflow-y: auto;
+    overflow-x: hidden; /* Evita scroll lateral */
+    
+    margin: 0;
+    padding: 15px;
+    padding-bottom: 80px;
+    z-index: 9999;
+    
     background-color: #2d5a36 !important; 
 }
 
-/* Patrón de fondo animado (Zoom + Movimiento Infinito) */
-#musScreen::before {
-    content: " ";
-    position: absolute;
-    
-    /* 1. TRUCO DEL TAMAÑO GIGANTE:
-       Hacemos que el fondo mida el 200% de la pantalla.
-       Así tenemos "imagen de sobra" por todos los lados. */
-    width: 200%;
-    height: 200%;
-    
-    /* 2. CENTRADO DESFASADO:
-       Al moverlo -50% a la izquierda y arriba, centramos ese
-       bloque gigante. Esto nos da margen de movimiento. */
-    top: -50%;
-    left: -50%;
-    
-    z-index: -1;
-    opacity: 0.15; /* Ajusta la transparencia a tu gusto */
-    pointer-events: none;
-    
-    /* Imagen local */
-    background-image: url('image.png');
-    background-repeat: repeat;
-    
-    /* 3. ZOOM INICIAL:
-       Aumenta este valor (ej: 150px) para más zoom, 
-       o bájalo (ej: 60px) para ver más cartas. */
-    background-size: 120px auto; 
-
-    /* Animación suave */
-    animation: floatingCards 60s linear infinite alternate;
+/* Regla para limitar el ancho del contenido en PC */
+#musScreen > * {
+    width: 100%;
+    max-width: 500px;
 }
 
-@keyframes floatingCards {
-    /* Empezamos ya rotados y en el centro */
-    0% { 
-        transform: rotate(0deg) translate(0, 0); 
-    }
-    /* Nos movemos y rotamos LENTAMENTE.
-       Como el div es gigante (200%), podemos movernos 100px
-       sin riesgo de que se vea el borde. */
-    100% { 
-        transform: rotate(10deg) translate(80px, 40px); 
-    }
+/* FONDO ANIMADO CORREGIDO */
+#musScreen::before {
+    content: " ";
+    /* CAMBIO CLAVE: Fixed para que no estire el scroll del padre */
+    position: fixed; 
+    width: 200%; 
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    z-index: -1;
+    opacity: 0.15;
+    pointer-events: none;
+    
+    background-image: url('image.png');
+    background-repeat: repeat;
+    background-size: 120px auto; 
+    
+    animation: floatingCards 60s linear infinite alternate;
 }
 
 @keyframes floatingCards {
@@ -974,4 +1050,424 @@ canvas { display: block; cursor: crosshair; }
 #musScreen .card, #musAddMatchModal > div, #musPairGenModal > div {
     background-color: #2f3640 !important;
     border: 2px solid #e1b12c !important;
+}
+
+
+
+
+
+/* =========================================
+   TRIVIAL PREMIUM STYLES
+   ========================================= */
+
+/* --- HUD SUPERIOR --- */
+.triv-hud-container {
+    display: flex;
+    gap: 15px;
+    padding: 10px;
+    background: linear-gradient(to bottom, #2f3640, #1e272e);
+    border-bottom: 2px solid #57606f;
+    overflow-x: auto;
+    width: 100%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.triv-team-badge {
+    background: #353b48;
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 120px;
+    position: relative;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.triv-team-badge.active {
+    border-color: #f1c40f;
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+    background: #404856;
+    transform: scale(1.05);
+}
+
+.triv-team-name { font-weight: bold; font-size: 0.9em; margin-bottom: 5px; color: white; }
+.triv-team-members { font-size: 0.7em; color: #a4b0be; margin-bottom: 5px; text-align: center; line-height: 1.1; }
+
+/* Indicador de Quesitos (Ficha plana en HUD) */
+.triv-cheese-holder {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #2f3640;
+    border: 2px solid #7f8fa6;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+}
+.triv-wedge {
+    position: absolute; width: 50%; height: 50%;
+    transform-origin: 100% 100%;
+    left: 0; top: 0;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+/* Posiciones de las cuñas en el HUD */
+.wedge-0 { transform: rotate(0deg) translate(100%, 100%); }
+.wedge-1 { transform: rotate(60deg) translate(100%, 100%); }
+.wedge-2 { transform: rotate(120deg) translate(100%, 100%); }
+.wedge-3 { transform: rotate(180deg) translate(100%, 100%); }
+.wedge-4 { transform: rotate(240deg) translate(100%, 100%); }
+.wedge-5 { transform: rotate(300deg) translate(100%, 100%); }
+
+
+/* --- TABLERO GRANDE (Estilo Rueda) --- */
+.triv-board-wrapper {
+    position: relative;
+    width: 360px; height: 360px;
+    margin: 20px auto;
+    background: radial-gradient(circle, #2f3640 20%, #1e272e 80%);
+    border-radius: 50%;
+    border: 8px solid #192a56;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+/* Casillas */
+.triv-node {
+    position: absolute;
+    width: 30px; height: 30px;
+    border-radius: 6px; /* Cuadrado redondeado */
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255,255,255,0.3);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    z-index: 1;
+    transition: transform 0.2s;
+}
+.triv-node.hub {
+    width: 40px; height: 40px;
+    border-radius: 50%; /* Quesitos redondos */
+    border: 3px solid white;
+    z-index: 2;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 1.2em;
+}
+.triv-node.highlight {
+    cursor: pointer;
+    animation: pulse-node 1s infinite;
+    border-color: #f1c40f;
+    box-shadow: 0 0 15px #f1c40f;
+    z-index: 10;
+}
+@keyframes pulse-node { 0% {transform:translate(-50%, -50%) scale(1);} 50% {transform:translate(-50%, -50%) scale(1.3);} 100% {transform:translate(-50%, -50%) scale(1);} }
+
+
+/* --- FICHAS DE JUGADOR (PEONES 3D) --- */
+.triv-pawn {
+    position: absolute;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    border: 2px solid white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex; justify-content: center; align-items: center;
+    font-size: 0.6em; color: white; font-weight: bold;
+}
+/* Efecto de "stack" si hay varias fichas en la misma casilla: se ajustará con JS */
+
+
+/* --- DADO 3D --- */
+.dice-stage {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    perspective: 600px;
+    z-index: 20;
+    pointer-events: none; /* Click a través, lo manejamos en un div transparente si es necesario */
+}
+.dice-cube {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 1s ease-out;
+}
+.dice-face {
+    position: absolute;
+    width: 60px; height: 60px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 35px; color: black;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+.df-1 { transform: rotateY(0deg) translateZ(30px); }
+.df-2 { transform: rotateY(90deg) translateZ(30px); }
+.df-3 { transform: rotateY(180deg) translateZ(30px); }
+.df-4 { transform: rotateY(-90deg) translateZ(30px); }
+.df-5 { transform: rotateX(90deg) translateZ(30px); }
+.df-6 { transform: rotateX(-90deg) translateZ(30px); }
+
+/* Botón transparente encima del dado para clicar */
+.dice-trigger {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; height: 80px;
+    z-index: 21; cursor: pointer;
+    background: transparent;
+}
+.shake-3d { animation: rolling 0.5s infinite linear; }
+@keyframes rolling { 
+    0% { transform: rotateX(0) rotateY(0); } 
+    100% { transform: rotateX(360deg) rotateY(360deg); } 
+}
+
+
+/* --- TARJETA (Flip Controlado) --- */
+.triv-card-container {
+    perspective: 1000px;
+    width: 300px; height: 420px;
+    position: relative;
+}
+.triv-card-inner {
+    width: 100%; height: 100%;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+    position: relative;
+}
+.triv-card-inner.flipped { transform: rotateY(180deg); }
+
+.triv-card-front, .triv-card-back {
+    position: absolute; width: 100%; height: 100%;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    background: #f5f6fa;
+    text-align: center;
+    border: 5px solid; /* El color se pone inline */
+}
+.triv-card-back { transform: rotateY(180deg); background: #2f3542; color: white; border-color: #57606f !important;}
+
+.locked-overlay {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 50;
+    border-radius: 15px;
+    text-align: center; padding: 20px;
+}
+
+
+/* --- GAME LOG --- */
+.triv-log-container {
+    width: 95%; max-width: 500px;
+    margin: 20px auto;
+    background: #1e272e;
+    border: 1px solid #57606f;
+    border-radius: 5px;
+    height: 150px;
+    overflow-y: auto;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.85em;
+}
+.log-entry { margin-bottom: 5px; border-bottom: 1px solid #2f3640; padding-bottom: 2px; }
+.log-time { color: #7f8fa6; margin-right: 5px; }
+.log-sys { color: #f19066; }
+.log-success { color: #2ed573; }
+.log-error { color: #ff4757; }
+.log-cheese { color: #f1c40f; font-weight: bold; background: rgba(241, 196, 15, 0.1); padding: 2px; }
+.log-gold { color: #ffd700; text-transform: uppercase; text-align: center; display: block; border: 1px solid #ffd700; }
+
+
+
+
+
+/* =========================================
+   FIFA 14 THEME
+   ========================================= */
+
+/* Fuente importada para estilo deportivo */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
+
+/* =========================================
+   FIFA 14 THEME
+   ========================================= */
+
+#fifaScreen {
+    font-family: 'Oswald', sans-serif !important;
+    text-transform: uppercase;
+    
+    background: 
+        linear-gradient(135deg, rgba(20, 30, 80, 0.95), rgba(10, 10, 30, 0.95)),
+        url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBMOF4wTTQwIDBMMCA0MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+');
+    background-color: #0c1430 !important;
+    
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    max-width: none !important; /* <--- CRUCIAL: ROMPE EL LÍMITE DE 500PX */
+    
+    overflow-y: auto; 
+    overflow-x: hidden; 
+    
+    margin: 0; 
+    padding: 15px; 
+    padding-bottom: 80px; 
+    z-index: 9999;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#fifaScreen > div, #fifaScreen > .back-nav, #fifaScreen > .fifa-header {
+    width: 100%;
+    max-width: 500px;
+}
+
+#fifaScreen .modal-overlay {
+    max-width: none;
+    left: 0;
+    width: 100%;
+}
+
+#fifaScreen * {
+    font-family: 'Oswald', sans-serif;
+}
+
+/* Encabezado */
+.fifa-header {
+    text-align: right;
+    border-bottom: 4px solid #00d2d3; /* Cyan característico */
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* Botones Inclinados (Skewed) */
+.fifa-btn {
+    background: linear-gradient(90deg, #1e272e, #353b48);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    transform: skewX(-15deg); /* La inclinación clave de FIFA 14 */
+    font-weight: bold;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-left: 4px solid #00d2d3;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 100px;
+}
+
+.fifa-btn:active {
+    background: #00d2d3;
+    color: #000;
+    transform: skewX(-15deg) scale(0.95);
+}
+
+/* Panel de controles */
+.fifa-panel {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Selectores FIFA */
+#fifaScreen select, #fifaScreen input {
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 0;
+    transform: skewX(-10deg);
+    padding: 8px;
+    font-weight: bold;
+    width: 100%;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+/* TABLA RANKING */
+.fifa-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 5px; /* Espacio entre filas */
+}
+
+.fifa-table thead th {
+    color: #00d2d3;
+    font-style: italic;
+    text-align: center;
+    padding-bottom: 10px;
+    font-weight: 400;
+}
+
+.fifa-table tbody tr {
+    background: rgba(255, 255, 255, 0.1);
+    transition: transform 0.1s;
+}
+
+.fifa-table td {
+    padding: 12px 5px;
+    text-align: center;
+    border: none;
+}
+
+.fifa-table td:first-child {
+    border-left: 4px solid #ff005c; /* Borde rosa neón */
+    text-align: left;
+    padding-left: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.fifa-pts {
+    color: #ff005c;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+/* LOG DE PARTIDOS */
+.fifa-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fifa-match-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+    padding: 10px;
+    border-right: 3px solid #00d2d3;
+}
+
+.f-team { font-size: 0.9em; width: 40%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.f-team:last-child { text-align: right; }
+.f-score { font-size: 1.5em; font-weight: bold; color: #fff; width: 20%; text-align: center; background: rgba(0,0,0,0.3); transform: skewX(-10deg); }
+
+/* MODAL */
+.fifa-modal-box {
+    background: linear-gradient(135deg, #131d38, #000);
+    padding: 25px;
+    border: 2px solid #00d2d3;
+    width: 90%;
+    max-width: 400px;
+    transform: skewX(-5deg); /* Todo el modal inclinado */
+    box-shadow: 0 0 20px #00d2d3;
+}
+
+.fifa-score-input {
+    font-size: 2em !important;
+    background: transparent !important;
+    color: #ff005c !important;
+    border-bottom: 2px solid white !important;
 }

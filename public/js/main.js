@@ -334,7 +334,8 @@ window.app = {
             'ordenLobby', 'ordenGame',
             'giveScreen', 'musScreen',
             'contextoScreen', 'consejoScreen',
-            'fiestaScreen'
+            'fiestaScreen', 'statsSelectionScreen',
+            'fifaScreen'
         ];
         
         screens.forEach(s => {
@@ -372,9 +373,13 @@ window.app = {
     },
 
     selectRoom: (room) => {
-        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta'].includes(room)) {
+        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa'].includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
+            if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
+            if(room === 'trivial') { 
+                if(app.trivial.init) app.trivial.init(); return; 
+    }
             if(room === 'contexto') { app.showScreen('contextoScreen'); if(app.contexto.init) app.contexto.init(); return; }
             if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
             
@@ -508,6 +513,10 @@ window.app = {
         app.renderLoginScreen(null);
     },
 
+    showStatsMenu: () => {
+        app.showScreen('statsSelectionScreen');
+    },
+
     goBackToHub: (forceLogout = false) => {
         if (app.mus && app.mus.resetUI) app.mus.resetUI();
 
@@ -622,6 +631,7 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'cifrasyletras') app.showScreen('cylLobby');
     else if (data.room === 'orden') app.showScreen('ordenLobby');
     else if (data.room === 'consejo') app.showScreen('consejoScreen');
+    
     
     // --- LÓGICA DE FIESTA REFORZADA ---
     else if (data.room === 'fiesta') {

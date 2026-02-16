@@ -1,224 +1,320 @@
 const database = require('./database');
 const Utils = require('./utils');
 
-let players = [];
-let gameInProgress = false;
-let settings = { impostors: 1, rounds: 1, category: 'MIX', hints: false };
-let turn = { currentDrawer: null, order: [], currentLap: 1, turnIndex: 0 };
-let canvasHistory = [];
-let currentStroke = [];
-let phase = 'LOBBY'; 
-let turnData = {}; 
+const rooms = {}; 
 
-// --- HELPER: Obtener categorías para el frontend ---
 const getPublicCategories = () => {
-    return Object.keys(database).map(k => ({
-        id: k,
-        label: database[k].label || k
-    }));
+    return Object.keys(database).map(k => ({ id: k, label: database[k].label || k }));
 };
-// --------------------------------------------------
 
-function broadcast(io) {
-    const pub = players.map(p => ({
+function ensureRoom(roomId) {
+    if (!rooms[roomId]) {
+        rooms[roomId] = {
+            id: roomId,
+            players: [],
+            gameInProgress: false,
+            settings: { impostors: 1, rounds: 1, category: 'MIX', hints: false },
+            turn: { 
+                currentDrawer: null, 
+                order: [], 
+                currentLap: 1, 
+                turnIndex: 0,
+                strokesThisTurn: 0 
+            },
+            canvasHistory: [],
+            currentStroke: [],
+            chatHistory: [], 
+            phase: 'LOBBY',
+            turnData: {}
+        };
+    }
+    return rooms[roomId];
+}
+
+function broadcast(io, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const pub = room.players.map(p => ({
         id: p.id,
         name: p.name,
         isAdmin: p.isAdmin,
         isDead: p.isDead,
         hasVoted: !!p.votedFor,
-        votes: players.filter(v => v.votedFor === p.id).length,
-        revealedRole: (p.isDead && turnData[p.id]) ? turnData[p.id].role : null
+        votes: room.players.filter(v => v.votedFor === p.id).length,
+        revealedRole: (p.isDead && room.turnData[p.id]) ? room.turnData[p.id].role : null
     }));
-    io.to('pinturilloImp').emit('pintuImpUpdate', {
-        players: pub, gameInProgress, settings, turn, phase
+
+    io.to('pintu_' + roomId).emit('pintuImpUpdate', {
+        players: pub, 
+        gameInProgress: room.gameInProgress, 
+        settings: room.settings, 
+        turn: room.turn, 
+        phase: room.phase,
+        chat: room.chatHistory 
     });
 }
 
-const gameModule = (io, socket) => {
+function nextTurn(room) {
+    room.turn.turnIndex++;
+    room.turn.order = room.turn.order.filter(id => room.players.some(p => p.id === id));
+    
+    const totalTurns = room.turn.order.length * room.settings.rounds;
+    
+    room.turn.strokesThisTurn = 0; 
+    
+    if (room.turn.turnIndex >= totalTurns || room.turn.order.length === 0) {
+        room.phase = 'VOTE';
+        room.turn.currentDrawer = null;
+    } else {
+        const nextId = room.turn.order[room.turn.turnIndex % room.turn.order.length];
+        room.turn.currentLap = Math.floor(room.turn.turnIndex / room.turn.order.length) + 1;
+        room.turn.currentDrawer = nextId;
+        room.currentStroke = [];
+    }
+}
+
+const handleSocket = (io, socket) => {
     socket.on('pintuImp_action', (action) => {
-        const me = players.find(p => p.socketId === socket.id);
+        const roomId = socket.data.roomId;
+        if (!roomId || !rooms[roomId]) return;
+
+        const room = rooms[roomId];
+        const me = room.players.find(p => p.socketId === socket.id);
         if (!me) return;
 
+        // --- ACTUALIZACIÓN DE AJUSTES EN TIEMPO REAL ---
+        if (action.type === 'update_settings' && me.isAdmin) {
+            if (action.value.rounds) room.settings.rounds = parseInt(action.value.rounds);
+            if (action.value.category) room.settings.category = action.value.category;
+            // hasOwnProperty es necesario porque false es un valor válido
+            if (action.value.hasOwnProperty('hints')) room.settings.hints = !!action.value.hints;
+            broadcast(io, roomId);
+        }
+
+        // --- START ---
         if (action.type === 'start' && me.isAdmin) {
-            if (players.length < 2) return;
-            
-            settings.rounds = parseInt(action.value.rounds) || 1;
-            settings.category = action.value.category || 'MIX';
-            settings.hints = !!action.value.hints;
-            
-            // LÓGICA DATABASE ACTUALIZADA
+            if (room.players.length < 2) return;
+
+            // Guardamos configuración final
+            room.settings.rounds = parseInt(action.value.rounds) || room.settings.rounds || 1;
+            room.settings.category = action.value.category || room.settings.category || 'MIX';
+            room.settings.hints = !!action.value.hints;
+
             let wordPool = [];
-            if (settings.category === 'MIX') {
-                // Cogemos todas menos MIX
+            if (room.settings.category === 'MIX') {
                 Object.keys(database).forEach(k => { 
-                    if(k!=='MIX' && database[k].words) {
-                        wordPool = wordPool.concat(database[k].words); 
-                    }
+                    if(k!=='MIX' && database[k].words) wordPool = wordPool.concat(database[k].words); 
                 });
-            } else if (database[settings.category]) {
-                wordPool = database[settings.category].words || [];
+            } else if (database[room.settings.category]) {
+                wordPool = database[room.settings.category].words || [];
+            }
+            if(!wordPool || wordPool.length === 0) wordPool = [{word: "CASA", hint: "Vivienda"}];
+            const sel = wordPool[Math.floor(Math.random() * wordPool.length)];
+
+            const playerIds = room.players.map(p => p.id).sort(()=>Math.random()-0.5);
+            const numImpostors = Math.min(room.settings.impostors, room.players.length - 1);
+            const impostorIds = [];
+            const tempIds = [...playerIds];
+            for(let i=0; i<numImpostors; i++) {
+                const idx = Math.floor(Math.random() * tempIds.length);
+                impostorIds.push(tempIds.splice(idx, 1)[0]);
             }
 
-            // Fallback
-            if(!wordPool || wordPool.length === 0) wordPool = [{word: "CASA", hint: "Vivienda"}, {word: "SOL", hint: "Astro"}];
-            
-            const sel = wordPool[Math.floor(Math.random() * wordPool.length)];
-            
-            // Roles
-            const indices = players.map((_,i)=>i).sort(()=>Math.random()-0.5);
-            const numImpostors = Math.min(settings.impostors, players.length - 1);
-            const impIdx = indices.slice(0, numImpostors);
-            
-            turnData = {};
-            turn.order = indices; 
-            turn.currentLap = 1;
-            turn.turnIndex = 0; 
-            
-            players.forEach((p, i) => {
+            room.turnData = {};
+            room.turn.order = playerIds; 
+            room.turn.currentLap = 1;
+            room.turn.turnIndex = 0;
+            room.turn.strokesThisTurn = 0; 
+
+            room.players.forEach(p => {
                 p.isDead = false;
                 p.votedFor = null;
-                const isImp = impIdx.includes(i);
+                const isImp = impostorIds.includes(p.id);
                 
-                turnData[p.id] = { 
+                // --- LÓGICA DE PISTAS CORREGIDA ---
+                // Si hints activado: Solo el Impostor ve la pista.
+                const showHint = (room.settings.hints && isImp); 
+                
+                room.turnData[p.id] = { 
                     role: isImp ? 'IMPOSTOR' : 'ARTISTA', 
-                    word: sel.word,
-                    // Soporte para estructura {word, hint}
-                    hint: (settings.hints && !isImp) ? (sel.hint || "Sin pista") : null
+                    word: sel.word, 
+                    hint: showHint ? (sel.hint || "Sin pista") : null
                 };
-                if(p.socketId) io.to(p.socketId).emit('pintuImpRole', turnData[p.id]);
+                if(p.socketId) io.to(p.socketId).emit('pintuImpRole', room.turnData[p.id]);
             });
 
-            turnData.SUMMARY = { 
-                word: sel.word, 
-                impostors: players.filter((_,i) => impIdx.includes(i)).map(p=>p.id) 
-            };
+            room.turnData.SUMMARY = { word: sel.word, impostors: impostorIds };
 
-            gameInProgress = true;
-            phase = 'DRAW';
-            canvasHistory = [];
-            currentStroke = [];
-            turn.currentDrawer = players[turn.order[0]].id;
-            
-            broadcast(io);
-            io.to('pinturilloImp').emit('pintuImpCanvasHistory', canvasHistory);
+            room.gameInProgress = true;
+            room.phase = 'DRAW';
+            room.canvasHistory = [];
+            room.currentStroke = [];
+            room.chatHistory = [];
+            room.turn.currentDrawer = room.turn.order[0];
+
+            broadcast(io, roomId);
+            io.to('pintu_' + roomId).emit('pintuImpCanvasHistory', room.canvasHistory);
         }
 
-        // ... (Resto de acciones: changeImpostors, draw_*, undo, pass, vote... IGUALES) ...
-        // Simplemente copia el bloque de acciones anterior, no ha cambiado la lógica interna
-        // Solo asegúrate de copiar todo el bloque de ifs que tenías antes.
+        // --- DRAWING ---
+        const isMyTurn = (room.phase === 'DRAW' && room.turn.currentDrawer === me.id);
+
+        if (action.type === 'draw_start' && isMyTurn) {
+            room.currentStroke = [action.value];
+            socket.broadcast.to('pintu_' + roomId).emit('pintuImpDrawOp', { type: 'start', ...action.value });
+        }
+        if (action.type === 'draw_move' && isMyTurn) {
+            room.currentStroke.push(action.value);
+            socket.broadcast.to('pintu_' + roomId).emit('pintuImpDrawOp', { type: 'move', ...action.value });
+        }
+        if (action.type === 'draw_end' && isMyTurn) {
+            if(room.currentStroke.length > 0) {
+                room.canvasHistory.push(room.currentStroke);
+                room.turn.strokesThisTurn++; 
+            }
+            room.currentStroke = [];
+        }
         
-        if (action.type === 'changeImpostors' && me.isAdmin) {
-            settings.impostors = Math.max(1, Math.min(players.length-1, settings.impostors + action.value));
-            broadcast(io);
-        }
-        if (action.type === 'draw_start' && phase === 'DRAW' && turn.currentDrawer === me.id) {
-            currentStroke = [action.value];
-            socket.broadcast.to('pinturilloImp').emit('pintuImpDrawOp', { type: 'start', ...action.value });
-        }
-        if (action.type === 'draw_move' && phase === 'DRAW' && turn.currentDrawer === me.id) {
-            currentStroke.push(action.value);
-            socket.broadcast.to('pinturilloImp').emit('pintuImpDrawOp', { type: 'move', ...action.value });
-        }
-        if (action.type === 'draw_end' && phase === 'DRAW' && turn.currentDrawer === me.id) {
-            if(currentStroke.length > 0) canvasHistory.push(currentStroke);
-            currentStroke = [];
-        }
-        if (action.type === 'undo' && phase === 'DRAW' && turn.currentDrawer === me.id) {
-            if (canvasHistory.length > 0) {
-                canvasHistory.pop();
-                io.to('pinturilloImp').emit('pintuImpCanvasHistory', canvasHistory);
+        if (action.type === 'undo' && isMyTurn) {
+            if (room.turn.strokesThisTurn > 0 && room.canvasHistory.length > 0) {
+                room.canvasHistory.pop();
+                room.turn.strokesThisTurn--; 
+                io.to('pintu_' + roomId).emit('pintuImpCanvasHistory', room.canvasHistory);
             }
         }
-        if (action.type === 'pass' && phase === 'DRAW' && turn.currentDrawer === me.id) {
-            turn.turnIndex++;
-            const totalTurns = players.length * settings.rounds;
-            if (turn.turnIndex >= totalTurns) {
-                phase = 'VOTE';
-                turn.currentDrawer = null;
-            } else {
-                const nextIdx = turn.turnIndex % players.length;
-                turn.currentLap = Math.floor(turn.turnIndex / players.length) + 1;
-                turn.currentDrawer = players[turn.order[nextIdx]].id;
-            }
-            broadcast(io);
+
+        if (action.type === 'pass' && isMyTurn) {
+            nextTurn(room);
+            broadcast(io, roomId);
         }
-        if (action.type === 'vote' && phase === 'VOTE' && !me.isDead) {
+
+        // --- CHAT (10 segundos) ---
+        if (action.type === 'chat') {
+            const msg = action.value.trim().substring(0, 50); 
+            if(msg) {
+                const msgId = Date.now() + Math.random(); 
+                room.chatHistory.push({ id: msgId, name: me.name, text: msg });
+                broadcast(io, roomId);
+
+                setTimeout(() => {
+                    if(rooms[roomId]) { 
+                        rooms[roomId].chatHistory = rooms[roomId].chatHistory.filter(m => m.id !== msgId);
+                        broadcast(io, roomId);
+                    }
+                }, 10000);
+            }
+        }
+
+        // --- VOTING & ADMIN ---
+        if (action.type === 'vote' && !me.isDead) {
             me.votedFor = (me.votedFor === action.value) ? null : action.value;
-            broadcast(io);
+            broadcast(io, roomId);
+        }
+        if (action.type === 'changeImpostors' && me.isAdmin) {
+            room.settings.impostors = Math.max(1, Math.min(room.players.length-1, room.settings.impostors + action.value));
+            broadcast(io, roomId);
         }
         if (action.type === 'clearVotes' && me.isAdmin) {
-            players.forEach(p => p.votedFor = null);
-            broadcast(io);
+            room.players.forEach(p => p.votedFor = null);
+            broadcast(io, roomId);
         }
         if (action.type === 'kick' && me.isAdmin) {
-            const target = players.find(p => p.id === action.value);
-            if (target) {
-                if(target.socketId) io.to(target.socketId).emit('sessionExpired');
-                players = players.filter(p => p.id !== action.value);
-                broadcast(io);
-            }
+            const targetId = action.value;
+            if (room.gameInProgress && room.turn.currentDrawer === targetId) nextTurn(room);
+            room.players = room.players.filter(p => p.id !== targetId);
+            room.turn.order = room.turn.order.filter(id => id !== targetId);
+            
+            io.to('pintu_' + roomId).emit('forceRefresh'); 
+            broadcast(io, roomId);
         }
         if (action.type === 'kill' && me.isAdmin) {
-            const p = players.find(x => x.id === action.value);
-            if(p) { p.isDead = !p.isDead; if(!p.isDead) p.votedFor=null; broadcast(io); }
+            const p = room.players.find(x => x.id === action.value);
+            if(p) { p.isDead = !p.isDead; if(!p.isDead) p.votedFor=null; broadcast(io, roomId); }
         }
         if (action.type === 'revealResults' && me.isAdmin) {
-            const sum = turnData.SUMMARY;
+            const sum = room.turnData.SUMMARY;
             if (sum) {
-                const imps = players.filter(p => sum.impostors.includes(p.id)).map(p => ({name:p.name, isDead:p.isDead}));
-                io.to('pinturilloImp').emit('pintuImpSummary', { word: sum.word, impostors: imps });
+                const imps = room.players.filter(p => sum.impostors.includes(p.id)).map(p => ({name:p.name, isDead:p.isDead}));
+                io.to('pintu_' + roomId).emit('pintuImpSummary', { word: sum.word, impostors: imps });
             }
         }
         if (action.type === 'reset' && me.isAdmin) {
-            gameInProgress = false;
-            phase = 'LOBBY';
-            players.forEach(p => { p.votedFor = null; p.isDead = false; });
-            broadcast(io);
+            room.gameInProgress = false;
+            room.phase = 'LOBBY';
+            room.players.forEach(p => { p.votedFor = null; p.isDead = false; });
+            broadcast(io, roomId);
         }
     });
 };
 
-const handleJoin = (socket, name) => {
-    if (players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase())) return socket.emit('joinError', 'Nombre en uso.');
-    const p = Utils.createPlayer(socket.id, name);
-    p.isDead = false; p.votedFor = null;
-    players.push(p);
-    socket.join('pinturilloImp');
+const handleJoin = (socket, name, targetRoomId) => {
+    let roomId = targetRoomId;
+    if (!roomId || roomId === 'NEW') roomId = Utils.getRandomCapital(Object.keys(rooms));
+    const room = ensureRoom(roomId);
     
-    // CAMBIO: ENVIAR CATEGORIAS AL ENTRAR
+    const existing = room.players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase());
+    if (existing) {
+        existing.socketId = socket.id;
+        existing.connected = true; 
+    } else {
+        const p = Utils.createPlayer(socket.id, name);
+        p.isDead = false; p.votedFor = null;
+        if (room.players.length === 0) p.isAdmin = true;
+        room.players.push(p);
+    }
+
+    socket.data.roomId = roomId; 
+    socket.join('pintu_' + roomId); 
+    
+    const myPlayer = room.players.find(p => p.socketId === socket.id);
+
     socket.emit('pintuImpCategories', getPublicCategories());
-    socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'pinturilloImp' });
+    socket.emit('joinedSuccess', { playerId: myPlayer.id, name, room: 'pinturilloImp', roomId });
     
-    broadcast(socket.server);
+    if(room.gameInProgress) {
+        if(room.phase === 'DRAW') socket.emit('pintuImpCanvasHistory', room.canvasHistory);
+        if(room.turnData[myPlayer.id]) socket.emit('pintuImpRole', room.turnData[myPlayer.id]);
+    }
+    broadcast(socket.server, roomId);
 };
 
-const handleRejoin = (socket, savedId) => {
-    const p = players.find(x => x.id === savedId);
+const handleRejoin = (socket, savedId, savedRoomId) => {
+    const room = rooms[savedRoomId];
+    if (!room) return socket.emit('sessionExpired');
+
+    const p = room.players.find(x => x.id === savedId);
     if(p) {
-        p.socketId = socket.id; p.connected = true;
-        socket.join('pinturilloImp');
+        p.socketId = socket.id; 
+        p.connected = true;
+        socket.data.roomId = savedRoomId;
+        socket.join('pintu_' + savedRoomId);
         
-        // CAMBIO: ENVIAR CATEGORIAS AL RECONECTAR
         socket.emit('pintuImpCategories', getPublicCategories());
-        socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'pinturilloImp', isRejoin: true });       
-        if(gameInProgress) {
-            if(turnData[p.id]) socket.emit('pintuImpRole', turnData[p.id]);
-            if(phase === 'DRAW') socket.emit('pintuImpCanvasHistory', canvasHistory);
+        socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'pinturilloImp', roomId: savedRoomId, isRejoin: true });       
+        
+        if(room.gameInProgress) {
+            if(room.turnData[p.id]) socket.emit('pintuImpRole', room.turnData[p.id]);
+            if(room.phase === 'DRAW') socket.emit('pintuImpCanvasHistory', room.canvasHistory);
         }
-        broadcast(socket.server);
-    } else socket.emit('sessionExpired');
+        broadcast(socket.server, savedRoomId);
+    } else {
+        socket.emit('sessionExpired');
+    }
 };
 
-const handleLeave = (id) => { players = players.filter(p => p.id !== id); };
-const handleDisconnect = (socket) => {
-    const p = players.find(x => x.socketId === socket.id);
-    if(p) { p.connected = false; broadcast(socket.server); setTimeout(() => { if(!p.connected) handleLeave(p.id); }, 900000); }
+const handleLeave = (playerId, roomId, io) => {
+    const room = rooms[roomId];
+    if(!room) return;
+
+    if (room.gameInProgress && room.turn.currentDrawer === playerId) nextTurn(room);
+    room.players = room.players.filter(p => p.id !== playerId);
+    room.turn.order = room.turn.order.filter(id => id !== playerId);
+    
+    if(room.players.length === 0) delete rooms[roomId];
+    else { if(!room.players.some(p => p.isAdmin)) room.players[0].isAdmin = true; broadcast(io, roomId); }
 };
 
-gameModule.resetInternalState = () => { players = []; gameInProgress = false; phase='LOBBY'; canvasHistory=[]; };
-gameModule.handleJoin = handleJoin;
-gameModule.handleRejoin = handleRejoin;
-gameModule.handleLeave = handleLeave;
-gameModule.handleDisconnect = handleDisconnect;
+const getRooms = () => Object.values(rooms).map(r => ({ id: r.id, players: r.players.length, state: r.gameInProgress ? 'GAME' : 'LOBBY' }));
 
-module.exports = gameModule;
+module.exports = { init: (io)=>{}, handleSocket, handleJoin, handleRejoin, handleLeave, getRooms };

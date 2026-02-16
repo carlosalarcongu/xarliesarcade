@@ -17,8 +17,8 @@
     <div id="hubScreen">
         <div class="header-wrapper">
             <div class="header-tools-left">
-                <button class="ignored-btn" onclick="app.selectRoom('mus')">
-                    Mus
+                <button class="ignored-btn" onclick="app.showStatsMenu()">
+                    Stats
                 </button>
             </div>
 
@@ -67,13 +67,9 @@
                 </div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
-            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #1cff2f;">
-                <div class="hub-icon">🐺</div>
-                <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
-                <div style="font-size:1.5em; color:#57606f">➜</div>
-            </div>
+
             
-            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #7830ff;">
+            <div class="hub-card" onclick="app.selectRoom('pinturilloImp')" style="border-left-color: #7830ff;">
                 <div class="hub-icon">🎨</div>
                 <div class="hub-info">
                     <div class="hub-title">El Falso Artista</div>
@@ -81,6 +77,13 @@
                 </div>
                 <div style="font-size:1.5em; color:#57606f">🔒</div>
             </div>
+
+            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #1cff2f;">
+                <div class="hub-icon">🐺</div>
+                <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            
             
             <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #e74c3c;">
                 <div class="hub-icon">⚔️</div>
@@ -120,6 +123,14 @@
             <div class="mini-card" onclick="app.showScreen('giveScreen')" style="border-left: 3px solid #00cec9;">
                 <span class="mini-icon">🎁</span>
                 <span class="mini-title">Give XP</span>
+            </div>
+            <div class="mini-card" onclick="app.selectRoom('trivial')" style="border-left: 3px solid #f1c40f;">
+                <span class="mini-icon">🧀</span>
+                <span class="mini-title">Trivial</span>
+            </div>
+            <div class="mini-card disabled" onclick="app.showDevMessage()" style="border-left: 3px solid #f1c40f;">
+                <span class="mini-icon">X</span>
+                <span class="mini-title">Torneos</span>
             </div>
         </div>
         <div style="margin-top: 30px; text-align: center; color: #555;">
@@ -549,44 +560,69 @@
         <ul id="pintuImpList"></ul>
     </div>
 
-    <div id="pinturilloImpGame" class="hidden">
-        <div class="back-nav" style="display:flex; gap:5px; margin-bottom:10px;">
-            <button onclick="app.goBackToHub(false)" style="flex:1; background:#57606f;">🏠 Sala</button>
-            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+    <div id="pinturilloImpGame" class="hidden" style="width: 100%; height: 100%; position: relative;">
+        <div class="back-nav" style="display:flex; gap:5px; margin-bottom:5px;">
+            <button onclick="document.getElementById('pintuImpPlayersModal').classList.remove('hidden')" style="flex:1; background:#0984e3;">👥 Jugadores</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900;">❓</button>
             <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
-        </div>        
-        <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.9em; text-align:center; margin-bottom:5px;"></div>
-        <div class="card-note">👆 Toca la tarjeta para ver tu rol</div>
-        <div id="pintuImpRoleCard" class="blur-content" onclick="app.pinturilloImp.toggleRole()" style="margin-bottom: 20px; background: #2f3542; padding: 20px; border-radius: 10px; border: 2px solid #57606f;">
-            <h1 id="pintuImpRoleTitle" style="margin:0;">...</h1>
-            <p id="pintuImpRoleWord" style="font-size:1.5em; color:#e1b12c; margin:5px 0;">...</p>
-            <p id="pintuImpHint" style="font-size:0.9em; color:#74b9ff; margin:0; display:none;">...</p>
         </div>
-        <div id="pintuImpDrawArea" class="hidden" style="width:100%">
-            <div id="drawStatus" class="draw-status">...</div>
+        
+        <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.8em; text-align:center;">Vuelta 1/1</div>
+        
+        <div id="pintuImpRoleCard" class="blur-content" onclick="app.pinturilloImp.toggleRole()" style="margin: 5px 0; background: #2f3542; padding: 10px; border-radius: 10px; border: 2px dashed #57606f; cursor:pointer;">
+            <h2 id="pintuImpRoleTitle" style="margin:0;">...</h2>
+            <p id="pintuImpRoleWord" style="font-size:1.2em; color:#e1b12c; margin:0;">...</p>
+            <p id="pintuImpHint" style="font-size:0.8em; color:#74b9ff; margin:0; display:none;">...</p>
+        </div>
+
+        <div id="pintuImpDrawArea" style="width:100%; position:relative;">
+            <div id="drawStatus" class="draw-status" style="font-size:0.9em; padding:5px;">...</div>
+            
             <div class="canvas-container">
                 <canvas id="pintuImpCanvas" width="300" height="300"></canvas>
             </div>
+
             <div class="canvas-controls hidden" id="myDrawControls">
-                <button onclick="app.pinturilloImp.undo()" style="width:48%; background:#eb4d4b">Deshacer</button>
-                <button id="btnPassTurn" onclick="app.pinturilloImp.passTurn()" style="width:48%; background:#6ab04c" disabled>Pasar</button>
+                <button onclick="app.pinturilloImp.undo()" style="width:48%; background:#eb4d4b; padding:10px;">↩ Deshacer</button>
+                <button id="btnPassTurn" onclick="app.pinturilloImp.passTurn()" style="width:48%; background:#6ab04c; padding:10px;" disabled>Pasar ➡</button>
             </div>
         </div>
-        <div id="pintuImpVoteSection" class="hidden" style="width:100%; margin-top:20px;">
-            <h3 style="color:#ff4757">🗳️ ¡VOTACIÓN!</h3>
-            <div style="display:flex; justify-content:flex-end; margin-bottom:10px; gap:5px;">
-                 <button id="pintuImpShowRes" class="kick-btn hidden" style="background:#ffa502;" onclick="app.pinturilloImp.revealResults()">👁️</button>
-                 <button id="pintuImpEndVote" class="kick-btn hidden" onclick="app.pinturilloImp.reset()">⏹️</button>
-                 <button id="pintuImpClearVote" class="kick-btn hidden" style="background:#555;" onclick="app.pinturilloImp.clearVotes()">Limpiar</button>
+
+        <div id="pintuImpVoteSection" style="width:100%; margin-top:10px;">
+            <div style="display:flex; justify-content:flex-end; gap:5px; margin-bottom:5px;">
+                 <button id="pintuImpShowRes" class="kick-btn hidden" style="width:auto; padding:5px; font-size:0.8em; background:#ffa502;" onclick="app.pinturilloImp.revealResults()">👁️ Ver Roles</button>
+                 <button id="pintuImpEndVote" class="kick-btn hidden" style="width:auto; padding:5px; font-size:0.8em;" onclick="app.pinturilloImp.reset()">⏹️ Fin</button>
+                 <button id="pintuImpClearVote" class="kick-btn hidden" style="width:auto; padding:5px; font-size:0.8em; background:#555;" onclick="app.pinturilloImp.clearVotes()">Limpiar</button>
             </div>
-            <div id="pintuImpVoteGrid" class="vote-grid"></div>
+            <div id="pintuImpVoteGrid" class="vote-grid" style="grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:5px;"></div>
         </div>
+
+        <div id="pintuChatContainer">
+            <div id="pintuChatBox"></div>
+            
+            <button id="btnOpenChat" onclick="app.pinturilloImp.toggleChat()">💬</button>
+            
+            <div id="pintuChatInputGroup" class="hidden">
+                <input type="text" id="pintuChatInput" placeholder="Escribe..." autocomplete="off">
+                <button onclick="app.pinturilloImp.sendChat()" style="background:#2ecc71; width:30px; padding:0; border-radius:4px;">✔</button>
+                <button onclick="app.pinturilloImp.toggleChat()" style="background:#ff4757; width:30px; padding:0; border-radius:4px;">✖</button>
+            </div>
+        </div>
+
+        <div id="pintuImpPlayersModal" class="hidden modal-overlay">
+            <div class="card" style="background:#2f3542; border:2px solid #0984e3; max-height:80vh; overflow-y:auto;">
+                <h3 style="color:#0984e3">👥 Lista de Jugadores</h3>
+                <ul id="pintuImpInGameList" style="text-align:left; margin-bottom:20px;"></ul>
+                <button onclick="document.getElementById('pintuImpPlayersModal').classList.add('hidden')" class="main-btn">Cerrar</button>
+            </div>
+        </div>
+
         <div id="pintuImpSummaryModal" class="hidden modal-overlay">
-            <h1 style="color:#e17055; font-size:3em;">RESUMEN</h1>
-            <h2 id="pintuImpSumWord" style="color:#ffeaa7; font-size:2.5em; margin:10px 0;"></h2>
+            <h1 style="color:#e17055;">RESUMEN</h1>
+            <h2 id="pintuImpSumWord" style="color:#ffeaa7;"></h2>
             <div style="background:#ff4757; color:white; padding:10px; width:100%; border-radius:10px; margin:20px 0;">
                 <h3>🔪 Impostores:</h3>
-                <div id="pintuImpSumImpostors" style="font-size:1.5em; font-weight:bold;"></div>
+                <div id="pintuImpSumImpostors" style="font-weight:bold;"></div>
             </div>
             <button onclick="document.getElementById('pintuImpSummaryModal').classList.add('hidden')" class="main-btn">Cerrar</button>
         </div>
@@ -619,7 +655,7 @@
                 </div>
             </div>
         
-        <div id="musControlsArea" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; border: 1px dashed #e1b12c; margin-bottom: 15px;">
+        <div id="musControlsArea" class="hidden" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; border: 1px dashed #e1b12c; margin-bottom: 15px;">
 
             <div style="display:flex; gap:5px; overflow-x:auto; padding-bottom: 5px;">
                 <button class="kick-btn" style="width:auto; font-size:0.8em;" onclick="app.mus.addPlayer()">+ Jugador</button>
@@ -772,6 +808,94 @@
             </div>
         </div>
     </div>
+
+    <div id="fifaScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ SALIR</button>
+            <button onclick="app.fifa.toggleControls()" style="border-radius:0; transform:skewX(-10deg); border:2px solid #00d2d3;">🖊️</button>
+        </div>
+
+        <div class="fifa-header">
+            <h1 style="margin:0; font-style:italic;">Registro de <span style="color:#ff005c">FIFA</span></h1>
+            <p style="font-size:0.8em; color:#00d2d3; letter-spacing:2px;"> TEAM DATABASE</p>
+        </div>
+
+        <div id="fifaControlsArea" class="hidden fifa-panel">
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <label style="color:#aaa; font-size:0.8em; align-self:center;">TORNEO:</label>
+                <select id="fifaRoomSelect" onchange="app.fifa.changeRoom()" style="flex:1"></select>
+                <button onclick="app.fifa.createRoom()">+</button>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                <button class="fifa-btn" onclick="app.fifa.addPlayer()">+ JUGADOR</button>
+                <button class="fifa-btn" onclick="app.fifa.showAddMatchModal()">+ PARTIDO</button>
+                <button class="fifa-btn" onclick="app.fifa.backup()">💾 SAVE</button>
+            </div>
+        </div>
+
+        <div class="fifa-panel" style="margin-top:15px; padding:10px;">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1">
+                    <label style="color:#aaa; font-size:0.7em;">PERIODO</label>
+                    <select id="fifaPeriodFilter" onchange="app.fifa.changeView()" class="fifa-input" style="margin:0;">
+                        <option value="all">Historico</option>
+                        <option value="7days">7 Días</option>
+                        <option value="30days">30 Días</option>
+                        <option value="year">Este Año</option>
+                    </select>
+                </div>
+                <div style="flex:2">
+                    <label style="color:#aaa; font-size:0.7em;">MODO</label>
+                    <select id="fifaViewMode" onchange="app.fifa.changeView()" class="fifa-input" style="margin:0;">
+                        <option value="ranking_player">👤 Ranking Individual</option>
+                        <option value="ranking_pair">👥 Ranking Parejas</option>
+                        <option value="1vs1">⚔️ Cara a Cara (1vs1)</option>
+                        <option value="top_improvement">🚀 Forma (14 días)</option>
+                        <option value="recent_log">📝 Historial</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="fifaDiv1vs1" class="hidden" style="margin-top:15px; border-top:1px solid #ffffff33; padding-top:10px;">
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <select id="fifaP1vs" onchange="app.fifa.runHeadToHead()" style="flex:1; margin:0;"></select>
+                    <span style="font-weight:bold; color:#ff005c; font-style:italic;">VS</span>
+                    <select id="fifaP2vs" onchange="app.fifa.runHeadToHead()" style="flex:1; margin:0;"></select>
+                </div>
+            </div>
+        </div>
+
+        <div id="fifaStatsContainer" style="margin-top:20px; width:100%;"></div>
+        
+        <div id="fifaLogContainer" style="width:100%; padding-bottom:50px;"></div>
+
+        <div id="fifaAddMatchModal" class="hidden modal-overlay">
+            <div class="fifa-modal-box">
+                <h3 style="color:#00d2d3; font-style:italic;">MATCH DAY</h3>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
+                    <div style="width:40%">
+                        <div style="color:#aaa; font-size:0.7em;">HOME</div>
+                        <select id="fifaP1" class="fifa-input"></select>
+                        <select id="fifaP2" class="fifa-input"></select>
+                        <input type="number" id="fifaS1" class="fifa-score-input" placeholder="0">
+                    </div>
+                    <div style="font-weight:bold; font-style:italic; font-size:1.5em;">VS</div>
+                    <div style="width:40%">
+                        <div style="color:#aaa; font-size:0.7em;">AWAY</div>
+                        <select id="fifaP3" class="fifa-input"></select>
+                        <select id="fifaP4" class="fifa-input"></select>
+                        <input type="number" id="fifaS2" class="fifa-score-input" placeholder="0">
+                    </div>
+                </div>
+
+                <div style="margin-top:20px; display:flex; gap:10px;">
+                    <button onclick="document.getElementById('fifaAddMatchModal').classList.add('hidden')" class="fifa-btn" style="background:#444">CANCEL</button>
+                    <button onclick="app.fifa.submitMatch()" class="fifa-btn" style="background:#ff005c">PLAY MATCH</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <div id="giveScreen" class="hidden">
     <div class="back-nav"><button onclick="app.goBackToHub()">⬅ Volver</button></div>
@@ -784,7 +908,7 @@
     <div class="card" style="background:#2d3436; border:none; padding:10px;">
         <div></div> 
     </div>
-</div>
+    </div>
 
     <div id="globalRulesModal" class="hidden modal-overlay" style="align-items: center; justify-content: center; z-index: 1000;">
         <div class="card" style="max-height: 80vh; overflow-y: auto; text-align: left; position: relative; border: 2px solid #ffa502;">
@@ -899,6 +1023,7 @@
             </div>
         </div>
     </div>
+
     <div id="contextoScreen" class="hidden">
         <div class="back-nav">
             <button onclick="app.goBackToHub()" style="flex:0.3; background:#eb4d4b;">⬅</button>
@@ -953,6 +1078,7 @@
             <button onclick="app.contexto.closeRanking()" class="main-btn" style="margin-top:10px;">Cerrar</button>
         </div>
     </div>
+
     <div id="consejoScreen" class="hidden">
         <div class="back-nav">
             <button onclick="app.goBackToHub()">⬅ Salir</button>
@@ -1157,9 +1283,148 @@
 
                 <button class="kick-btn" style="margin-top:20px; background:#444" onclick="app.fiesta.selectGame('MENU')">Volver al Menú</button>
             </div>
-            
         </div>
     </div>
+
+    <div id="trivialScreen" class="hidden">
+        
+        <div class="back-nav">
+            <button onclick="app.goBackToHub(true)">🚪 Salir</button>
+            <div id="trivialTurnIndicator" class="turn-badge" style="background:#2f3542; color:white; padding:5px 10px; border-radius:15px; border:1px solid #7f8fa6;">Turno: ...</div>
+        </div>
+
+        <div id="trivialLobby" class="hidden">
+            <h1 style="color:#f1c40f; font-family:'Times New Roman', serif; text-transform: uppercase; letter-spacing: 2px;">🧀 Trivial Pursuit</h1>
+            
+            <div id="trivTeamList" class="team-grid"></div>
+
+            <div class="triv-admin-only hidden admin-panel" style="margin-top:20px;">
+                <h3 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px;">Configuración</h3>
+                <div style="display:flex; gap:10px; justify-content:center; margin-bottom:10px;">
+                    <button class="kick-btn" onclick="app.trivial.addTeam()" style="width:auto; font-size:0.8em;">+ Equipo</button>
+                </div>
+                <button class="start-btn" onclick="app.trivial.startGame()">▶️ COMENZAR PARTIDA</button>
+            </div>
+            <p id="trivWaitMsg" style="color:#aaa; font-style:italic; margin-top:20px;">Esperando al administrador...</p>
+        </div>
+
+        <div id="trivialGame" class="hidden" style="width:100%;">
+            
+            <div id="trivHUD" class="triv-hud-container"></div>
+
+            <div class="triv-board-wrapper">
+                <div id="trivialBoardNodes"></div>
+                
+                <div class="dice-stage">
+                    <div id="diceCube" class="dice-cube">
+                        <div class="dice-face df-1">⚀</div>
+                        <div class="dice-face df-2">⚁</div>
+                        <div class="dice-face df-3">⚂</div>
+                        <div class="dice-face df-4">⚃</div>
+                        <div class="dice-face df-5">⚄</div>
+                        <div class="dice-face df-6">⚅</div>
+                    </div>
+                </div>
+                <div id="diceTrigger" class="dice-trigger hidden" onclick="app.trivial.rollDice()"></div>
+            </div>
+
+            <div id="trivLog" class="triv-log-container"></div>
+
+            <div id="trivCardOverlay" class="card-overlay hidden">
+                <div class="triv-card-container">
+                    <div id="trivCardInner" class="triv-card-inner">
+                        
+                        <div class="triv-card-front" id="trivFrontStyle">
+                            <div id="qIcon" style="font-size:3em; margin-bottom:10px;">🌍</div>
+                            <h3 id="qCat" style="text-transform:uppercase; letter-spacing:2px; margin-bottom:20px;">GEO</h3>
+                            <p id="qText" style="font-size:1.3em; font-weight:bold; line-height:1.4;">¿Pregunta?</p>
+                            
+                            <div id="trivActiveLockMsg" class="hidden" style="margin-top:auto; color:#e74c3c; font-weight:bold; font-size:0.9em; background:rgba(255,255,255,0.9); padding:10px; border-radius:5px;">
+                                🚫 TU EQUIPO JUEGA <br> No puedes ver la respuesta
+                            </div>
+                        </div>
+
+                        <div class="triv-card-back">
+                            <div style="font-size:3em; margin-bottom:10px;">💡</div>
+                            <h3 style="color:#aaa">Respuesta:</h3>
+                            <p id="qAns" style="font-size:1.6em; font-weight:bold; color:#f1c40f; margin:20px 0;">Respuesta</p>
+                            
+                            <div id="trivAdminCtrls" class="hidden" style="width:100%; display:flex; gap:10px; margin-top:auto;">
+                                <button onclick="app.trivial.validate(false)" class="kick-btn" style="border-color:#e74c3c; color:#e74c3c; background:white;">❌ FALLO</button>
+                                <button onclick="app.trivial.validate(true)" class="kick-btn" style="border-color:#2ed573; color:#2ed573; background:white;">✅ ACIERTO</button>
+                            </div>
+                        </div>
+
+                        <div id="trivBackMask" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#2f3542; border-radius:15px; backface-visibility:hidden; transform: rotateY(180deg); display:flex; justify-content:center; align-items:center; z-index:20;">
+                            <span style="font-size:3em">🔒</span>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <button id="btnFlipTriv" class="main-btn" onclick="app.trivial.flipCard()" style="margin-top:20px; width:auto; padding:10px 40px; background:white; color:black; border:2px solid black; font-weight:bold;">🔄 VOLTEAR TARJETA</button>
+            </div>
+
+            <button class="triv-admin-only hidden mini-fab" onclick="document.getElementById('trivAdminPanel').classList.remove('hidden')">⚙️</button>
+        </div>
+
+        <div id="trivialPodium" class="hidden">
+            <h1 style="color:#f1c40f">🏆 RESULTADOS 🏆</h1>
+            <div id="trivPodiumList" style="width:100%; max-width:400px; margin-top:20px;"></div>
+            <button class="triv-admin-only hidden main-btn" onclick="app.trivial.backToLobby()" style="margin-top:20px">Volver al Lobby</button>
+        </div>
+
+        <div id="trivAdminPanel" class="hidden modal-overlay">
+            <div class="card" style="background:#222; border:2px solid #f1c40f;">
+                <h3>Panel de Control</h3>
+                <div style="display:grid; gap:10px;">
+                    <button class="kick-btn" onclick="app.trivial.forceNext()">Forzar Siguiente Turno</button>
+                    <button class="kick-btn" onclick="app.trivial.endGame()">Acabar Partida</button>
+                </div>
+                <button onclick="document.getElementById('trivAdminPanel').classList.add('hidden')" style="margin-top:15px; width:100%; background:#555;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsSelectionScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Volver</button>
+        </div>
+
+        <h2 style="color:#00d2d3; font-family:'Poppins', sans-serif;">Rankings de juegos</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:30px;">Selecciona el registro:</p>
+
+        <div class="hub-grid">
+            
+            <div class="hub-card" onclick="app.selectRoom('mus')" style="border-left-color: #e1b12c;">
+                <div class="hub-icon">🐄</div>
+                <div class="hub-info">
+                    <div class="hub-title">Mus</div>
+                    <div class="hub-desc">Ranking y Parejas.</div>
+                </div>
+                <div style="font-size:1.5em; color:#09c432">➜</div>
+            </div>
+
+            <div class="hub-card" onclick="app.selectRoom('fifa')" style="border-left-color: #2ed573;">
+                <div class="hub-icon">⚽</div>
+                <div class="hub-info">
+                    <div class="hub-title">FIFA</div>
+                    <div class="hub-desc">Partidos 1vs y 2vs2.</div>
+                </div>
+                <div style="font-size:1.5em; color:#e11ed8">🔒</div>
+            </div>
+
+            <div class="hub-card disabled" style="border-left-color: #57606f; opacity: 0.5;">
+                <div class="hub-icon">➕</div>
+                <div class="hub-info">
+                    <div class="hub-title">Otro</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -1178,6 +1443,11 @@
     <script src="js/contexto.js"></script>
     <script src="js/consejo.js"></script>
     <script src="js/fiesta.js"></script>
+    <script src="js/trivial.js"></script>
+    <script src="js/fifa.js"></script>
+
+
+
     
 </body>
 </html>

@@ -24,7 +24,9 @@ const gamesModules = {
     orden: require('./games/orden'),
     contexto: require('./games/contexto'),
     consejo: require('./games/consejo'),
-    fiesta: require('./games/fiesta')
+    fiesta: require('./games/fiesta'),
+    trivial: require('./games/trivial'),
+    fifa: require('./games/fifa'),
 };
 
 // Inicializar juegos

@@ -116,7 +116,7 @@ module.exports = (io, socket) => {
         if (action.type === 'deleteMatch') {
              const idx = musData.matches.findIndex(m => m.id === action.id);
              if(idx !== -1) {
-                 if (action.user === "musero" || action.user === "Administrador de mus") {
+                 if (action.user === "musero" || action.user === "Xarlie") {
                      musData.matches.splice(idx, 1);
                      saveData();
                      io.emit('mus_data', musData);
