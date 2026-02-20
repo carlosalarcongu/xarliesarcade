@@ -4,11 +4,10 @@ const path = require('path');
 const DB_FILE = path.join(__dirname, '../mus_database.json');
 const FEEDBACK_FILE = path.join(__dirname, '../feedback_log.txt');
 
-// Estructura por defecto
 let musData = {
     rooms: ["Entre Nosotros (Las monjas)"],
     players: [],
-    matches: [] // Ahora cada match tendrá una propiedad "roomId"
+    matches: []
 };
 
 const loadData = () => {
@@ -17,20 +16,16 @@ const loadData = () => {
             const raw = fs.readFileSync(DB_FILE, 'utf8');
             if (raw) {
                 const parsed = JSON.parse(raw);
-                
-                // --- MIGRACIÓN DE DATOS ANTIGUOS ---
-                // Si no hay array de rooms, es la versión vieja.
                 if (!parsed.rooms) {
                     console.log("[MUS] Migrando base de datos a sistema de salas...");
                     parsed.rooms = ["Entre Nosotros (Las monjas)"];
-                    // Asignar sala por defecto a todas las partidas antiguas
                     if (parsed.matches) {
                         parsed.matches.forEach(m => {
                             if (!m.roomId) m.roomId = "Entre Nosotros (Las monjas)";
                         });
                     }
                     musData = parsed;
-                    saveData(); // Guardar estructura nueva
+                    saveData();
                 } else {
                     musData = parsed;
                 }
@@ -49,33 +44,28 @@ const saveData = () => {
     } catch (e) { console.error(e); }
 };
 
-// Carga inicial
 loadData();
 
-// Watcher
 let fsWait = false;
 fs.watch(DB_FILE, (event, filename) => {
     if (filename && !fsWait) {
         fsWait = setTimeout(() => { fsWait = false; }, 100);
         console.log(`[MUS] DB cambiada externamente.`);
         loadData();
-        // Nota: io se pasa en el export, aquí no lo tenemos accesible globalmente
-        // pero como module.exports es una función, el socket lo maneja abajo.
     }
 });
 
 module.exports = (io, socket) => {
-    
-    // Al conectar o cambiar algo fuera, emitimos a todos (si se llamara desde watcher)
-    // Para simplificar, el watcher recarga RAM. El cliente pide datos al entrar.
-
     socket.on('mus_action', (action) => {
-        
         if (action.type === 'getData') {
             socket.emit('mus_data', musData);
         }
 
         if (action.type === 'addRoom') {
+            if (action.user !== 'musero') {
+                socket.emit('mus_msg', 'Solo "musero" tiene permisos para crear salas nuevas.');
+                return;
+            }
             const r = action.value.trim();
             if (r && !musData.rooms.includes(r)) {
                 musData.rooms.push(r);
@@ -96,7 +86,6 @@ module.exports = (io, socket) => {
 
         if (action.type === 'addMatch') {
             const m = action.value;
-            // Validar que la sala exista o sea la default
             if (!musData.rooms.includes(m.roomId)) return;
 
             musData.matches.push({
@@ -116,18 +105,67 @@ module.exports = (io, socket) => {
         if (action.type === 'deleteMatch') {
              const idx = musData.matches.findIndex(m => m.id === action.id);
              if(idx !== -1) {
-                 if (action.user === "musero" || action.user === "Xarlie") {
+                 if (action.user === "musero" || action.user === "Xarlie" || action.user === "Administrador de mus" || action.user.toLowerCase() === "administrador m") {
                      musData.matches.splice(idx, 1);
                      saveData();
                      io.emit('mus_data', musData);
+                 } else {
+                     socket.emit('mus_msg', 'No tienes permisos para borrar partidas.');
                  }
              }
+        }
+
+        // --- FUNCIONES EXCLUSIVAS DE ADMINISTRADOR ---
+        if (action.type === 'adminEditPlayer') {
+            if (action.user.toLowerCase() !== 'administrador m') return;
+            const { oldName, newName } = action.value;
+            
+            // Actualizar en array de players
+            const idx = musData.players.indexOf(oldName);
+            if (idx !== -1) {
+                musData.players[idx] = newName;
+            } else if (!musData.players.includes(newName)) {
+                musData.players.push(newName);
+            }
+            
+            // Actualizar retroactivamente en todas las partidas
+            musData.matches.forEach(m => {
+                if (m.p1 === oldName) m.p1 = newName;
+                if (m.p2 === oldName) m.p2 = newName;
+                if (m.p3 === oldName) m.p3 = newName;
+                if (m.p4 === oldName) m.p4 = newName;
+            });
+            
+            musData.players.sort();
+            saveData(); 
+            io.emit('mus_data', musData);
+        }
+
+        if (action.type === 'adminDeletePlayer') {
+            if (action.user.toLowerCase() !== 'administrador m') return;
+            const name = action.value;
+            musData.players = musData.players.filter(p => p !== name);
+            saveData(); 
+            io.emit('mus_data', musData);
+        }
+
+        if (action.type === 'adminEditMatch') {
+            if (action.user.toLowerCase() !== 'administrador m') return;
+            const m = musData.matches.find(x => x.id === action.value.id);
+            if (m) {
+                m.p1 = action.value.p1; m.p2 = action.value.p2;
+                m.p3 = action.value.p3; m.p4 = action.value.p4;
+                m.s1 = parseInt(action.value.s1); 
+                m.s2 = parseInt(action.value.s2);
+                saveData(); 
+                io.emit('mus_data', musData);
+            }
         }
 
         if (action.type === 'backup') {
             const line = `\n--- BACKUP MUS ${new Date().toISOString()} ---\n${JSON.stringify(musData)}\n`;
             fs.appendFileSync(FEEDBACK_FILE, line);
-            socket.emit('mus_msg', 'Backup OK');
+            socket.emit('mus_msg', 'Backup OK guardado en logs.');
         }
     });
 };

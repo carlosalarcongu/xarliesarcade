@@ -3,10 +3,29 @@ app.mus = {
     chartInstance: null,
     currentRoom: "Entre Nosotros (Las monjas)", 
     
-    // Lista de emojis
     emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷','🕸','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦚','🦜','🦢','🦩','🕊','🐇','🦝','🦨','🦡','🦦','🦫','🐁','🐀','🐿','🦔','🐉','🐲'],
 
     init: () => {
+        const vm = document.getElementById('musViewMode');
+        
+        // Inyectar opción Rachas
+        if (vm && !vm.querySelector('option[value="rachas"]')) {
+            const opt = document.createElement('option');
+            opt.value = 'rachas';
+            opt.innerHTML = '🔥 Rachas Actuales';
+            vm.appendChild(opt);
+        }
+
+        // Inyectar opción Administración (Solo para administrador m)
+        if (app.myPlayerName && app.myPlayerName.toLowerCase() === 'administrador m') {
+            if (vm && !vm.querySelector('option[value="administracion"]')) {
+                const optAdmin = document.createElement('option');
+                optAdmin.value = 'administracion';
+                optAdmin.innerHTML = '⚙️ Administración';
+                vm.appendChild(optAdmin);
+            }
+        }
+
         app.mus.refresh();
     },
 
@@ -18,7 +37,6 @@ app.mus = {
         socket.emit('mus_action', { type: 'getData' });
     },
 
-    // --- HELPERS ---
     getAvatar: (name) => {
         if (!name) return '👤';
         let hash = 0;
@@ -30,10 +48,7 @@ app.mus = {
     },
 
     getColor: (pct) => {
-        const colors = [
-            '#ff4757', '#ff6b81', '#ff7f50', '#ffa502', '#eccc68', 
-            '#f1c40f', '#7bed9f', '#2ed573', '#26de81', '#009432'
-        ];
+        const colors = ['#ff4757', '#ff6b81', '#ff7f50', '#ffa502', '#eccc68', '#f1c40f', '#7bed9f', '#2ed573', '#26de81', '#009432'];
         const index = Math.min(Math.floor(pct / 10), 9);
         return colors[index];
     },
@@ -66,14 +81,13 @@ app.mus = {
 
     toggleControls: () => {
         const area = document.getElementById('musControlsArea');
-        if (area) {
-            area.classList.toggle('hidden');
-        }
+        if (area) area.classList.toggle('hidden');
     },
 
     createRoom: () => {
+        if (app.myPlayerName !== "musero") return alert("Solo el usuario 'musero' puede crear salas nuevas.");
         const name = prompt("Nombre de la nueva sala:");
-        if(name) socket.emit('mus_action', { type: 'addRoom', value: name });
+        if(name) socket.emit('mus_action', { type: 'addRoom', value: name, user: app.myPlayerName });
     },
 
     // --- DATOS ---
@@ -97,7 +111,7 @@ app.mus = {
         return roomMatches.filter(m => new Date(m.date) >= limitDate);
     },
 
-    // --- ACCIONES ---
+    // --- ACCIONES COMUNES ---
     addPlayer: () => {
         const name = prompt("Nombre:");
         if (name) socket.emit('mus_action', { type: 'addPlayer', value: name });
@@ -135,11 +149,58 @@ app.mus = {
     },
 
     deleteMatch: (id) => {
-        if(confirm("¿Borrar?")) socket.emit('mus_action', { type: 'deleteMatch', id, user: app.myPlayerName });
+        if(confirm("¿Borrar partida?")) socket.emit('mus_action', { type: 'deleteMatch', id, user: app.myPlayerName });
     },
 
     backup: () => {
-        if(confirm("¿Backup?")) socket.emit('mus_action', { type: 'backup' });
+        if(confirm("¿Forzar Backup en servidor?")) socket.emit('mus_action', { type: 'backup' });
+    },
+
+    // --- ACCIONES DE ADMINISTRADOR ---
+    adminRenamePlayer: (oldName) => {
+        const newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
+        if(newName && newName.trim() !== "" && newName !== oldName) {
+            socket.emit('mus_action', { 
+                type: 'adminEditPlayer', 
+                user: app.myPlayerName, 
+                value: { oldName, newName: newName.trim() } 
+            });
+        }
+    },
+    adminDeletePlayer: (name) => {
+        if(confirm(`¿Seguro que quieres eliminar al jugador "${name}" de la lista?\n(Las partidas que haya jugado se mantendrán intactas en el historial)`)) {
+            socket.emit('mus_action', { type: 'adminDeletePlayer', user: app.myPlayerName, value: name });
+        }
+    },
+    adminEditMatchPlayers: (id) => {
+        const m = app.mus.data.matches.find(x => x.id === id);
+        if(!m) return;
+        const p1 = prompt("Jugador 1 (Equipo 1):", m.p1) || m.p1;
+        const p2 = prompt("Jugador 2 (Equipo 1):", m.p2) || m.p2;
+        const p3 = prompt("Jugador 3 (Equipo 2):", m.p3) || m.p3;
+        const p4 = prompt("Jugador 4 (Equipo 2):", m.p4) || m.p4;
+        
+        if(confirm(`Nuevos equipos:\nAzul: ${p1} y ${p2}\nRojo: ${p3} y ${p4}\n\n¿Guardar cambios?`)) {
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { id, p1, p2, p3, p4, s1: m.s1, s2: m.s2 } 
+            });
+        }
+    },
+    adminEditMatchScore: (id) => {
+        const m = app.mus.data.matches.find(x => x.id === id);
+        if(!m) return;
+        const s1 = prompt(`Puntuación Equipo Azul (${m.p1} y ${m.p2}):`, m.s1);
+        const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
+        
+        if(s1 !== null && s2 !== null) {
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { id, p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, s1: parseInt(s1), s2: parseInt(s2) } 
+            });
+        }
     },
 
     // --- VISTAS ---
@@ -167,7 +228,7 @@ app.mus = {
             app.mus.renderImprovement(container);
         }
         else if (mode === 'recent_log') {
-            app.mus.renderLog(container);
+            app.mus.renderLog(container, 'ALL');
         }
         else if (mode === '1vs1') {
             div1vs1.classList.remove('hidden');
@@ -177,7 +238,6 @@ app.mus = {
         else if (mode === '2vs2') {
             div2vs2.classList.remove('hidden');
             app.mus.renderPlayerSelects();
-            // IMPORTANTE: Al entrar, actualizamos los rivales disponibles para la pareja seleccionada por defecto
             app.mus.updateRivalSelector(); 
         }
         else if (mode === 'examinar_persona') {
@@ -190,6 +250,67 @@ app.mus = {
             app.mus.renderPlayerSelects();
             app.mus.runAnalysis();
         }
+        else if (mode === 'rachas') {
+            app.mus.renderRachas(container);
+        }
+        else if (mode === 'administracion') {
+            app.mus.renderAdminPanel(container);
+        }
+    },
+
+    renderAdminPanel: (container) => {
+        if (app.myPlayerName.toLowerCase() !== 'administrador m') return;
+        
+        let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
+        
+        // --- JUGADORES ---
+        html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
+        html += `<ul style="list-style:none; padding:0; text-align:left; max-height: 250px; overflow-y: auto;">`;
+        app.mus.data.players.forEach(p => {
+            html += `<li style="margin-bottom:5px; background:#222; padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#fff; font-weight:bold;">${p}</span>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="app.mus.adminRenamePlayer('${p}')" style="background:#3498db; padding:4px 8px; font-size:0.8em; width:auto;">✏️ Modificar</button>
+                    <button onclick="app.mus.adminDeletePlayer('${p}')" style="background:#e74c3c; padding:4px 8px; font-size:0.8em; width:auto;">🗑️ Eliminar</button>
+                </div>
+            </li>`;
+        });
+        html += `</ul>`;
+
+        // --- PARTIDAS ---
+        html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; margin-top:20px; text-align:left;">📝 Partidas (Sala: ${app.mus.currentRoom})</h4>`;
+        const matches = app.mus.getRoomMatches().sort((a,b) => b.id - a.id);
+        
+        if (matches.length === 0) {
+            html += `<p style="text-align:left;">No hay partidas registradas en esta sala.</p>`;
+        } else {
+            html += `<div style="display:flex; flex-direction:column; gap:10px; max-height: 500px; overflow-y: auto;">`;
+            matches.forEach(m => {
+                const d = new Date(m.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()<10?'0':''}${d.getMinutes()}`;
+                
+                html += `<div style="background:#222; padding:10px; border-radius:5px; text-align:left; border-left:3px solid #f1c40f;">
+                    <div style="font-size:0.8em; color:#aaa; margin-bottom:5px; display:flex; justify-content:space-between;">
+                        <span>🗓️ ${dateStr}</span>
+                        <span>ID: ${m.id}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="color:#fff; font-size:0.9em; flex:1;">
+                            <span style="color:#74b9ff">${m.p1} y ${m.p2}</span> (<span style="color:#fff; font-weight:bold">${m.s1}</span>)<br>
+                            <span style="color:#aaa; font-size:0.8em">VS</span><br>
+                            <span style="color:#ff7675">${m.p3} y ${m.p4}</span> (<span style="color:#fff; font-weight:bold">${m.s2}</span>)
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                            <button onclick="app.mus.adminEditMatchPlayers(${m.id})" style="background:#9b59b6; padding:4px 8px; font-size:0.8em; width:auto;">👥 Jugadores</button>
+                            <button onclick="app.mus.adminEditMatchScore(${m.id})" style="background:#e67e22; padding:4px 8px; font-size:0.8em; width:auto;">🔢 Resultado</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+        }
+        
+        container.innerHTML = html;
     },
 
     // --- RANKING ---
@@ -226,20 +347,28 @@ app.mus = {
                  rWon: s.rWon,
                  rLost: s.rLost,
                  pPlayed: s.pPlayed,
-                 pct: totalR > 0 ? (s.rWon / totalR) * 100 : 0
+                 pct: totalR > 0 ? (s.rWon / totalR) * 100 : 0,
+                 dgp: s.rWon - s.rLost
              };
         });
         
-        rows.sort((a,b) => b.pct - a.pct); 
+        rows.sort((a,b) => {
+            if (Math.abs(b.pct - a.pct) > 0.01) return b.pct - a.pct;
+            const totalA = a.rWon + a.rLost;
+            const totalB = b.rWon + b.rLost;
+            if (a.pct > 50) return totalB - totalA; 
+            if (a.pct < 50) return totalA - totalB; 
+            if (b.dgp !== a.dgp) return b.dgp - a.dgp; 
+            return totalB - totalA; 
+        }); 
         
         let html = `<div class="mus-table-wrapper"><table class="mus-table">
             <tr>
                 <th>Pareja / Jugador</th>
                 <th>% WR</th>
-                <th>R.J.</th>
+                <th>DGP</th>
                 <th>R.G.</th>
                 <th>R.P.</th>
-                <th>P.J.</th>
             </tr>`;
         
         rows.forEach(r => {
@@ -252,25 +381,44 @@ app.mus = {
             }
 
             const winRateColor = app.mus.getColor(r.pct);
+            const dgpColor = r.dgp > 0 ? '#2ed573' : (r.dgp < 0 ? '#ff4757' : '#aaa');
+            const dgpStr = r.dgp > 0 ? `+${r.dgp}` : r.dgp;
             
             html += `<tr>
                 <td style="font-weight:bold; color:#fff" title="${r.name}">${nameHtml}</td>
                 <td style="color:${winRateColor}; font-weight:900">${r.pct.toFixed(1)}%</td>
-                <td>${r.rWon + r.rLost}</td>
+                <td style="color:${dgpColor}; font-weight:bold;">${dgpStr}</td>
                 <td style="color:#2ed573">${r.rWon}</td>
                 <td style="color:#ff4757">${r.rLost}</td>
-                <td>${r.pPlayed}</td>
             </tr>`;
         });
         html += `</table></div>`;
         container.innerHTML = html;
     },
 
-    renderLog: (container) => {
-        const matches = [...app.mus.getRoomMatches()].sort((a,b) => b.id - a.id).slice(0, 20); 
-        if(matches.length === 0) { container.innerHTML = "<p>Sin partidas.</p>"; return; }
+    // --- LOG Y FILTRO POR AUTOR ---
+    renderLog: (container, filterAuthor = 'ALL') => {
+        const allMatches = app.mus.getRoomMatches();
+        if(allMatches.length === 0) { container.innerHTML = "<p>Sin partidas registradas.</p>"; return; }
 
-        let html = `<div class="mus-table-wrapper"><table class="mus-table">
+        const authors = [...new Set(allMatches.map(m => m.addedBy).filter(Boolean))].sort();
+        
+        let matches = [...allMatches].sort((a,b) => b.id - a.id);
+        if (filterAuthor !== 'ALL') {
+            matches = matches.filter(m => m.addedBy === filterAuthor);
+        }
+        
+        matches = matches.slice(0, 30);
+
+        let html = `
+        <div style="margin-bottom:15px; text-align:left;">
+            <label style="color:#aaa; font-size:0.8em; margin-right:5px;">Filtrar autor:</label>
+            <select id="logAuthorFilter" onchange="app.mus.renderLog(document.getElementById('musStatsContainer'), this.value)" style="padding:5px; border-radius:5px; background:#222; color:#fff; border:1px solid #444;">
+                <option value="ALL">🌟 Todos</option>
+                ${authors.map(a => `<option value="${a}" ${a===filterAuthor?'selected':''}>${a}</option>`).join('')}
+            </select>
+        </div>
+        <div class="mus-table-wrapper"><table class="mus-table">
             <tr>
                 <th style="width:25%">Fecha</th>
                 <th>Resultado</th>
@@ -283,7 +431,7 @@ app.mus = {
             const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()<10?'0':''}${d.getMinutes()}`;
             const res = `<span style="color:#74b9ff">${m.p1}+${m.p2}</span> (${m.s1}) <br>vs<br> <span style="color:#ff7675">${m.p3}+${m.p4}</span> (${m.s2})`;
             let delBtn = "";
-            if (app.myPlayerName === "Administrador de mus" || app.myPlayerName === "musero" ) {
+            if (app.myPlayerName === "Administrador de mus" || app.myPlayerName === "musero" || app.myPlayerName === "Xarlie" || app.myPlayerName.toLowerCase() === "administrador m") {
                 delBtn = `<button onclick="app.mus.deleteMatch(${m.id})" style="padding:4px 8px; background:#e74c3c; font-size:0.8em">🗑️</button>`;
             }
             html += `<tr>
@@ -346,6 +494,95 @@ app.mus = {
         container.innerHTML = html;
     },
 
+    // --- RACHAS ---
+    renderRachas: (container) => {
+        const matches = app.mus.getFilteredMatches();
+        const ascMatches = [...matches].sort((a,b) => a.id - b.id);
+        
+        let pStreaks = {}; 
+        let pairStreaks = {};
+
+        ascMatches.forEach(m => {
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+            const t1Won = m.s1 > m.s2;
+            const t2Won = m.s2 > m.s1;
+
+            const processEntity = (entity, won, isPair) => {
+                if (won === null) return; 
+                let dict = isPair ? pairStreaks : pStreaks;
+                if (!dict[entity]) dict[entity] = 0;
+                
+                if (won) {
+                    dict[entity] = dict[entity] > 0 ? dict[entity] + 1 : 1;
+                } else {
+                    dict[entity] = dict[entity] < 0 ? dict[entity] - 1 : -1;
+                }
+            };
+
+            [m.p1, m.p2].forEach(p => processEntity(p, t1Won ? true : (t2Won ? false : null), false));
+            [m.p3, m.p4].forEach(p => processEntity(p, t2Won ? true : (t1Won ? false : null), false));
+
+            processEntity(t1, t1Won ? true : (t2Won ? false : null), true);
+            processEntity(t2, t2Won ? true : (t1Won ? false : null), true);
+        });
+
+        let maxWinP = {n: '-', s: 0}, maxLossP = {n: '-', s: 0};
+        let maxWinPair = {n: '-', s: 0}, maxLossPair = {n: '-', s: 0};
+
+        Object.entries(pStreaks).forEach(([n, s]) => {
+            if (s > maxWinP.s) maxWinP = {n, s};
+            if (s < maxLossP.s) maxLossP = {n, s}; 
+        });
+        Object.entries(pairStreaks).forEach(([n, s]) => {
+            if (s > maxWinPair.s) maxWinPair = {n, s};
+            if (s < maxLossPair.s) maxLossPair = {n, s}; 
+        });
+
+        const limit7 = Date.now() - (7 * 24 * 3600 * 1000);
+        const recentMatches = ascMatches.filter(m => new Date(m.date).getTime() > limit7);
+        let pCounts = {};
+        recentMatches.forEach(m => {
+            [m.p1, m.p2, m.p3, m.p4].forEach(p => pCounts[p] = (pCounts[p] || 0) + 1);
+        });
+        let maxRecent = {n: '-', c: 0};
+        Object.entries(pCounts).forEach(([n, c]) => {
+            if (c > maxRecent.c) maxRecent = {n, c};
+        });
+
+        const rHTML = `
+            <h3 style="color:#ffa502">🔥 Rachas Actuales (Activas)</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left;">
+                <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
+                    <div style="font-size:0.8em; color:#aaa;">👤 Victorias seguidas</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxWinP.n}</div>
+                    <div style="color:#2ed573; font-weight:900; font-size:1.5em;">+${maxWinP.s}</div>
+                </div>
+                <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
+                    <div style="font-size:0.8em; color:#aaa;">👤 Derrotas seguidas</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxLossP.n}</div>
+                    <div style="color:#ff4757; font-weight:900; font-size:1.5em;">${maxLossP.s}</div>
+                </div>
+                <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
+                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja en Racha (Win)</div>
+                    <div style="font-size:1em; font-weight:bold; color:#fff;">${maxWinPair.n}</div>
+                    <div style="color:#2ed573; font-weight:900; font-size:1.5em;">+${maxWinPair.s}</div>
+                </div>
+                <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
+                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja en Racha (Loss)</div>
+                    <div style="font-size:1em; font-weight:bold; color:#fff;">${maxLossPair.n}</div>
+                    <div style="color:#ff4757; font-weight:900; font-size:1.5em;">${maxLossPair.s}</div>
+                </div>
+                <div class="card" style="grid-column: span 2; background:#222; border-left: 4px solid #74b9ff;">
+                    <div style="font-size:0.8em; color:#aaa;">⏱️ Más viciado (Últimos 7 días)</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxRecent.n}</div>
+                    <div style="color:#74b9ff; font-weight:900;">${maxRecent.c} Partidas jugadas</div>
+                </div>
+            </div>
+        `;
+        container.innerHTML = rHTML;
+    },
+
     renderTopMatchesTable: (matchesList) => {
         matchesList.sort((a,b) => {
             const totalA = a.s1 + a.s2;
@@ -397,8 +634,17 @@ app.mus = {
 
             if ( (p1InT1 && p2InT2) || (p1InT2 && p2InT1) ) {
                 totalMatches++;
-                const scoreP1 = p1InT1 ? m.s1 : m.s2;
-                const scoreP2 = p1InT1 ? m.s2 : m.s1;
+                
+                // Clonar y reorientar para que el equipo de p1 siempre quede a la izquierda (Azul)
+                let matchClone = { ...m };
+                if (p1InT2) {
+                    matchClone.p1 = m.p3; matchClone.p2 = m.p4;
+                    matchClone.p3 = m.p1; matchClone.p4 = m.p2;
+                    matchClone.s1 = m.s2; matchClone.s2 = m.s1;
+                }
+                
+                const scoreP1 = matchClone.s1;
+                const scoreP2 = matchClone.s2;
                 
                 p1Rounds += scoreP1; 
                 p2Rounds += scoreP2;
@@ -406,7 +652,7 @@ app.mus = {
                 if (scoreP1 > scoreP2) p1WinsMatch++;
                 if (scoreP2 > scoreP1) p2WinsMatch++;
 
-                headToHeadMatches.push(m);
+                headToHeadMatches.push(matchClone);
             }
         });
 
@@ -428,11 +674,10 @@ app.mus = {
         `;
     },
 
-    // --- NUEVA LÓGICA 2VS2 CON FILTRADO DE RIVALES ---
     updateRivalSelector: () => {
         const selectedPairStr = document.getElementById('pair1vs').value;
         const select2 = document.getElementById('pair2vs');
-        const matches = app.mus.getRoomMatches(); // Buscamos en todo el historial de la sala (sin filtro de fecha)
+        const matches = app.mus.getRoomMatches();
 
         const rivals = new Set();
 
@@ -452,7 +697,6 @@ app.mus = {
              select2.innerHTML = sortedRivals.map(r => `<option value="${r}">${r}</option>`).join('');
         }
         
-        // Ejecutar cálculo automáticamente con el primer rival
         app.mus.runPairToPair();
     },
 
@@ -486,7 +730,13 @@ app.mus = {
                 w2 += (m.s1 > m.s2 ? 1 : 0); 
                 w1 += (m.s2 > m.s1 ? 1 : 0);
                 r2 += m.s1; r1 += m.s2;
-                pairMatches.push(m);
+                
+                // Reorientar para que Pair 1 sea azul
+                let mClone = {...m};
+                mClone.p1 = m.p3; mClone.p2 = m.p4;
+                mClone.p3 = m.p1; mClone.p4 = m.p2;
+                mClone.s1 = m.s2; mClone.s2 = m.s1;
+                pairMatches.push(mClone);
             }
         });
 
@@ -627,7 +877,7 @@ app.mus = {
             let myScore = 0, oppScore = 0;
             let participated = false;
 
-            if (entity.includes(' y ')) { // Pareja
+            if (entity.includes(' y ')) { 
                  const [pA, pB] = entity.split(' y ');
                  const t1 = (m.p1===pA && m.p2===pB) || (m.p1===pB && m.p2===pA);
                  const t2 = (m.p3===pA && m.p4===pB) || (m.p3===pB && m.p4===pA);
@@ -636,7 +886,7 @@ app.mus = {
                      myScore = t1 ? m.s1 : m.s2;
                      oppScore = t1 ? m.s2 : m.s1;
                  }
-            } else { // Persona
+            } else { 
                  const team = (m.p1 === entity || m.p2 === entity) ? 1 : (m.p3 === entity || m.p4 === entity) ? 2 : 0;
                  if (team !== 0) {
                      participated = true;
@@ -708,7 +958,6 @@ app.mus = {
             const el = document.getElementById(id);
             if(el) el.innerHTML = pairOpts;
         });
-        // pair2vs se llena dinámicamente, no aquí
         document.getElementById('musExamPair').innerHTML = pairOpts;
     },
 

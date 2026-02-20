@@ -217,32 +217,27 @@ window.app = {
     myPlayerName: null,
     categoriesCache: {},
 
-    // --- FUNCIÓN DE FUERZA BRUTA PARA FIESTA (NUEVO) ---
+    // --- FUNCIÓN DE FUERZA BRUTA PARA FIESTA ---
     forceFiestaStyles: () => {
         console.log("🚑 Forzando estilos de Fiesta...");
         const menu = document.getElementById('fiestaMenu');
         if (!menu) return;
 
-        // 1. Asegurar visibilidad del contenedor
         menu.classList.remove('hidden');
         menu.style.display = 'block';
         menu.style.width = '100%';
 
-        // 2. Forzar el grid
         const grid = menu.querySelector('.hub-grid');
         if (grid) {
             grid.style.cssText = "display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 15px !important; width: 100% !important;";
         }
 
-        // 3. Forzar apariencia de las cartas
         const cards = menu.querySelectorAll('.hub-card');
         cards.forEach(card => {
             card.style.cssText = "display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; min-height: 120px !important; background-color: #2f3542 !important; border-radius: 12px !important; padding: 15px !important; box-shadow: 0 4px 0 rgba(0,0,0,0.2) !important; cursor: pointer !important; opacity: 1 !important; visibility: visible !important;";
             
-            // Asegurar que el borde de color se mantiene (recuperándolo del atributo style original si es posible, o reasignándolo)
             const originalBorder = card.getAttribute('style');
             if(originalBorder && originalBorder.includes('border-left')) {
-                // Extraer color
                 const colorMatch = originalBorder.match(/border-left:\s*4px\s*solid\s*(#[0-9a-fA-F]+)/);
                 if(colorMatch) {
                     card.style.borderLeft = `4px solid ${colorMatch[1]}`;
@@ -313,9 +308,8 @@ window.app = {
         
         // Limpieza de Fiesta
         document.getElementById('fiestaScreen')?.classList.add('hidden');
-        if(app.fiesta && app.fiesta.hideAll) app.fiesta.hideAll(); // Usamos la nueva funcion de fiesta.js
+        if(app.fiesta && app.fiesta.hideAll) app.fiesta.hideAll(); 
         else {
-             // Fallback manual si fiesta.js no cargó
              const fIds = ['fiestaMenu', 'fiestaGameORACULO', 'fiestaGameRONDA', 'fiestaGamePUERTA', 'fiestaGameACUSADO', 'fiestaGameCONEXION', 'fiestaGameCADENA'];
              fIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
         }
@@ -377,15 +371,12 @@ window.app = {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
-            if(room === 'trivial') { 
-                if(app.trivial.init) app.trivial.init(); return; 
-    }
+            if(room === 'trivial') { if(app.trivial.init) app.trivial.init(); return; }
             if(room === 'contexto') { app.showScreen('contextoScreen'); if(app.contexto.init) app.contexto.init(); return; }
             if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
             
             if (room === 'fiesta') {
                  const name = app.myPlayerName || "Fiestero";
-                 // Generar ID único para evitar problemas
                  const uniqueRoomId = 'FIESTA-MAIN'; 
                  socket.emit('joinRoom', { name, room: 'fiesta', roomId: uniqueRoomId }); 
                  return;
@@ -469,7 +460,10 @@ window.app = {
         localStorage.setItem('global_username', name);
         app.myPlayerName = name; 
         
-        app.renderLoginScreen(app.currentRoom);
+        // --- REDIRECCIÓN DIRECTA AL HUB ---
+        app.currentRoom = null;
+        app.pendingRoomId = null;
+        app.showScreen('hubScreen'); 
     },
 
     joinGame: (roomIdOverride = null) => {
@@ -632,19 +626,14 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'orden') app.showScreen('ordenLobby');
     else if (data.room === 'consejo') app.showScreen('consejoScreen');
     
-    
-    // --- LÓGICA DE FIESTA REFORZADA ---
     else if (data.room === 'fiesta') {
         app.showScreen('fiestaScreen');
         
-        // 1. Mostrar pantalla
         const screen = document.getElementById('fiestaScreen');
         screen.classList.remove('hidden');
 
-        // 2. Ejecutar Force Styles (Corrección CSS en tiempo real)
         app.forceFiestaStyles();
 
-        // 3. Iniciar lógica de JS
         setTimeout(() => {
             if (app.fiesta && app.fiesta.init) app.fiesta.init();
         }, 100);
@@ -675,6 +664,17 @@ window.onload = function() {
     const savedGlobalName = localStorage.getItem('global_username');
     if (savedGlobalName) {
         app.myPlayerName = savedGlobalName; 
+    }
+
+    // --- EVENTO TECLA ENTER PARA GUARDAR NOMBRE ---
+    const nameInput = document.getElementById('username');
+    if (nameInput) {
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                app.saveNameAndContinue();
+            }
+        });
     }
 
     socket.emit('requestHubRooms');
