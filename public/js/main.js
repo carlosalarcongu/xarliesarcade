@@ -216,8 +216,8 @@ window.app = {
     myPlayerId: null,
     myPlayerName: null,
     categoriesCache: {},
+    currentScreenId: 'hubScreen', // NUEVO: Para llevar control interno de la pantalla
 
-    // --- FUNCIÓN DE FUERZA BRUTA PARA FIESTA ---
     forceFiestaStyles: () => {
         console.log("🚑 Forzando estilos de Fiesta...");
         const menu = document.getElementById('fiestaMenu');
@@ -306,7 +306,6 @@ window.app = {
         document.getElementById('ordenResultArea')?.classList.add('hidden');
         document.getElementById('ordenControls')?.classList.remove('hidden');
         
-        // Limpieza de Fiesta
         document.getElementById('fiestaScreen')?.classList.add('hidden');
         if(app.fiesta && app.fiesta.hideAll) app.fiesta.hideAll(); 
         else {
@@ -315,7 +314,8 @@ window.app = {
         }
     },
 
-    showScreen: (id) => {
+    // --- NUEVO: SOPORTE PARA HISTORY API ---
+    showScreen: (id, skipHistory = false) => {
         const screens = [
             'hubScreen', 'loginScreen', 'feedbackScreen', 
             'impostorLobby', 'impostorGame', 
@@ -341,6 +341,12 @@ window.app = {
 
         const target = document.getElementById(id);
         if(target) target.classList.remove('hidden');
+
+        // HISTORY API: Guardar estado si es una pantalla nueva
+        if (!skipHistory && app.currentScreenId !== id) {
+            history.pushState({ screen: id }, '', window.location.href);
+        }
+        app.currentScreenId = id;
 
         // Widget Logic
         const widget = document.getElementById('floatingUserWidget');
@@ -460,7 +466,6 @@ window.app = {
         localStorage.setItem('global_username', name);
         app.myPlayerName = name; 
         
-        // --- REDIRECCIÓN DIRECTA AL HUB ---
         app.currentRoom = null;
         app.pendingRoomId = null;
         app.showScreen('hubScreen'); 
@@ -511,7 +516,8 @@ window.app = {
         app.showScreen('statsSelectionScreen');
     },
 
-    goBackToHub: (forceLogout = false) => {
+    // --- NUEVO: MODIFICADO PARA HISTORY API ---
+    goBackToHub: (forceLogout = false, skipHistory = false) => {
         if (app.mus && app.mus.resetUI) app.mus.resetUI();
 
         if (forceLogout) {
@@ -526,10 +532,10 @@ window.app = {
              app.currentRoom = null;
              app.currentRoomId = null;
              app.myPlayerId = null;
-             app.showScreen('hubScreen');
+             app.showScreen('hubScreen', skipHistory);
         } else {
             app.currentRoom = null; 
-            app.showScreen('hubScreen');
+            app.showScreen('hubScreen', skipHistory);
             socket.emit('requestHubRooms');
         }
     },
@@ -550,8 +556,36 @@ window.app = {
     },
     
     impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}, contexto: {}, consejo: {},
-    fiesta: {} // Placeholder por si falla carga
+    fiesta: {} 
 };
+
+// --- GESTIÓN DEL BOTÓN ATRÁS (POPSTATE) ---
+window.addEventListener('popstate', (event) => {
+    // 1. Si hay un modal abierto, lo cerramos en lugar de navegar hacia atrás
+    const openModals = document.querySelectorAll('.modal-overlay:not(.hidden)');
+    if (openModals.length > 0) {
+        openModals.forEach(m => m.classList.add('hidden'));
+        // Recuperar el estado actual para no estropear el historial
+        history.pushState({ screen: app.currentScreenId }, '', window.location.href);
+        return;
+    }
+
+    const targetScreen = event.state ? event.state.screen : 'hubScreen';
+
+    // 2. Si el usuario está dentro de una sala y va a salir a otra pantalla
+    if (app.currentRoom && targetScreen !== app.currentScreenId) {
+        if (confirm("¿Seguro que quieres salir de la sala actual?")) {
+            app.goBackToHub(true, true); // true = salir de sala, true = no empujar al historial
+        } else {
+            // Si cancela, devolvemos su posición al historial actual para evitar desincronización
+            history.pushState({ screen: app.currentScreenId }, '', window.location.href);
+        }
+    } else {
+        // 3. Navegación normal (ej: de login a hub)
+        app.showScreen(targetScreen, true);
+    }
+});
+
 
 socket.on('hubRoomsUpdate', (rooms) => {
     const hubContainer = document.getElementById('activeRoomsList');
@@ -658,6 +692,9 @@ socket.on('sessionExpired', () => {
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
 window.onload = function() {
+    // --- ESTABLECER EL PUNTO DE PARTIDA DEL HISTORIAL ---
+    history.replaceState({ screen: 'hubScreen' }, '', window.location.href);
+
     app.initFloatingWidget();
     if(app.feedback && app.feedback.init) app.feedback.init();
     
@@ -666,7 +703,6 @@ window.onload = function() {
         app.myPlayerName = savedGlobalName; 
     }
 
-    // --- EVENTO TECLA ENTER PARA GUARDAR NOMBRE ---
     const nameInput = document.getElementById('username');
     if (nameInput) {
         nameInput.addEventListener('keydown', (e) => {
