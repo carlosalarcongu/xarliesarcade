@@ -8,15 +8,20 @@ app.mus = {
     init: () => {
         const vm = document.getElementById('musViewMode');
         
-        // Inyectar opción Rachas
         if (vm && !vm.querySelector('option[value="rachas"]')) {
             const opt = document.createElement('option');
             opt.value = 'rachas';
-            opt.innerHTML = '🔥 Rachas Actuales';
+            opt.innerHTML = '🔥 Rachas y Curiosidades';
             vm.appendChild(opt);
         }
 
-        // Inyectar opción Administración (Solo para administrador m)
+        if (vm && !vm.querySelector('option[value="predictor"]')) {
+            const optP = document.createElement('option');
+            optP.value = 'predictor';
+            optP.innerHTML = '🔮 Predictor de Partidas';
+            vm.appendChild(optP);
+        }
+
         if (app.myPlayerName && app.myPlayerName.toLowerCase() === 'administrador m') {
             if (vm && !vm.querySelector('option[value="administracion"]')) {
                 const optAdmin = document.createElement('option');
@@ -253,6 +258,9 @@ app.mus = {
         else if (mode === 'rachas') {
             app.mus.renderRachas(container);
         }
+        else if (mode === 'predictor') {
+            app.mus.renderPredictor(container);
+        }
         else if (mode === 'administracion') {
             app.mus.renderAdminPanel(container);
         }
@@ -263,7 +271,6 @@ app.mus = {
         
         let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
         
-        // --- JUGADORES ---
         html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
         html += `<ul style="list-style:none; padding:0; text-align:left; max-height: 250px; overflow-y: auto;">`;
         app.mus.data.players.forEach(p => {
@@ -277,7 +284,6 @@ app.mus = {
         });
         html += `</ul>`;
 
-        // --- PARTIDAS ---
         html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; margin-top:20px; text-align:left;">📝 Partidas (Sala: ${app.mus.currentRoom})</h4>`;
         const matches = app.mus.getRoomMatches().sort((a,b) => b.id - a.id);
         
@@ -362,6 +368,11 @@ app.mus = {
             return totalB - totalA; 
         }); 
         
+        const percentages = rows.map(r => r.pct);
+        const maxPct = percentages.length > 0 ? Math.max(...percentages) : 100;
+        const minPct = percentages.length > 0 ? Math.min(...percentages) : 0;
+        const range = (maxPct - minPct) || 1; 
+
         let html = `<div class="mus-table-wrapper"><table class="mus-table">
             <tr>
                 <th>Pareja / Jugador</th>
@@ -380,7 +391,10 @@ app.mus = {
                 nameHtml = `<span class="player-avatar">${app.mus.getAvatar(r.name)}</span>${r.name}`;
             }
 
-            const winRateColor = app.mus.getColor(r.pct);
+            const norm = (r.pct - minPct) / range;
+            const hue = 120 + ((1 - norm) * 240); 
+            const winRateColor = `hsl(${hue}, 85%, 60%)`;
+
             const dgpColor = r.dgp > 0 ? '#2ed573' : (r.dgp < 0 ? '#ff4757' : '#aaa');
             const dgpStr = r.dgp > 0 ? `+${r.dgp}` : r.dgp;
             
@@ -494,93 +508,357 @@ app.mus = {
         container.innerHTML = html;
     },
 
-    // --- RACHAS ---
+    // --- NUEVA LÓGICA DE RACHAS ---
     renderRachas: (container) => {
         const matches = app.mus.getFilteredMatches();
+        // Orden cronológico (antiguo a nuevo) para calcular la racha actual
         const ascMatches = [...matches].sort((a,b) => a.id - b.id);
         
         let pStreaks = {}; 
         let pairStreaks = {};
+        let pDiffHistory = {}; 
+        let pairDiffHistory = {};
 
         ascMatches.forEach(m => {
             const t1 = [m.p1, m.p2].sort().join(' y ');
             const t2 = [m.p3, m.p4].sort().join(' y ');
-            const t1Won = m.s1 > m.s2;
-            const t2Won = m.s2 > m.s1;
+            
+            // Evaluamos si el Equipo 1 ganó la partida
+            let t1Won = null;
+            if (m.s1 > m.s2) t1Won = true;
+            else if (m.s1 < m.s2) t1Won = false;
 
-            const processEntity = (entity, won, isPair) => {
-                if (won === null) return; 
+            const processEntity = (entity, won, myScore, oppScore, isPair) => {
                 let dict = isPair ? pairStreaks : pStreaks;
-                if (!dict[entity]) dict[entity] = 0;
+                let hist = isPair ? pairDiffHistory : pDiffHistory;
+                
+                if (!hist[entity]) hist[entity] = [];
+                hist[entity].push(myScore - oppScore);
+
+                if (won === null) return; // Empate
+                
+                if (!dict[entity]) dict[entity] = { type: null, val: 0 };
                 
                 if (won) {
-                    dict[entity] = dict[entity] > 0 ? dict[entity] + 1 : 1;
+                    if (dict[entity].type === 'win') dict[entity].val += myScore;
+                    else dict[entity] = { type: 'win', val: myScore };
                 } else {
-                    dict[entity] = dict[entity] < 0 ? dict[entity] - 1 : -1;
+                    if (dict[entity].type === 'loss') dict[entity].val += oppScore;
+                    else dict[entity] = { type: 'loss', val: oppScore };
                 }
             };
 
-            [m.p1, m.p2].forEach(p => processEntity(p, t1Won ? true : (t2Won ? false : null), false));
-            [m.p3, m.p4].forEach(p => processEntity(p, t2Won ? true : (t1Won ? false : null), false));
+            [m.p1, m.p2].forEach(p => processEntity(p, t1Won, m.s1, m.s2, false));
+            [m.p3, m.p4].forEach(p => processEntity(p, t1Won === null ? null : !t1Won, m.s2, m.s1, false));
 
-            processEntity(t1, t1Won ? true : (t2Won ? false : null), true);
-            processEntity(t2, t2Won ? true : (t1Won ? false : null), true);
+            processEntity(t1, t1Won, m.s1, m.s2, true);
+            processEntity(t2, t1Won === null ? null : !t1Won, m.s2, m.s1, true);
         });
 
-        let maxWinP = {n: '-', s: 0}, maxLossP = {n: '-', s: 0};
-        let maxWinPair = {n: '-', s: 0}, maxLossPair = {n: '-', s: 0};
+        let maxWinP = {n: '-', val: 0}, maxLossP = {n: '-', val: 0};
+        let maxWinPair = {n: '-', val: 0}, maxLossPair = {n: '-', val: 0};
 
-        Object.entries(pStreaks).forEach(([n, s]) => {
-            if (s > maxWinP.s) maxWinP = {n, s};
-            if (s < maxLossP.s) maxLossP = {n, s}; 
+        Object.entries(pStreaks).forEach(([n, data]) => {
+            if (data.type === 'win' && data.val > maxWinP.val) maxWinP = {n, val: data.val};
+            if (data.type === 'loss' && data.val > maxLossP.val) maxLossP = {n, val: data.val}; 
         });
-        Object.entries(pairStreaks).forEach(([n, s]) => {
-            if (s > maxWinPair.s) maxWinPair = {n, s};
-            if (s < maxLossPair.s) maxLossPair = {n, s}; 
+        Object.entries(pairStreaks).forEach(([n, data]) => {
+            if (data.type === 'win' && data.val > maxWinPair.val) maxWinPair = {n, val: data.val};
+            if (data.type === 'loss' && data.val > maxLossPair.val) maxLossPair = {n, val: data.val}; 
         });
 
+        let closestZeroPair = {n: '-', dgp: Infinity, totalMatches: 0};
+        Object.keys(pairDiffHistory).forEach(pair => {
+            const hist = pairDiffHistory[pair];
+            if (hist.length < 5) return; 
+            const totalDGP = hist.reduce((a,b) => a+b, 0);
+            if (Math.abs(totalDGP) < Math.abs(closestZeroPair.dgp) || 
+               (Math.abs(totalDGP) === Math.abs(closestZeroPair.dgp) && hist.length > closestZeroPair.totalMatches)) {
+                closestZeroPair = {n: pair, dgp: totalDGP, totalMatches: hist.length};
+            }
+        });
+
+        const getStdDev = (arr) => {
+            if(arr.length < 5) return 0;
+            const mean = arr.reduce((a, b) => a + b) / arr.length;
+            return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
+        };
+
+        let mostIrregularP = {n: '-', dev: 0};
+        Object.keys(pDiffHistory).forEach(p => {
+            const dev = getStdDev(pDiffHistory[p]);
+            if (dev > mostIrregularP.dev) mostIrregularP = {n: p, dev};
+        });
+
+        let mostIrregularPair = {n: '-', dev: 0};
+        Object.keys(pairDiffHistory).forEach(pair => {
+            const dev = getStdDev(pairDiffHistory[pair]);
+            if (dev > mostIrregularPair.dev) mostIrregularPair = {n: pair, dev};
+        });
+
+        const limit14 = Date.now() - (14 * 24 * 3600 * 1000);
         const limit7 = Date.now() - (7 * 24 * 3600 * 1000);
-        const recentMatches = ascMatches.filter(m => new Date(m.date).getTime() > limit7);
-        let pCounts = {};
-        recentMatches.forEach(m => {
-            [m.p1, m.p2, m.p3, m.p4].forEach(p => pCounts[p] = (pCounts[p] || 0) + 1);
+        
+        const recentMatches14 = ascMatches.filter(m => new Date(m.date).getTime() > limit14);
+        const recentMatches7 = ascMatches.filter(m => new Date(m.date).getTime() > limit7);
+        
+        let pRoundsCount = {};
+        recentMatches7.forEach(m => {
+            const totalRounds = m.s1 + m.s2;
+            [m.p1, m.p2, m.p3, m.p4].forEach(p => pRoundsCount[p] = (pRoundsCount[p] || 0) + totalRounds);
         });
-        let maxRecent = {n: '-', c: 0};
-        Object.entries(pCounts).forEach(([n, c]) => {
-            if (c > maxRecent.c) maxRecent = {n, c};
+        let maxRecentP = {n: '-', c: 0};
+        Object.entries(pRoundsCount).forEach(([n, c]) => { if (c > maxRecentP.c) maxRecentP = {n, c}; });
+
+        let pairRoundsCount = {};
+        recentMatches14.forEach(m => {
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+            const totalRounds = m.s1 + m.s2;
+            pairRoundsCount[t1] = (pairRoundsCount[t1] || 0) + totalRounds;
+            pairRoundsCount[t2] = (pairRoundsCount[t2] || 0) + totalRounds;
         });
+        let maxRecentPair = {n: '-', c: 0};
+        Object.entries(pairRoundsCount).forEach(([n, c]) => { if (c > maxRecentPair.c) maxRecentPair = {n, c}; });
 
         const rHTML = `
-            <h3 style="color:#ffa502">🔥 Rachas Actuales (Activas)</h3>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left;">
+            <h3 style="color:#ffa502; margin-bottom:5px;">🔥 Rachas Actuales (Rondas Acumuladas)</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left; margin-bottom:20px;">
                 <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
-                    <div style="font-size:0.8em; color:#aaa;">👤 Victorias seguidas</div>
+                    <div style="font-size:0.8em; color:#aaa;">👤 Rondas Ganadas (Seguidas)</div>
                     <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxWinP.n}</div>
-                    <div style="color:#2ed573; font-weight:900; font-size:1.5em;">+${maxWinP.s}</div>
+                    <div style="color:#2ed573; font-weight:900; font-size:1.3em;">+${maxWinP.val}</div>
                 </div>
                 <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
-                    <div style="font-size:0.8em; color:#aaa;">👤 Derrotas seguidas</div>
+                    <div style="font-size:0.8em; color:#aaa;">👤 Rondas Perdidas (Seguidas)</div>
                     <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxLossP.n}</div>
-                    <div style="color:#ff4757; font-weight:900; font-size:1.5em;">${maxLossP.s}</div>
+                    <div style="color:#ff4757; font-weight:900; font-size:1.3em;">-${maxLossP.val}</div>
                 </div>
                 <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
-                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja en Racha (Win)</div>
+                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja Ganadora (Seguidas)</div>
                     <div style="font-size:1em; font-weight:bold; color:#fff;">${maxWinPair.n}</div>
-                    <div style="color:#2ed573; font-weight:900; font-size:1.5em;">+${maxWinPair.s}</div>
+                    <div style="color:#2ed573; font-weight:900; font-size:1.3em;">+${maxWinPair.val}</div>
                 </div>
                 <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
-                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja en Racha (Loss)</div>
+                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja Perdedora (Seguidas)</div>
                     <div style="font-size:1em; font-weight:bold; color:#fff;">${maxLossPair.n}</div>
-                    <div style="color:#ff4757; font-weight:900; font-size:1.5em;">${maxLossPair.s}</div>
+                    <div style="color:#ff4757; font-weight:900; font-size:1.3em;">-${maxLossPair.val}</div>
                 </div>
-                <div class="card" style="grid-column: span 2; background:#222; border-left: 4px solid #74b9ff;">
-                    <div style="font-size:0.8em; color:#aaa;">⏱️ Más viciado (Últimos 7 días)</div>
-                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxRecent.n}</div>
-                    <div style="color:#74b9ff; font-weight:900;">${maxRecent.c} Partidas jugadas</div>
+            </div>
+
+            <h3 style="color:#a55eea; margin-bottom:5px;">⚖️ Curiosidades Históricas</h3>
+            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
+                <div class="card" style="background:#222; border-left: 4px solid #f1c40f;">
+                    <div style="font-size:0.8em; color:#aaa;">⚖️ Pareja más equilibrada (DGP ≈ 0)</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${closestZeroPair.n}</div>
+                    <div style="color:#f1c40f; font-weight:900;">DGP: ${closestZeroPair.dgp > 0 ? '+'+closestZeroPair.dgp : closestZeroPair.dgp} <span style="font-size:0.7em; color:#aaa; font-weight:normal;">en ${closestZeroPair.totalMatches} partidas</span></div>
+                </div>
+                <div class="card" style="background:#222; border-left: 4px solid #e056fd;">
+                    <div style="font-size:0.8em; color:#aaa;">🎢 Jugador más irregular</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${mostIrregularP.n}</div>
+                    <div style="color:#e056fd; font-weight:900; font-size:0.9em;">Desviación Estándar: ${mostIrregularP.dev.toFixed(2)}</div>
+                </div>
+                <div class="card" style="background:#222; border-left: 4px solid #e056fd;">
+                    <div style="font-size:0.8em; color:#aaa;">🎢 Pareja más irregular</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${mostIrregularPair.n}</div>
+                    <div style="color:#e056fd; font-weight:900; font-size:0.9em;">Desviación Estándar: ${mostIrregularPair.dev.toFixed(2)}</div>
+                </div>
+            </div>
+
+            <h3 style="color:#0984e3; margin-bottom:5px;">📅 Últimos Días (Rondas)</h3>
+            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left;">
+                <div class="card" style="background:#222; border-left: 4px solid #74b9ff;">
+                    <div style="font-size:0.8em; color:#aaa;">⏱️ Más viciado (7 días)</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxRecentP.n}</div>
+                    <div style="color:#74b9ff; font-weight:900;">${maxRecentP.c} Rondas jugadas</div>
+                </div>
+                <div class="card" style="background:#222; border-left: 4px solid #a55eea;">
+                    <div style="font-size:0.8em; color:#aaa;">🤝 Pareja más frecuente (14 días)</div>
+                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxRecentPair.n}</div>
+                    <div style="color:#a55eea; font-weight:900;">${maxRecentPair.c} Rondas juntos</div>
                 </div>
             </div>
         `;
         container.innerHTML = rHTML;
+    },
+
+    // --- PREDICTOR Y REGLAS DE OPONENTES ---
+    updatePredictorOpponents: () => {
+        const p1Str = document.getElementById('predPair1').value;
+        const p2Select = document.getElementById('predPair2');
+        if (!p2Select) return;
+
+        const currentP2Str = p2Select.value;
+        const matches = app.mus.getRoomMatches();
+        const pairStats = {};
+        
+        matches.forEach(m => {
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+            pairStats[t1] = (pairStats[t1] || 0) + m.s1 + m.s2;
+            pairStats[t2] = (pairStats[t2] || 0) + m.s1 + m.s2;
+        });
+
+        // Filtrar solo las parejas con >10 rondas
+        const validPairs = Object.keys(pairStats).filter(p => pairStats[p] >= 10).sort();
+        const p1Players = p1Str ? p1Str.split(' y ') : [];
+
+        let optionsHtml = `<option value="">-- Selecciona --</option>`;
+        
+        validPairs.forEach(pair => {
+            if (p1Str && pair === p1Str) return; // Excluir la misma pareja
+            
+            // Excluir si hay jugadores superpuestos
+            const pairPlayers = pair.split(' y ');
+            if (p1Players.some(player => pairPlayers.includes(player))) return;
+
+            optionsHtml += `<option value="${pair}">${pair}</option>`;
+        });
+
+        p2Select.innerHTML = optionsHtml;
+
+        // Restaurar la selección previa si sigue siendo válida
+        if (Array.from(p2Select.options).some(o => o.value === currentP2Str)) {
+            p2Select.value = currentP2Str;
+        } else {
+            p2Select.value = "";
+        }
+    },
+
+    renderPredictor: (container) => {
+        const matches = app.mus.getRoomMatches();
+        const pairStats = {};
+        matches.forEach(m => {
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+            pairStats[t1] = (pairStats[t1] || 0) + m.s1 + m.s2;
+            pairStats[t2] = (pairStats[t2] || 0) + m.s1 + m.s2;
+        });
+
+        const validPairs = Object.keys(pairStats).filter(p => pairStats[p] >= 10).sort();
+        const pairOpts = `<option value="">-- Selecciona --</option>` + validPairs.map(p => `<option value="${p}">${p}</option>`).join('');
+
+        let html = `
+            <h3 style="color:#a55eea;">🔮 Oráculo de Partidas</h3>
+            <p style="color:#aaa; font-size:0.8em; margin-bottom:15px;">Simula un enfrentamiento basándose en el historial. <br><span style="font-size:0.8em;">(Solo parejas con >10 rondas registradas)</span></p>
+            
+            <div class="card" style="background:#2f3542; padding:15px; border-radius:10px;">
+                <label style="color:#74b9ff; font-weight:bold;">Equipo Azul:</label>
+                <select id="predPair1" onchange="app.mus.updatePredictorOpponents()" style="width:100%; margin-bottom:10px; background:#fff; color:#000;">${pairOpts}</select>
+                
+                <label style="color:#ff7675; font-weight:bold;">Equipo Rojo:</label>
+                <select id="predPair2" style="width:100%; margin-bottom:10px; background:#fff; color:#000;">${pairOpts}</select>
+                
+                <label style="color:#f1c40f; font-weight:bold;">Rondas objetivo (ej. 40):</label>
+                <input type="number" id="predTarget" value="40" min="1" max="100" style="width:100%; text-align:center; margin-bottom:15px; background:#fff; color:#000; padding:8px; border-radius:5px;">
+                
+                <button class="main-btn" style="background:#a55eea;" onclick="app.mus.calculatePrediction()">✨ PREDECIR RESULTADO ✨</button>
+            </div>
+            
+            <div id="predResultArea" style="margin-top:20px;"></div>
+        `;
+        container.innerHTML = html;
+        
+        setTimeout(app.mus.updatePredictorOpponents, 50);
+    },
+
+    calculatePrediction: () => {
+        const p1Str = document.getElementById('predPair1').value;
+        const p2Str = document.getElementById('predPair2').value;
+        const target = parseInt(document.getElementById('predTarget').value);
+        const resArea = document.getElementById('predResultArea');
+
+        if (!p1Str || !p2Str || p1Str === p2Str) {
+            resArea.innerHTML = "<p style='color:#ff4757;'>Selecciona dos parejas distintas.</p>";
+            return;
+        }
+
+        const matches = app.mus.getRoomMatches();
+        
+        const getPairStats = (pairStr) => {
+            let won = 0, lost = 0, recentWon = 0, recentLost = 0;
+            const limit14 = Date.now() - (14 * 24 * 3600 * 1000);
+            
+            matches.forEach(m => {
+                const t1 = [m.p1, m.p2].sort().join(' y ');
+                const t2 = [m.p3, m.p4].sort().join(' y ');
+                const isRecent = new Date(m.date).getTime() > limit14;
+
+                if (t1 === pairStr) {
+                    won += m.s1; lost += m.s2;
+                    if(isRecent) { recentWon += m.s1; recentLost += m.s2; }
+                } else if (t2 === pairStr) {
+                    won += m.s2; lost += m.s1;
+                    if(isRecent) { recentWon += m.s2; recentLost += m.s1; }
+                }
+            });
+            return { won, lost, total: won+lost, recentWon, recentLost, recentTotal: recentWon+recentLost };
+        };
+
+        const stats1 = getPairStats(p1Str);
+        const stats2 = getPairStats(p2Str);
+
+        const getForce = (s) => {
+            const histWR = s.won / s.total;
+            const recentWR = s.recentTotal > 0 ? (s.recentWon / s.recentTotal) : histWR;
+            return (histWR * 0.4) + (recentWR * 0.6); 
+        };
+
+        let f1 = getForce(stats1);
+        let f2 = getForce(stats2);
+
+        let h2hW1 = 0, h2hW2 = 0;
+        matches.forEach(m => {
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+            if (t1 === p1Str && t2 === p2Str) { h2hW1 += m.s1; h2hW2 += m.s2; }
+            else if (t2 === p1Str && t1 === p2Str) { h2hW1 += m.s2; h2hW2 += m.s1; }
+        });
+
+        if ((h2hW1 + h2hW2) > 0) {
+            const h2hRatio1 = h2hW1 / (h2hW1 + h2hW2);
+            f1 = (f1 * 0.7) + (h2hRatio1 * 0.3); 
+            f2 = (f2 * 0.7) + ((1 - h2hRatio1) * 0.3);
+        }
+
+        const prob1 = f1 / (f1 + f2);
+        const prob2 = f2 / (f1 + f2);
+
+        let predScore1, predScore2;
+        if (prob1 > prob2) {
+            predScore1 = target;
+            predScore2 = Math.round(target * (prob2 / prob1));
+        } else {
+            predScore2 = target;
+            predScore1 = Math.round(target * (prob1 / prob2));
+        }
+
+        const confidence = Math.min(100, Math.max(50, Math.round(Math.max(prob1, prob2) * 100)));
+        const winnerColor = prob1 > prob2 ? '#74b9ff' : '#ff7675';
+        const winnerName = prob1 > prob2 ? p1Str : p2Str;
+
+        resArea.innerHTML = `
+            <div style="background:#222; padding:20px; border-radius:10px; border:2px solid ${winnerColor};">
+                <div style="font-size:0.9em; color:#aaa; margin-bottom:10px;">VENCEDOR ESTIMADO:</div>
+                <div style="font-size:1.5em; font-weight:bold; color:${winnerColor}; margin-bottom:20px;">${winnerName}</div>
+                
+                <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:15px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:3em; font-weight:900; color:#74b9ff;">${predScore1}</div>
+                        <div style="font-size:0.7em; color:#aaa;">AZUL</div>
+                    </div>
+                    <div style="font-size:1.5em; color:#555; font-weight:bold;">-</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:3em; font-weight:900; color:#ff7675;">${predScore2}</div>
+                        <div style="font-size:0.7em; color:#aaa;">ROJO</div>
+                    </div>
+                </div>
+                
+                <div style="font-size:0.8em; color:#e1b12c; background:rgba(225,177,44,0.1); padding:5px; border-radius:5px;">
+                    📈 Nivel de confianza: <b>${confidence}%</b>
+                </div>
+            </div>
+        `;
     },
 
     renderTopMatchesTable: (matchesList) => {
@@ -635,7 +913,6 @@ app.mus = {
             if ( (p1InT1 && p2InT2) || (p1InT2 && p2InT1) ) {
                 totalMatches++;
                 
-                // Clonar y reorientar para que el equipo de p1 siempre quede a la izquierda (Azul)
                 let matchClone = { ...m };
                 if (p1InT2) {
                     matchClone.p1 = m.p3; matchClone.p2 = m.p4;
@@ -731,7 +1008,6 @@ app.mus = {
                 w1 += (m.s2 > m.s1 ? 1 : 0);
                 r2 += m.s1; r1 += m.s2;
                 
-                // Reorientar para que Pair 1 sea azul
                 let mClone = {...m};
                 mClone.p1 = m.p3; mClone.p2 = m.p4;
                 mClone.p3 = m.p1; mClone.p4 = m.p2;
