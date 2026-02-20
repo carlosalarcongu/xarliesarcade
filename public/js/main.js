@@ -111,6 +111,15 @@ Que tu equipo adivine la palabra clave sin decir las prohibidas.
 
 4. Tiempo:
    - Al llegar a 0, cambio de turno.`,
+   torres: `🗼 TORRES
+--------------------------------
+🎯 OBJETIVO
+Adivinar qué palabra tienes asignada viendo las palabras de los demás.
+
+🕹️ DINÁMICA
+1. Tú no puedes ver tu palabra ("???"), pero ves las de los demás.
+2. Hablad (o escribid en Modo Silencioso) haciendo preguntas de sí o no, o dando pistas sutiles.
+3. El Administrador marcará como "Ganador" a quien la adivine, y "Eliminado" a quien se rinda o falle catastróficamente.`,
 
     pinturilloImp: `🎨 EL FALSO ARTISTA
 --------------------------------
@@ -206,7 +215,7 @@ No hay contraseñas.
 const ROOM_EMOJIS = {
     impostor: "🕵️", lobo: "🐺", anecdotas: "📜", elmas: "🏆", tabu: "🚫",
     pinturilloImp: "🎨", cifrasyletras: "🔣", feedback: "💌", orden: "🎌", 
-    consejo: "🦉", fiesta: "🎉"
+    consejo: "🦉", fiesta: "🎉", torres: "🗼"
 };
 
 window.app = {
@@ -329,7 +338,7 @@ window.app = {
             'giveScreen', 'musScreen',
             'contextoScreen', 'consejoScreen',
             'fiestaScreen', 'statsSelectionScreen',
-            'fifaScreen'
+            'fifaScreen', 'torresLobby', 'torresGame'
         ];
         
         screens.forEach(s => {
@@ -365,7 +374,7 @@ window.app = {
     },
 
     findActiveSession: () => {
-        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp', 'cifrasyletras', 'orden'];
+        const rooms = ['impostor', 'lobo', 'anecdotas', 'elmas', 'tabu', 'pinturilloImp', 'cifrasyletras', 'orden', 'torres'];
         for (let r of rooms) {
             if (localStorage.getItem(r + '_playerId') && localStorage.getItem(r + '_roomId')) return r;
         }
@@ -556,7 +565,7 @@ window.app = {
     },
     
     impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}, contexto: {}, consejo: {},
-    fiesta: {} 
+    fiesta: {}, torres: {}
 };
 
 // --- GESTIÓN DEL BOTÓN ATRÁS (POPSTATE) ---
@@ -659,6 +668,7 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'cifrasyletras') app.showScreen('cylLobby');
     else if (data.room === 'orden') app.showScreen('ordenLobby');
     else if (data.room === 'consejo') app.showScreen('consejoScreen');
+    else if (data.room === 'torres') app.showScreen('torresLobby');
     
     else if (data.room === 'fiesta') {
         app.showScreen('fiestaScreen');

@@ -64,7 +64,8 @@ function broadcastRoom(io, roomId) {
         connected: p.connected,
         hasVoted: !!p.votedFor,
         votesReceived: room.players.filter(v => v.votedFor === p.id).length,
-        revealedRole: (p.isDead && room.turnData[p.id]) ? room.turnData[p.id].role : null
+        revealedRole: (p.isDead && room.turnData[p.id]) ? room.turnData[p.id].role : null,
+        gameWord: p.gameWord // NUEVO: La palabra que han dicho en su turno
     }));
 
     let currentTurnId = null;
@@ -86,6 +87,36 @@ function getPublicCategories() {
     return Object.keys(database).map(k => ({ id: k, label: database[k].label || k }));
 }
 
+// NUEVO: Función para calcular porcentajes de voto y notificar eliminación
+function notifyElimination(room, eliminatedPlayer) {
+    if (!room.settings.silentMode) return;
+    
+    // Contar votos activos (jugadores vivos que no son observadores)
+    const validVoters = room.players.filter(p => !p.isDead && !p.isObserver);
+    const totalVotesMade = validVoters.filter(p => p.votedFor !== null).length;
+    
+    if (totalVotesMade > 0) {
+        const votesForHim = room.players.filter(p => p.votedFor === eliminatedPlayer.id).length;
+        const percentage = Math.round((votesForHim / validVoters.length) * 100);
+        
+        room.chatHistory.push({
+            name: "SISTEMA",
+            text: `💀 <b>${eliminatedPlayer.name}</b> ha sido ELIMINADO (${percentage}% de los votos posibles). Era: ${room.turnData[eliminatedPlayer.id]?.role || '?'}`,
+            type: 'system_elimination'
+        });
+    } else {
+        // Asesinato directo de admin
+        room.chatHistory.push({
+            name: "SISTEMA",
+            text: `💀 <b>${eliminatedPlayer.name}</b> ha sido ELIMINADO por el Administrador. Era: ${room.turnData[eliminatedPlayer.id]?.role || '?'}`,
+            type: 'system_elimination'
+        });
+    }
+    
+    if(room.chatHistory.length > 60) room.chatHistory.shift();
+}
+
+
 const handleSocket = (io, socket) => {
     socket.on('impostor_action', (action) => {
         const roomId = socket.data.roomId; 
@@ -103,11 +134,40 @@ const handleSocket = (io, socket) => {
             broadcastRoom(io, roomId);
         }
 
+        // --- SISTEMA DE CHAT CON ANTI-SPAM ---
         if (action.type === 'chat') {
+            // Verificar si está baneado
+            if (me.chatBanUntil && Date.now() < me.chatBanUntil) {
+                return; // Bloqueado silenciosamente
+            } else if (me.chatBanUntil) {
+                me.chatBanUntil = null; // Quitar ban caducado
+            }
+
             const msgText = String(action.value).trim().substring(0, 100);
             if(msgText) {
-                room.chatHistory.push({ name: me.name, text: msgText, type: 'chat' });
-                if(room.chatHistory.length > 50) room.chatHistory.shift();
+                // Control Anti-Spam Automático
+                const now = Date.now();
+                if (!me.msgTimestamps) me.msgTimestamps = [];
+                me.msgTimestamps.push(now);
+                
+                // Limpiar timestamps más antiguos de 10 segundos
+                me.msgTimestamps = me.msgTimestamps.filter(t => now - t < 10000);
+                
+                // Si ha enviado más de 5 en los últimos 10s -> BAN
+                if (me.msgTimestamps.length > 5) {
+                    me.chatBanUntil = now + 10000; // 10s ban
+                    me.msgTimestamps = []; // Reset
+                    
+                    room.chatHistory.push({
+                        name: "SISTEMA",
+                        text: `🚫 <b>${me.name}</b> ha sido silenciado 10s por SPAM.`,
+                        type: 'system_ban'
+                    });
+                } else {
+                    room.chatHistory.push({ name: me.name, text: msgText, type: 'chat' });
+                }
+
+                if(room.chatHistory.length > 60) room.chatHistory.shift();
                 broadcastRoom(io, roomId);
             }
         }
@@ -118,7 +178,12 @@ const handleSocket = (io, socket) => {
                 if (currentTurnId === me.id && !me.isDead) {
                     const wordText = String(action.value).trim().substring(0, 50);
                     if(wordText) {
+                        // NUEVO: Guardar la palabra en el perfil del jugador
+                        me.gameWord = wordText;
+
                         room.chatHistory.push({ name: me.name, text: wordText, type: 'gameWord' });
+                        if(room.chatHistory.length > 60) room.chatHistory.shift();
+                        
                         advanceTurn(room);
                         broadcastRoom(io, roomId);
                     }
@@ -140,23 +205,23 @@ const handleSocket = (io, socket) => {
             if(!wordPool.length) wordPool = [{word: "Error", hint: "..."}];
             const sel = wordPool[Math.floor(Math.random() * wordPool.length)];
 
-            // Roles
             const indices = room.players.map((_,i)=>i).sort(()=>Math.random()-0.5);
             const numImpostors = Math.min(room.settings.impostors, Math.floor(room.players.length / 2)); 
             const impIdx = indices.slice(0, numImpostors);
             
             room.players.forEach(p => { 
                 p.isDead = false; p.votedFor = null; p.isObserver = false; 
+                p.gameWord = null; // Limpiar palabras anteriores
+                p.msgTimestamps = [];
+                p.chatBanUntil = null;
             });
             
             room.gameInProgress = true;
             room.chatHistory = []; 
             
-            // --- INICIADOR ALEATORIO ---
             room.turn.order = room.players.map(p => p.id).sort(() => Math.random() - 0.5);
             room.turn.currentIndex = 0;
             
-            // Buscamos el nombre del primer jugador en el orden aleatorio
             const starterId = room.turn.order[0];
             const starterPlayer = room.players.find(p => p.id === starterId);
             const starterName = starterPlayer ? starterPlayer.name : "Desconocido";
@@ -178,7 +243,7 @@ const handleSocket = (io, socket) => {
                     role: isImp ? 'IMPOSTOR' : 'CIVIL',
                     word: isImp ? 'Impostor' : sel.word,
                     hint: (room.settings.hints && isImp) ? sel.hint : null,
-                    starter: starterName, // <-- AQUI USAMOS EL NOMBRE ALEATORIO
+                    starter: starterName, 
                     categoriesPlayed: database[room.settings.category] ? database[room.settings.category].label : "Mezcla"
                 };
             });
@@ -193,13 +258,43 @@ const handleSocket = (io, socket) => {
             }, 3500);
         }
 
+        // --- VOTACIONES CON NOTIFICACIÓN CHAT ---
         if (action.type === 'vote' && room.gameInProgress && !me.isDead && !me.isObserver) {
             me.votedFor = (me.votedFor === action.targetId) ? null : action.targetId;
+            
+            if (room.settings.silentMode && me.votedFor) {
+                const target = room.players.find(p => p.id === action.targetId);
+                if (target) {
+                    room.chatHistory.push({
+                        name: me.name,
+                        text: `ha votado a ${target.name}`,
+                        type: 'system_vote'
+                    });
+                    if(room.chatHistory.length > 60) room.chatHistory.shift();
+                }
+            }
+            
             broadcastRoom(io, roomId);
         }
 
         if (me.isAdmin) {
              if (action.type === 'kick') handleLeave(action.targetId, roomId, io, true); 
+             
+             // NUEVO: Ban manual
+             if (action.type === 'banChat') {
+                const p = room.players.find(pl => pl.id === action.targetId);
+                if (p) {
+                    p.chatBanUntil = Date.now() + 10000; // 10s
+                    room.chatHistory.push({
+                        name: "SISTEMA",
+                        text: `🚫 El Admin ha silenciado a <b>${p.name}</b> por 10s.`,
+                        type: 'system_ban'
+                    });
+                    if(room.chatHistory.length > 60) room.chatHistory.shift();
+                    broadcastRoom(io, roomId);
+                }
+             }
+
              if (action.type === 'kill') {
                 const p = room.players.find(pl => pl.id === action.targetId);
                 if (p) { 
@@ -207,6 +302,8 @@ const handleSocket = (io, socket) => {
                     if (!p.isDead) p.votedFor = null;
                     else {
                         io.to(p.socketId).emit('youDied'); 
+                        notifyElimination(room, p); // Llamada a la notificación
+                        
                         if(room.gameInProgress && room.settings.silentMode) {
                             if(room.turn.currentIndex < room.turn.order.length) {
                                 const currentTurnId = room.turn.order[room.turn.currentIndex];
@@ -217,7 +314,12 @@ const handleSocket = (io, socket) => {
                     broadcastRoom(io, roomId); 
                 }
              }
-             if (action.type === 'clearVotes') { room.players.forEach(p => p.votedFor = null); broadcastRoom(io, roomId); }
+
+             if (action.type === 'clearVotes') { 
+                 room.players.forEach(p => p.votedFor = null); 
+                 broadcastRoom(io, roomId); 
+             }
+             
              if (action.type === 'revealResults') {
                 if (room.turnData['SUMMARY']) {
                     room.turnData['SUMMARY'].impostorsData = room.players
@@ -226,13 +328,18 @@ const handleSocket = (io, socket) => {
                     io.to('impostor_' + roomId).emit('gameSummary', room.turnData['SUMMARY']);
                 }
              }
+             
              if (action.type === 'reset') {
                 room.gameInProgress = false;
                 room.chatHistory = [];
-                room.players.forEach(p => { p.isDead=false; p.votedFor=null; p.isObserver=false; });
+                room.players.forEach(p => { 
+                    p.isDead=false; p.votedFor=null; p.isObserver=false; 
+                    p.gameWord = null; p.chatBanUntil = null; 
+                });
                 io.to('impostor_' + roomId).emit('resetGame');
                 broadcastRoom(io, roomId);
             }
+             
              if (action.type === 'changeImpostors') {
                 room.settings.impostors = Math.max(0, Math.min(room.players.length, room.settings.impostors + action.value));
                 broadcastRoom(io, roomId);
@@ -248,6 +355,9 @@ const handleSocket = (io, socket) => {
         }
     });
 };
+
+// ... handleJoin, handleRejoin, handleLeave ...
+// (El resto de la lógica de conexión no cambia, te dejo la base normal)
 
 const handleJoin = (socket, nameRaw, targetRoomId) => {
     const cleanName = nameRaw.replace(/👑|👤/g, '').trim();

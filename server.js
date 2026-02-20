@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const contexto = require('./games/contexto');
 
 const app = express();
 const server = http.createServer(app);
@@ -27,6 +26,7 @@ const gamesModules = {
     fiesta: require('./games/fiesta'),
     trivial: require('./games/trivial'),
     fifa: require('./games/fifa'),
+    torres: require('./games/torres') // <-- NUEVO: Juego Torres añadido aquí
 };
 
 // Inicializar juegos
@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
     socket.on('requestHubRooms', () => {
         const allRooms = [];
         
-        // CORRECCIÓN: Iteramos sobre TODOS los módulos cargados, no solo 'impostor'
+        // Iteramos sobre TODOS los módulos cargados
         Object.keys(gamesModules).forEach(gameKey => {
             const module = gamesModules[gameKey];
             

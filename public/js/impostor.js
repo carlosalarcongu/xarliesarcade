@@ -13,8 +13,9 @@ app.impostor = {
         app.impostor.send('startGame', {}); 
     },
     
-    kick: (id) => { if(confirm("¿Echar de la sala?")) socket.emit('impostor_action', { type: 'kick', targetId: id }); },
-    kill: (e, id) => { e.stopPropagation(); if(confirm("¿Matar/Revivir?")) socket.emit('impostor_action', { type: 'kill', targetId: id }); },
+    kick: (e, id) => { if(e) e.stopPropagation(); if(confirm("¿Echar de la sala?")) socket.emit('impostor_action', { type: 'kick', targetId: id }); },
+    kill: (e, id) => { if(e) e.stopPropagation(); if(confirm("¿Matar/Revivir?")) socket.emit('impostor_action', { type: 'kill', targetId: id }); },
+    banChat: (e, id) => { if(e) e.stopPropagation(); socket.emit('impostor_action', { type: 'banChat', targetId: id }); },
     resetGame: () => socket.emit('impostor_action', { type: 'reset' }),
     changeImpostors: (v) => socket.emit('impostor_action', { type: 'changeImpostors', value: v }),
     revealResults: () => socket.emit('impostor_action', { type: 'revealResults' }),
@@ -54,7 +55,6 @@ app.impostor = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Listeners configuración
     const catSelect = document.getElementById('impostorCategory');
     if (catSelect) catSelect.addEventListener('change', () => { if (app.impostor.iAmAdmin) app.impostor.syncSettings(); });
     
@@ -64,13 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const silentCheck = document.getElementById('impostorSilent');
     if (silentCheck) silentCheck.addEventListener('change', () => { if (app.impostor.iAmAdmin) app.impostor.syncSettings(); });
 
-    // --- LISTENER PARA ENTER EN CHAT ---
     const chatInput = document.getElementById('impostorInput');
     if (chatInput) {
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                app.impostor.sendChat(); // Por defecto envía a conversación
+                app.impostor.sendChat(); 
             }
         });
     }
@@ -102,7 +101,6 @@ socket.on('updateState', (data) => {
 
     if(me) app.impostor.iAmAdmin = me.isAdmin;
 
-    // Sincronizar UI Admin
     const countDisp = document.getElementById('impostorCountDisp');
     if(countDisp) countDisp.innerText = settings.impostors;
     const pCount = document.getElementById('playerCount');
@@ -119,7 +117,6 @@ socket.on('updateState', (data) => {
     if (hintCheck) hintCheck.disabled = !app.impostor.iAmAdmin;
     if (silentCheck) silentCheck.disabled = !app.impostor.iAmAdmin;
 
-    // --- LOGICA DE PANELES Y BOTONES ---
     const adminPanel = document.getElementById('impostorAdminPanel');
     const waitMsg = document.getElementById('waitMsg');
     
@@ -128,7 +125,6 @@ socket.on('updateState', (data) => {
         if(waitMsg) waitMsg.classList.add('hidden');
         document.querySelector('#impostorAdminPanel .start-btn')?.classList.remove('hidden');
         
-        // MOSTRAR BOTONES DE ADMIN DE JUEGO
         ['btnEndVoting','btnClearVotes','btnShowResults'].forEach(id => {
             const btn = document.getElementById(id);
             if(btn) btn.classList.remove('hidden');
@@ -145,25 +141,24 @@ socket.on('updateState', (data) => {
         });
     }
 
-    // LISTA LOBBY
     const list = document.getElementById('playerList');
     if(list) {
+        // En el lobby también quitamos la restricción para que el admin pueda echarse a sí mismo
         list.innerHTML = players.map(p => `
             <li>
                 <span>${p.name} ${p.isAdmin ? '👑' : ''} ${p.isObserver ? '👁️' : ''}</span>
-                ${app.impostor.iAmAdmin ? `<button class="kick-btn" style="padding:2px 6px; width:auto; margin-left:10px;" onclick="app.impostor.kick('${p.id}')">❌</button>` : ''}
+                ${app.impostor.iAmAdmin ? `<button class="kick-btn" style="padding:2px 6px; width:auto; margin-left:10px;" onclick="app.impostor.kick(event, '${p.id}')">❌</button>` : ''}
             </li>`).join('');
     }
 
-    // --- JUEGO EN CURSO ---
     if(gameInProgress) {
         app.showScreen('impostorGame');
         
-        // Aseguramos que la sección de votación es VISIBLE SIEMPRE en partida
         const voteSection = document.getElementById('voteSection');
         if(voteSection) voteSection.classList.remove('hidden');
 
-        // GRID DE VOTACIÓN (TARJETAS)
+        let spokenWordsHTML = "";
+
         const voteGrid = document.getElementById('voteGrid');
         if(voteGrid) {
             voteGrid.innerHTML = "";
@@ -181,9 +176,16 @@ socket.on('updateState', (data) => {
                     btn.style.boxShadow = "0 0 10px #0984e3";
                 }
 
-                let html = `<div style="font-weight:bold; margin-bottom:5px; ${isTurn ? 'color:#0984e3' : ''}">
+                let html = `<div style="font-weight:bold; margin-bottom:2px; ${isTurn ? 'color:#0984e3' : ''}">
                     ${p.name} ${isTurn ? '🖊️' : ''}
                 </div>`;
+
+                if (settings.silentMode && p.gameWord) {
+                    html += `<div style="font-size:0.9em; color:#00cec9; font-style:italic; margin-bottom:5px;">"${p.gameWord}"</div>`;
+                    spokenWordsHTML += `<span style="margin-right:10px;"><b>${p.name}:</b> <span style="color:#00cec9">"${p.gameWord}"</span></span>`;
+                } else if (settings.silentMode) {
+                    html += `<div style="height:15px; margin-bottom:5px;"></div>`;
+                }
 
                 if (p.isDead) html += `<div class="eliminated-text">ELIMINADO<br><span style="color:white">${p.revealedRole || '?'}</span></div>`;
                 else if (!p.isObserver) {
@@ -191,11 +193,16 @@ socket.on('updateState', (data) => {
                     if (p.votesReceived > 0) html += `<div style="color:#ffa502; font-weight:900; font-size:1.2em;">${p.votesReceived} VOTOS</div>`;
                 }
 
-                if(app.impostor.iAmAdmin && p.id !== me.id && !p.isObserver) {
+                // CONTROLES ADMIN (AQUÍ SE PERMITE AHORA HACERLO SOBRE SÍ MISMO)
+                if(app.impostor.iAmAdmin && !p.isObserver) {
                     html += `<div style="margin-top:5px; display:flex; justify-content:center; gap:5px; z-index:5;">
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kill(event, '${p.id}')">💀</button>
-                        <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kick('${p.id}')">❌</button>
-                    </div>`;
+                        <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kick(event, '${p.id}')">❌</button>`;
+                    
+                    if(settings.silentMode && !p.isDead) {
+                        html += `<button style="padding:2px 5px; background:#e67e22; font-size:0.7em;" onclick="app.impostor.banChat(event, '${p.id}')">🔇</button>`;
+                    }
+                    html += `</div>`;
                 }
 
                 btn.innerHTML = html;
@@ -208,12 +215,15 @@ socket.on('updateState', (data) => {
             });
         }
 
-        // MODO SILENCIOSO
         const silentArea = document.getElementById('impostorSilentArea');
         if (settings.silentMode) {
             silentArea.classList.remove('hidden');
             
-            // Log Chat
+            const headerDiv = document.getElementById('impostorSpokenWords');
+            if (headerDiv) {
+                headerDiv.innerHTML = spokenWordsHTML || "<span style='color:#aaa'>Aún no se han dicho palabras.</span>";
+            }
+
             const logDiv = document.getElementById('impostorChatLog');
             if (chatHistory) {
                 logDiv.innerHTML = chatHistory.map(msg => {
@@ -221,6 +231,14 @@ socket.on('updateState', (data) => {
                         return `<div style="margin-bottom:8px; border-left:3px solid #00cec9; padding-left:5px; background:rgba(0,206,201,0.1)">
                             <div style="font-size:0.8em; color:#00cec9;">🖊️ PALABRA DE <b>${msg.name}</b>:</div>
                             <div style="font-size:1.2em; color:#fff; font-weight:bold;">${msg.text}</div>
+                        </div>`;
+                    } else if (msg.type === 'system_vote') {
+                        return `<div style="margin-bottom:2px; color:#aaa; font-size:0.6em; font-style:italic;">
+                            👉 ${msg.name} ${msg.text}
+                        </div>`;
+                    } else if (msg.type === 'system_elimination' || msg.type === 'system_ban') {
+                        return `<div style="margin-bottom:5px; color:#ff4757; font-size:0.8em; background:rgba(255,71,87,0.1); padding:5px; border-radius:3px; border-left:2px solid #ff4757;">
+                            ${msg.text}
                         </div>`;
                     } else {
                         return `<div style="margin-bottom:4px; color:#aaa; font-size:0.9em; word-break:break-word;">
@@ -231,11 +249,9 @@ socket.on('updateState', (data) => {
                 logDiv.scrollTop = logDiv.scrollHeight;
             }
 
-            // Gestión de Botones e Indicadores
             const btnWord = document.getElementById('btnImpWord');
             const turnInd = document.getElementById('turnIndicator');
             
-            // Si currentTurn es null, fin de ronda
             if (turnData && turnData.currentTurn === null) {
                 btnWord.disabled = true;
                 btnWord.style.opacity = "0.4";
@@ -277,7 +293,6 @@ socket.on('preGameCountdown', (count) => {
 
     app.showScreen('impostorGame'); 
     document.getElementById('roleCard').classList.add('hidden'); 
-    // Ocultar votación y silent area temporalmente
     document.getElementById('voteSection').classList.add('hidden');
     document.getElementById('impostorSilentArea').classList.add('hidden');
 
@@ -344,12 +359,10 @@ socket.on('privateRole', (data) => {
     const cats = document.getElementById('catsPlayed');
     if(cats && data.categoriesPlayed) cats.innerText = data.categoriesPlayed;
     
-    // Al recibir el rol, mostramos las secciones de juego
     document.getElementById('voteSection').classList.remove('hidden');
     app.showScreen('impostorGame');
 });
 
-// ... (Resto de listeners gameSummary, resetGame, youDied se mantienen igual)
 socket.on('gameSummary', (data) => {
     if(!data) return;
     document.getElementById('summaryModal').classList.remove('hidden');
