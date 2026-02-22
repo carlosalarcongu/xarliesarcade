@@ -731,31 +731,16 @@
                 <div style="flex:2">
                     <label style="color:#aaa; font-size:0.8em;">Vista:</label>
                     <select id="musViewMode" onchange="app.mus.changeView()" style="width:100%; font-size:0.9em;">
-                        <option value="ranking_pair" selected>🏆 Ranking Parejas</option>
-                        <option value="ranking_player">👤 Ranking Individual</option>
+                        <option value="ranking_pair">🏆 Ranking Parejas</option>
+                        <option value="ranking_player" selected>👤 Ranking Individual</option>
                         <option value="top_improvement">🚀 Mayor Mejora WinRate</option>
-                        <option value="1vs1">⚔️ 1 vs 1 (Cara a Cara)</option>
-                        <option value="2vs2">⚔️ 2 vs 2 (Duelo Parejas)</option>
                         <option value="recent_log">📝 Historial Partidas</option>
                         <option value="examinar_persona">🔬 Examinar Persona</option>
                         <option value="examinar_pareja">🔬 Examinar Pareja</option>
                     </select>
                 </div>
             </div>
-            <div id="div1vs1" class="hidden" style="margin-top:10px; background:#2f3542; padding:10px; border-radius:8px;">
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <select id="p1vs" onchange="app.mus.runHeadToHead()" style="flex:1"></select>
-                    <span style="font-weight:bold; color:#ff4757">VS</span>
-                    <select id="p2vs" onchange="app.mus.runHeadToHead()" style="flex:1"></select>
-                </div>
-            </div>
-            <div id="div2vs2" class="hidden" style="margin-top:10px; background:#2f3542; padding:10px; border-radius:8px;">
-                <div style="display:flex; flex-direction:column; gap:5px;">
-                    <select id="pair1vs" onchange="app.mus.updateRivalSelector()" style="width:100%"></select>
-                    <div style="text-align:center; font-weight:bold; color:#ff4757">VS</div>
-                    <select id="pair2vs" onchange="app.mus.runPairToPair()" style="width:100%"></select>
-                </div>
-            </div>
+            
             <div id="divExamPlayer" class="hidden" style="margin-top:10px;">
                 <label>Persona:</label>
                     <select id="musExamPlayer" onchange="app.mus.runAnalysis()" style="width:100%; margin-bottom:5px;"></select>

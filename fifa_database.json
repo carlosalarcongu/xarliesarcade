@@ -7,6 +7,8 @@
     "Acebo",
     "IA",
     "Manco",
+    "Marcos",
+    "Nacho",
     "xarliebarber"
   ],
   "matches": [
@@ -33,6 +35,42 @@
       "s2": 4,
       "date": "2026-02-16T21:28:50.242Z",
       "addedBy": "edge"
+    },
+    {
+      "id": 1771628506520,
+      "roomId": "Copa Ourense",
+      "p1": "Acebo",
+      "p2": "xarliebarber",
+      "p3": "Marcos",
+      "p4": "Nacho",
+      "s1": 2,
+      "s2": 4,
+      "date": "2026-02-20T23:01:46.520Z",
+      "addedBy": "xarlie"
+    },
+    {
+      "id": 1771628518384,
+      "roomId": "Copa Ourense",
+      "p1": "Marcos",
+      "p2": "-",
+      "p3": "Nacho",
+      "p4": "-",
+      "s1": 2,
+      "s2": 1,
+      "date": "2026-02-20T23:01:58.384Z",
+      "addedBy": "xarlie"
+    },
+    {
+      "id": 1771632801145,
+      "roomId": "Copa Ourense",
+      "p1": "xarliebarber",
+      "p2": "Acebo",
+      "p3": "Nacho",
+      "p4": "Marcos",
+      "s1": 4,
+      "s2": 2,
+      "date": "2026-02-21T00:13:21.145Z",
+      "addedBy": "xarlie"
     }
   ]
 }
