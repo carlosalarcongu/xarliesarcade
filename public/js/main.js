@@ -215,7 +215,7 @@ No hay contraseñas.
 const ROOM_EMOJIS = {
     impostor: "🕵️", lobo: "🐺", anecdotas: "📜", elmas: "🏆", tabu: "🚫",
     pinturilloImp: "🎨", cifrasyletras: "🔣", feedback: "💌", orden: "🎌", 
-    consejo: "🦉", fiesta: "🎉", torres: "🗼"
+    consejo: "🦉", fiesta: "🎉", torres: "🗼", darkstories: "📖"
 };
 
 window.app = {
@@ -338,7 +338,8 @@ window.app = {
             'giveScreen', 'musScreen',
             'contextoScreen', 'consejoScreen',
             'fiestaScreen', 'statsSelectionScreen',
-            'fifaScreen', 'torresLobby', 'torresGame'
+            'fifaScreen', 'torresLobby', 'torresGame',
+            'darkstoriesScreen'
         ];
         
         screens.forEach(s => {
@@ -382,14 +383,14 @@ window.app = {
     },
 
     selectRoom: (room) => {
-        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa'].includes(room)) {
+        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories'].includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
             if(room === 'trivial') { if(app.trivial.init) app.trivial.init(); return; }
             if(room === 'contexto') { app.showScreen('contextoScreen'); if(app.contexto.init) app.contexto.init(); return; }
             if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
-            
+            if(room === 'darkstories') { app.showScreen('darkstoriesScreen'); if(app.darkstories.init) app.darkstories.init(); return; }
             if (room === 'fiesta') {
                  const name = app.myPlayerName || "Fiestero";
                  const uniqueRoomId = 'FIESTA-MAIN'; 

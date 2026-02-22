@@ -26,7 +26,8 @@ const gamesModules = {
     fiesta: require('./games/fiesta'),
     trivial: require('./games/trivial'),
     fifa: require('./games/fifa'),
-    torres: require('./games/torres') // <-- NUEVO: Juego Torres añadido aquí
+    torres: require('./games/torres'),
+    darkstories: require('./games/darkstories') 
 };
 
 // Inicializar juegos
