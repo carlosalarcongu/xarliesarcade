@@ -98,6 +98,14 @@ module.exports = {
 
         socket.on('joinRoom', ({ name, room }) => registerRoom(name, room));
         socket.on('registerRoomVisit', ({ name, room }) => registerRoom(name, room));
+
+        socket.on('analytics_requestData', (data) => {
+            if (!data || !data.admin) return;
+            const adminLower = data.admin.toLowerCase();
+            if (adminLower === 'administrador m' || adminLower === 'xarlie') {
+                socket.emit('analytics_data', analyticsData);
+            }
+        });
     },
     getRooms: () => []
 };

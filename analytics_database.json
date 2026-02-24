@@ -2,9 +2,9 @@
   "2026-W09": [
     {
       "name": "xarlie",
-      "visits": 18,
+      "visits": 20,
       "firstVisit": "2026-02-24T22:04:50.966Z",
-      "lastVisit": "2026-02-24T22:41:41.914Z",
+      "lastVisit": "2026-02-24T22:49:59.656Z",
       "lastIp": "2a02:9130:fe02:1d55:fcc1:b98d:4e51:c94c",
       "lastSocketId": "glGaguHI0bSzLImWAAAD",
       "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36",
@@ -13,6 +13,9 @@
         "88.10.159.242"
       ],
       "recentRooms": [
+        "beber",
+        "analytics",
+        "impostor",
         "beber"
       ]
     },
@@ -24,6 +27,19 @@
       "lastIp": "2a02:9130:fe02:1d55:fcc1:b98d:4e51:c94c",
       "lastSocketId": "glGaguHI0bSzLImWAAAD",
       "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+    },
+    {
+      "name": "pepe",
+      "visits": 1,
+      "firstVisit": "2026-02-24T22:49:41.840Z",
+      "lastVisit": "2026-02-24T22:49:41.840Z",
+      "ips": [
+        "88.10.159.242"
+      ],
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36",
+      "recentRooms": [
+        "analytics"
+      ]
     }
   ]
 }

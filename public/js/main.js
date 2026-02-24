@@ -216,7 +216,7 @@ No hay contraseñas.
 const ROOM_EMOJIS = {
     impostor: "🕵️", lobo: "🐺", anecdotas: "📜", elmas: "🏆", tabu: "🚫",
     pinturilloImp: "🎨", cifrasyletras: "🔣", feedback: "💌", orden: "🎌", 
-    consejo: "🦉", fiesta: "🎉", torres: "🗼", darkstories: "📖", beber: "🍻"
+    consejo: "🦉", fiesta: "🎉", torres: "🗼", darkstories: "📖", beber: "🍻", analytics: "📈"
 };
 
 window.app = {
@@ -338,7 +338,8 @@ window.app = {
             'contextoScreen', 'consejoScreen',
             'fiestaScreen', 'statsSelectionScreen',
             'fifaScreen', 'torresLobby', 'torresGame',
-            'darkstoriesScreen', 'beberScreen', 'beberStatsScreen'
+            'darkstoriesScreen', 'beberScreen', 'beberStatsScreen',
+            'analyticsScreen'
         ];
         
         screens.forEach(s => {
@@ -384,7 +385,7 @@ window.app = {
             socket.emit('registerRoomVisit', { name: app.myPlayerName, room: room });
         }
 
-        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber'].includes(room)) {
+        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber', 'analytics'].includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
@@ -393,6 +394,7 @@ window.app = {
             if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
             if(room === 'darkstories') { app.showScreen('darkstoriesScreen'); if(app.darkstories.init) app.darkstories.init(); return; }
             if(room === 'beber') { app.showScreen('beberScreen'); if(app.beber.init) app.beber.init(); return; }
+            if(room === 'analytics') { app.showScreen('analyticsScreen'); if(app.analytics.init) app.analytics.init(); return; }
             
             if (room === 'fiesta') {
                  const name = app.myPlayerName || "Fiestero";
@@ -597,7 +599,7 @@ window.app = {
     },
     
     impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}, contexto: {}, consejo: {},
-    fiesta: {}, torres: {}, darkstories: {}, beber: {}
+    fiesta: {}, torres: {}, darkstories: {}, beber: {}, analytics: {}
 };
 
 window.addEventListener('popstate', (event) => {
