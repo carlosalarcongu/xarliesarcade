@@ -484,7 +484,11 @@ window.app = {
         const protectedNames = ['musero', 'administrador m', 'xarlie'];
         if (protectedNames.includes(name)) {
             const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            if (pwd !== "arcArcade") {
+            
+            // Lógica de contraseñas específicas
+            const expectedPwd = (name === 'musero') ? "ordago" : "arcArcade";
+            
+            if (pwd !== expectedPwd) {
                 alert("Contraseña incorrecta.");
                 return;
             }
@@ -523,7 +527,11 @@ window.app = {
         const protectedNames = ['musero', 'administrador m', 'xarlie'];
         if (protectedNames.includes(name) && app.myPlayerName !== name) {
             const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            if (pwd !== "arcArcade") {
+            
+            // Lógica de contraseñas específicas
+            const expectedPwd = (name === 'musero') ? "ordago" : "arcArcade";
+            
+            if (pwd !== expectedPwd) {
                 alert("Contraseña incorrecta.");
                 return;
             }

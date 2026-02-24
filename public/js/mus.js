@@ -58,7 +58,6 @@ app.mus = {
         return colors[index];
     },
 
-    // --- SALAS ---
     renderRoomSelector: () => {
         const sel = document.getElementById('musRoomSelect');
         if(!sel || !app.mus.data) return;
@@ -95,7 +94,6 @@ app.mus = {
         if(name) socket.emit('mus_action', { type: 'addRoom', value: name, user: app.myPlayerName });
     },
 
-    // --- DATOS ---
     getRoomMatches: () => {
         if (!app.mus.data) return [];
         if (app.mus.currentRoom === 'ABSOLUTA') return app.mus.data.matches;
@@ -116,7 +114,6 @@ app.mus = {
         return roomMatches.filter(m => new Date(m.date) >= limitDate);
     },
 
-    // --- ACCIONES COMUNES ---
     addPlayer: () => {
         const name = prompt("Nombre:");
         if (name) socket.emit('mus_action', { type: 'addPlayer', value: name });
@@ -161,7 +158,6 @@ app.mus = {
         if(confirm("¿Forzar Backup en servidor?")) socket.emit('mus_action', { type: 'backup' });
     },
 
-    // --- ACCIONES DE ADMINISTRADOR ---
     adminRenamePlayer: (oldName) => {
         const newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
         if(newName && newName.trim() !== "" && newName !== oldName) {
@@ -172,11 +168,13 @@ app.mus = {
             });
         }
     },
+    
     adminDeletePlayer: (name) => {
         if(confirm(`¿Seguro que quieres eliminar al jugador "${name}" de la lista?\n(Las partidas que haya jugado se mantendrán intactas en el historial)`)) {
             socket.emit('mus_action', { type: 'adminDeletePlayer', user: app.myPlayerName, value: name });
         }
     },
+    
     adminEditMatchPlayers: (id) => {
         const m = app.mus.data.matches.find(x => x.id === id);
         if(!m) return;
@@ -193,6 +191,7 @@ app.mus = {
             });
         }
     },
+    
     adminEditMatchScore: (id) => {
         const m = app.mus.data.matches.find(x => x.id === id);
         if(!m) return;
@@ -208,7 +207,6 @@ app.mus = {
         }
     },
 
-    // --- VISTAS ---
     changeView: () => {
         const mode = document.getElementById('musViewMode').value;
         const container = document.getElementById('musStatsContainer');
@@ -305,7 +303,6 @@ app.mus = {
         container.innerHTML = html;
     },
 
-    // --- RANKING DINÁMICO CON TOP 10 RACHAS ---
     renderRanking: (container, mode) => {
         const matches = app.mus.getFilteredMatches();
         const stats = {}; 
@@ -394,7 +391,6 @@ app.mus = {
         });
         html += `</table></div>`;
 
-        // --- CÁLCULO DE TOP 10 RACHAS (Se añade justo debajo de la tabla) ---
         const ascMatches = [...matches].sort((a,b) => a.id - b.id);
         let streaks = {};
         let allWinStreaks = [];
@@ -420,7 +416,7 @@ app.mus = {
                     if (streaks[entity].val > 0) {
                         allWinStreaks.push({ n: entity, val: streaks[entity].val, endedBy: oppNames, end: dateStr });
                     }
-                    streaks[entity].val = 0; // Se resetea al perder
+                    streaks[entity].val = 0;
                 }
             };
 
@@ -436,14 +432,12 @@ app.mus = {
             }
         });
 
-        // Añadir las rachas que sigan activas actualmente al historial para que compitan
         Object.entries(streaks).forEach(([n, data]) => {
             if (data.val > 0) {
                 allWinStreaks.push({ n, val: data.val, endedBy: '-', end: 'AÚN ACTIVA' });
             }
         });
 
-        // Ordenar y coger el top 10
         const top10Streaks = allWinStreaks.sort((a,b) => b.val - a.val).slice(0, 10);
 
         if (top10Streaks.length > 0) {
@@ -477,7 +471,6 @@ app.mus = {
         container.innerHTML = html;
     },
 
-    // --- LOG Y FILTRO POR AUTOR ---
     renderLog: (container, filterAuthor = 'ALL') => {
         const allMatches = app.mus.getRoomMatches();
         if(allMatches.length === 0) { container.innerHTML = "<p>Sin partidas registradas.</p>"; return; }
@@ -512,8 +505,15 @@ app.mus = {
             const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()<10?'0':''}${d.getMinutes()}`;
             const res = `<span style="color:#74b9ff">${m.p1}+${m.p2}</span> (${m.s1}) <br>vs<br> <span style="color:#ff7675">${m.p3}+${m.p4}</span> (${m.s2})`;
             let delBtn = "";
-            if (app.myPlayerName === "Administrador de mus" || app.myPlayerName === "musero" || app.myPlayerName === "Xarlie" || app.myPlayerName.toLowerCase() === "administrador m") {
-                delBtn = `<button onclick="app.mus.deleteMatch(${m.id})" style="padding:4px 8px; background:#e74c3c; font-size:0.8em">🗑️</button>`;
+            
+            const reqUser = app.myPlayerName ? app.myPlayerName.toLowerCase() : "";
+            const addedByUser = m.addedBy ? m.addedBy.toLowerCase() : "";
+            
+            const isAdmin = reqUser === "administrador de mus" || reqUser === "musero" || reqUser === "xarlie" || reqUser === "administrador m";
+            const isOwner = reqUser !== "" && reqUser === addedByUser;
+
+            if (isAdmin || isOwner) {
+                delBtn = `<button onclick="app.mus.deleteMatch(${m.id})" style="padding:4px 8px; background:#e74c3c; font-size:0.8em; cursor:pointer;">🗑️</button>`;
             }
             html += `<tr>
                 <td style="font-size:0.8em; color:#aaa">${dateStr}</td>
@@ -575,18 +575,14 @@ app.mus = {
         container.innerHTML = html;
     },
 
-    // --- RACHAS Y CURIOSIDADES ---
     renderRachas: (container) => {
         const matches = app.mus.getFilteredMatches();
         const ascMatches = [...matches].sort((a,b) => a.id - b.id);
         
         let pStreaks = {}; 
         let pairStreaks = {};
-        
-        // Historial de todas las rachas para sacar el Top 5
         let allWinStreaks = [];
         let allLossStreaks = [];
-
         let pDiffHistory = {}; 
         let pairDiffHistory = {};
 
@@ -614,7 +610,6 @@ app.mus = {
                 
                 if (won) {
                     if (dict[entity].type === 'loss') {
-                        // Guardar la racha de derrota que acaba de terminar
                         allLossStreaks.push({ n: entity, val: dict[entity].val, end: dateStr, endedBy: oppNames });
                         dict[entity] = { type: 'win', val: myScore, start: dateStr };
                     } else {
@@ -624,7 +619,6 @@ app.mus = {
                     }
                 } else {
                     if (dict[entity].type === 'win') {
-                        // Guardar la racha de victoria que acaba de terminar
                         allWinStreaks.push({ n: entity, val: dict[entity].val, end: dateStr, endedBy: oppNames });
                         dict[entity] = { type: 'loss', val: oppScore, start: dateStr };
                     } else {
@@ -645,7 +639,6 @@ app.mus = {
             processEntity(t2, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names, true);
         });
 
-        // 1. Rachas Activas (Actuales)
         let maxWinP = {n: '-', val: 0}, maxLossP = {n: '-', val: 0};
         let maxWinPair = {n: '-', val: 0}, maxLossPair = {n: '-', val: 0};
 
@@ -658,8 +651,6 @@ app.mus = {
             if (data.type === 'loss' && data.val > maxLossPair.val) maxLossPair = {n, val: data.val}; 
         });
 
-        // 2. Top Rachas Históricas
-        // Añadir las rachas actuales que aún no se han roto al historial para que compitan
         Object.entries(pStreaks).forEach(([n, data]) => {
             if (data.type === 'win') allWinStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
             if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
@@ -672,7 +663,6 @@ app.mus = {
         allWinStreaks.sort((a,b) => b.val - a.val);
         allLossStreaks.sort((a,b) => b.val - a.val);
 
-        // 3. Jugadores más irregulares
         const getStdDev = (arr) => {
             if(arr.length < 5) return 0;
             const mean = arr.reduce((a, b) => a + b) / arr.length;
@@ -689,7 +679,6 @@ app.mus = {
             if (dev > mostIrregularPair.dev) mostIrregularPair = {n: pair, dev};
         });
 
-        // 4. Datos de tiempo (14 días y 7 días)
         const limit14 = Date.now() - (14 * 24 * 3600 * 1000);
         const limit7 = Date.now() - (7 * 24 * 3600 * 1000);
         
@@ -704,7 +693,6 @@ app.mus = {
         let maxRecentP = {n: '-', c: 0};
         Object.entries(pRoundsCount).forEach(([n, c]) => { if (c > maxRecentP.c) maxRecentP = {n, c}; });
 
-        // 5. Top Parejas Históricas (Todas las rondas)
         let histPairRounds = {};
         ascMatches.forEach(m => {
             const t1 = [m.p1, m.p2].sort().join(' y ');
@@ -717,7 +705,6 @@ app.mus = {
                                 .sort((a,b) => b[1] - a[1])
                                 .slice(0, 3);
 
-        // 6. Top 5 Stompeadas Históricas (Mayor diferencia absoluta)
         let stomps = [];
         ascMatches.forEach(m => {
             const diff = Math.abs(m.s1 - m.s2);
@@ -736,7 +723,6 @@ app.mus = {
         const top5Stomps = stomps.slice(0, 5);
 
 
-        // --- CONSTRUCCIÓN DEL HTML ---
         let rHTML = `
             <h3 style="color:#ffa502; margin-bottom:5px;">🔥 Rachas Actuales (Activas)</h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left; margin-bottom:20px;">
@@ -765,8 +751,8 @@ app.mus = {
             <h3 style="color:#e1b12c; margin-bottom:5px;">📜 Salón de la Fama: Top Rachas Históricas</h3>
             <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
                 <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:200px; overflow-y:auto;">
-                    <div style="font-size:0.9em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Top 15 Rachas de Victoria</div>
-                    ${allWinStreaks.slice(0,15).map((s, i) => `
+                    <div style="font-size:0.9em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Top 5 Rachas de Victoria</div>
+                    ${allWinStreaks.slice(0,5).map((s, i) => `
                         <div style="margin-bottom:8px; font-size:0.9em;">
                             <b>${i+1}. ${s.n}</b> (+${s.val} rondas)<br>
                             <span style="font-size:0.8em; color:#aaa;">${s.end === 'AÚN ACTIVA' ? '🟢 AÚN ACTIVA' : `Cortada el ${s.end} por ${s.endedBy}`}</span>
@@ -774,8 +760,8 @@ app.mus = {
                     `).join('')}
                 </div>
                 <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:200px; overflow-y:auto;">
-                    <div style="font-size:0.9em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Top 15 Rachas de Derrota</div>
-                    ${allLossStreaks.slice(0,15).map((s, i) => `
+                    <div style="font-size:0.9em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Top 5 Rachas de Derrota</div>
+                    ${allLossStreaks.slice(0,5).map((s, i) => `
                         <div style="margin-bottom:8px; font-size:0.9em;">
                             <b>${i+1}. ${s.n}</b> (-${s.val} rondas)<br>
                             <span style="font-size:0.8em; color:#aaa;">${s.end === 'AÚN ACTIVA' ? '🔴 AÚN ACTIVA' : `Salvados el ${s.end} contra ${s.endedBy}`}</span>
@@ -833,7 +819,6 @@ app.mus = {
         container.innerHTML = rHTML;
     },
 
-    // --- PREDICTOR Y REGLAS DE OPONENTES ---
     updatePredictorOpponents: () => {
         const p1Str = document.getElementById('predPair1').value;
         const p2Select = document.getElementById('predPair2');
@@ -850,25 +835,20 @@ app.mus = {
             pairStats[t2] = (pairStats[t2] || 0) + m.s1 + m.s2;
         });
 
-        // Filtrar solo las parejas con >10 rondas
         const validPairs = Object.keys(pairStats).filter(p => pairStats[p] >= 10).sort();
         const p1Players = p1Str ? p1Str.split(' y ') : [];
 
         let optionsHtml = `<option value="">-- Selecciona --</option>`;
         
         validPairs.forEach(pair => {
-            if (p1Str && pair === p1Str) return; // Excluir la misma pareja
-            
-            // Excluir si hay jugadores superpuestos
+            if (p1Str && pair === p1Str) return; 
             const pairPlayers = pair.split(' y ');
             if (p1Players.some(player => pairPlayers.includes(player))) return;
-
             optionsHtml += `<option value="${pair}">${pair}</option>`;
         });
 
         p2Select.innerHTML = optionsHtml;
 
-        // Restaurar la selección previa si sigue siendo válida
         if (Array.from(p2Select.options).some(o => o.value === currentP2Str)) {
             p2Select.value = currentP2Str;
         } else {
@@ -1042,8 +1022,6 @@ app.mus = {
         return html + '</table></div>';
     },
 
-
-    // --- ANÁLISIS EXAMINAR ---
     runAnalysis: () => {
         const mode = document.getElementById('musViewMode').value;
         const container = document.getElementById('musStatsContainer');
@@ -1227,7 +1205,6 @@ app.mus = {
     renderPlayerSelects: () => {
         if (!app.mus.data) return;
         
-        // 1. Opciones para el modal de "Añadir Partida" (Muestra a TODOS los jugadores)
         const allPlayers = app.mus.data.players;
         const allOpts = allPlayers.map(p => `<option value="${p}">${p}</option>`).join('');
         
@@ -1236,7 +1213,6 @@ app.mus = {
             if(el) el.innerHTML = allOpts;
         });
         
-        // 2. Extraer solo los jugadores que han jugado al menos 1 partida en la sala actual
         const matches = app.mus.getRoomMatches();
         const activePlayersSet = new Set();
         matches.forEach(m => {
@@ -1247,13 +1223,11 @@ app.mus = {
         });
         const activePlayers = Array.from(activePlayersSet).sort();
         
-        // 3. Opciones para "Examinar Persona" (Solo jugadores reales de esta sala)
         const activeOpts = activePlayers.map(p => `<option value="${p}">${p}</option>`).join('');
         const filterP = `<option value="all">-- Selecciona --</option>` + activeOpts;
         const examP = document.getElementById('musExamPlayer');
         if(examP) examP.innerHTML = filterP;
 
-        // 4. Opciones para "Examinar Pareja" (getUniquePairs ya filtra por sala actual nativamente)
         const pairs = app.mus.getUniquePairs();
         const pairOpts = `<option value="all">-- Selecciona --</option>` + pairs.map(p => `<option value="${p}">${p}</option>`).join('');
         
@@ -1302,7 +1276,6 @@ app.mus = {
     }
 };
 
-// Listeners
 socket.on('mus_data', (d) => {
     app.mus.data = d;
     app.mus.renderRoomSelector();
