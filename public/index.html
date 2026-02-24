@@ -1488,6 +1488,15 @@
                 <div style="font-size:1.5em; color:#e11ed8">🔒</div>
             </div>
 
+            <div class="hub-card" onclick="app.selectRoom('beber')" style="border-left-color: #f368e0;">
+                <div class="hub-icon">🍻</div>
+                <div class="hub-info">
+                    <div class="hub-title">Beber</div>
+                    <div class="hub-desc">Registro y Ranking de alcohol.</div>
+                </div>
+                <div style="font-size:1.5em; color:#09c432">➜</div>
+            </div>
+
             <div class="hub-card disabled" style="border-left-color: #57606f; opacity: 0.5;">
                 <div class="hub-icon">➕</div>
                 <div class="hub-info">
@@ -1579,6 +1588,67 @@
         </div>
     </div>
 
+    <div id="beberScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Salir</button>
+        </div>
+        
+        <h2 style="color:#f368e0; margin-bottom:20px;">🍻 Registro de Bebidas</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">Toca lo que te acabas de pedir para registrarlo a tu nombre.</p>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:40px;">
+            <button class="card" onclick="app.beber.addDrink('copa')" style="background:#2f3542; border:2px solid #ff7675; cursor:pointer; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <span style="font-size:3em;">🍹</span><span style="color:#fff; font-weight:bold; margin-top:5px;">Copa</span>
+            </button>
+            <button class="card" onclick="app.beber.addDrink('cerveza')" style="background:#2f3542; border:2px solid #f1c40f; cursor:pointer; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <span style="font-size:3em;">🍺</span><span style="color:#fff; font-weight:bold; margin-top:5px;">Cerveza</span>
+            </button>
+            <button class="card" onclick="app.beber.addDrink('calimocho')" style="background:#2f3542; border:2px solid #8c7ae6; cursor:pointer; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <span style="font-size:3em;">🍷</span><span style="color:#fff; font-weight:bold; margin-top:5px;">Calimocho</span>
+            </button>
+            <button class="card" onclick="app.beber.addDrink('vino')" style="background:#2f3542; border:2px solid #e84118; cursor:pointer; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <span style="font-size:3em;">🍷</span><span style="color:#fff; font-weight:bold; margin-top:5px;">Vino</span>
+            </button>
+            <button class="card" onclick="app.beber.addDrink('chupito')" style="background:#2f3542; border:2px solid #00a8ff; cursor:pointer; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <span style="font-size:3em;">🥃</span><span style="color:#fff; font-weight:bold; margin-top:5px;">Chupito</span>
+            </button>
+            <button class="card" onclick="app.beber.addDrink('jarra')" style="background:#2f3542; border:2px solid #e1b12c; cursor:pointer; min-height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <span style="font-size:3em;">🍻</span><span style="color:#fff; font-weight:bold; margin-top:5px;">Jarra</span>
+            </button>
+        </div>
+
+        <div style="text-align:center; width:100%;">
+            <span onclick="app.beber.openStats()" style="color:#333; font-size:0.7em; cursor:pointer; user-select:none;">ver clasificación</span>
+        </div>
+    </div>
+
+    <div id="beberStatsScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.showScreen('beberScreen')">⬅ Volver</button>
+        </div>
+
+        <h2 style="color:#f368e0; margin-bottom:10px;">📊 Clasificación</h2>
+
+        <div style="margin-bottom:15px;">
+            <select id="beberViewMode" onchange="app.beber.changeStatsView()" style="width:100%; padding:10px; border-radius:5px; background:#222; color:#fff; border:1px solid #444;">
+                <option value="ranking">🏆 Ranking Dinámico</option>
+                <option value="table">📋 Tabla General</option>
+                <option value="podium">🗓️ Podio Mensual Histórico</option>
+                <option value="admin">⚙️ Whitelist (Admin)</option>
+            </select>
+        </div>
+
+        <div id="beberDynamicFilters" style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-bottom:20px;">
+            <button id="filter_copa" onclick="app.beber.toggleFilter('copa')" style="background:#2f3542; padding:5px 10px; border-radius:15px; border:2px solid #2ed573;">🍹 Copa</button>
+            <button id="filter_cerveza" onclick="app.beber.toggleFilter('cerveza')" style="background:#2f3542; padding:5px 10px; border-radius:15px; border:2px solid #2ed573;">🍺 Cerveza</button>
+            <button id="filter_calimocho" onclick="app.beber.toggleFilter('calimocho')" style="background:#2f3542; padding:5px 10px; border-radius:15px; border:2px solid #2ed573;">🍷 Calimocho</button>
+            <button id="filter_vino" onclick="app.beber.toggleFilter('vino')" style="background:#2f3542; padding:5px 10px; border-radius:15px; border:2px solid #2ed573;">🍷 Vino</button>
+            <button id="filter_chupito" onclick="app.beber.toggleFilter('chupito')" style="background:#2f3542; padding:5px 10px; border-radius:15px; border:2px solid #2ed573;">🥃 Chupito</button>
+            <button id="filter_jarra" onclick="app.beber.toggleFilter('jarra')" style="background:#2f3542; padding:5px 10px; border-radius:15px; border:2px solid #2ed573;">🍻 Jarra</button>
+        </div>
+
+        <div id="beberStatsContainer" style="width:100%; text-align:center;"></div>
+    </div>
 
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1602,6 +1672,7 @@
     <script src="js/fifa.js"></script>
     <script src="js/torres.js"></script>
     <script src="js/darkstories.js"></script>
+    <script src="js/beber.js"></script>
     
 
 

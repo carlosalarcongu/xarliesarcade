@@ -322,7 +322,7 @@
       "p3": "Carlos",
       "p4": "Mario",
       "s1": 0,
-      "s2": 1,
+      "s2": 4,
       "date": "2026-02-02T21:59:01.157Z",
       "addedBy": "Japa",
       "roomId": "Copa Ourense"
@@ -1342,8 +1342,8 @@
       "p2": "Marcos",
       "p3": "Carlos",
       "p4": "Mario",
-      "s1": 2,
-      "s2": 0,
+      "s1": 3,
+      "s2": 2,
       "date": "2026-02-21T03:11:32.184Z",
       "addedBy": "musero"
     },
@@ -1418,6 +1418,30 @@
       "s2": 11,
       "date": "2026-02-22T01:08:45.817Z",
       "addedBy": "xarlie"
+    },
+    {
+      "id": 1771795174943,
+      "roomId": "Copa Ourense",
+      "p1": "Japa",
+      "p2": "Acebo",
+      "p3": "Mario",
+      "p4": "Nacho",
+      "s1": 0,
+      "s2": 1,
+      "date": "2026-02-22T21:19:34.943Z",
+      "addedBy": "nachos4quesos"
+    },
+    {
+      "id": 1771802071702,
+      "roomId": "Copa Ourense",
+      "p1": "Nacho",
+      "p2": "Mario",
+      "p3": "Japa",
+      "p4": "Carlos",
+      "s1": 7,
+      "s2": 3,
+      "date": "2026-02-22T23:14:31.702Z",
+      "addedBy": "nachos4quesos"
     }
   ],
   "rooms": [
