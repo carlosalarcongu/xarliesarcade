@@ -34,35 +34,70 @@ function getWeekNumber(d) {
 module.exports = {
     init: (io) => {},
     handleSocket: (io, socket) => {
+        const getIp = () => {
+            const forwarded = socket.handshake.headers['x-forwarded-for'];
+            return forwarded ? forwarded.split(',')[0].trim() : socket.handshake.address;
+        };
+
         socket.on('registerVisit', (name) => {
+            if (!name) return;
             const week = getWeekNumber(new Date());
             if(!analyticsData[week]) analyticsData[week] = [];
             
-            const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+            const ip = getIp();
             const userAgent = socket.handshake.headers['user-agent'] || 'Unknown';
-            const socketId = socket.id;
             const connectionTime = new Date().toISOString();
 
-            const record = analyticsData[week].find(r => r.name === name);
+            let record = analyticsData[week].find(r => r.name === name);
             if (record) {
                 record.visits++;
                 record.lastVisit = connectionTime;
-                record.lastIp = ip;
-                record.lastSocketId = socketId;
                 record.userAgent = userAgent;
+                
+                if (!record.ips) {
+                    record.ips = record.lastIp ? [record.lastIp] : [];
+                }
+                if (!record.ips.includes(ip)) {
+                    record.ips.push(ip);
+                }
+                
+                if (!record.recentRooms) record.recentRooms = [];
+
             } else {
                 analyticsData[week].push({
                     name: name,
                     visits: 1,
                     firstVisit: connectionTime,
                     lastVisit: connectionTime,
-                    lastIp: ip,
-                    lastSocketId: socketId,
-                    userAgent: userAgent
+                    ips: [ip],
+                    userAgent: userAgent,
+                    recentRooms: []
                 });
             }
             saveData();
         });
+
+        const registerRoom = (name, room) => {
+            if (!name || !room) return;
+            const week = getWeekNumber(new Date());
+            if(!analyticsData[week]) return;
+
+            let record = analyticsData[week].find(r => r.name === name);
+            if (record) {
+                if (!record.recentRooms) record.recentRooms = [];
+                
+                if (record.recentRooms[0] !== room) {
+                    record.recentRooms.unshift(room);
+                    if (record.recentRooms.length > 10) {
+                        record.recentRooms = record.recentRooms.slice(0, 10);
+                    }
+                    saveData();
+                }
+            }
+        };
+
+        socket.on('joinRoom', ({ name, room }) => registerRoom(name, room));
+        socket.on('registerRoomVisit', ({ name, room }) => registerRoom(name, room));
     },
     getRooms: () => []
 };

@@ -380,6 +380,10 @@ window.app = {
     },
 
     selectRoom: (room) => {
+        if (app.myPlayerName) {
+            socket.emit('registerRoomVisit', { name: app.myPlayerName, room: room });
+        }
+
         if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber'].includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }

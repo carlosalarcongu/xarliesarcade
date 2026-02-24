@@ -14,16 +14,5 @@
     "silvia",
     "xarlie"
   ],
-  "records": [
-    {
-      "user": "administrador m",
-      "drink": "jarra",
-      "date": "2026-02-24T08:43:34.443Z"
-    },
-    {
-      "user": "Japa",
-      "drink": "cerveza",
-      "date": "2026-02-24T16:33:51.755Z"
-    }
-  ]
+  "records": []
 }

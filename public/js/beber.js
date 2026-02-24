@@ -1,3 +1,4 @@
+// public/js/beber.js
 window.app = window.app || {};
 
 const DRINK_SCORES = {
@@ -17,10 +18,16 @@ window.app.beber = {
     data: { whitelist: [], records: [] },
     activeFilters: { copa: true, cerveza: true, calimocho: true, vino: true, chupito: true, jarra: true },
 
+    isAdmin: () => {
+        if (!app.myPlayerName) return false;
+        const lower = app.myPlayerName.toLowerCase();
+        return lower === 'administrador m' || lower === 'xarlie';
+    },
+
     init: () => {
         socket.emit('beber_requestData');
         const sel = document.getElementById('beberViewMode');
-        if (sel && app.myPlayerName && app.myPlayerName.toLowerCase() === 'administrador m') {
+        if (sel && app.beber.isAdmin()) {
             if (!sel.querySelector('option[value="registry"]')) {
                 const opt = document.createElement('option');
                 opt.value = 'registry';
@@ -31,8 +38,8 @@ window.app.beber = {
     },
 
     isAllowed: () => {
+        if (app.beber.isAdmin()) return true;
         if (!app.myPlayerName) return false;
-        if (app.myPlayerName.toLowerCase() === 'administrador m') return true;
         return app.beber.data.whitelist.some(n => n.toLowerCase() === app.myPlayerName.toLowerCase());
     },
 
@@ -94,11 +101,15 @@ window.app.beber = {
         const scores = {};
 
         app.beber.data.records.forEach(r => {
-            const isWhiteListed = app.beber.data.whitelist.some(n => n.toLowerCase() === r.user.toLowerCase()) || r.user.toLowerCase() === 'administrador m';
+            const userLower = r.user.toLowerCase();
+            const isWhiteListed = app.beber.data.whitelist.some(n => n.toLowerCase() === userLower) || userLower === 'administrador m' || userLower === 'xarlie';
             if (!isWhiteListed) return;
 
-            const realNameObj = app.beber.data.whitelist.find(n => n.toLowerCase() === r.user.toLowerCase());
-            const displayName = realNameObj ? realNameObj : (r.user.toLowerCase() === 'administrador m' ? 'Admin' : r.user);
+            const realNameObj = app.beber.data.whitelist.find(n => n.toLowerCase() === userLower);
+            let displayName = r.user;
+            if (realNameObj) displayName = realNameObj;
+            else if (userLower === 'administrador m') displayName = 'Admin';
+            else if (userLower === 'xarlie') displayName = 'Xarlie';
 
             if (app.beber.activeFilters[r.drink]) {
                 if (!scores[displayName]) scores[displayName] = 0;
@@ -210,7 +221,7 @@ window.app.beber = {
     },
 
     renderAdmin: (container) => {
-        if (app.myPlayerName.toLowerCase() !== 'administrador m') {
+        if (!app.beber.isAdmin()) {
             container.innerHTML = "<p style='color:#ff4757'>No tienes permisos de administrador.</p>";
             return;
         }
@@ -238,8 +249,7 @@ window.app.beber = {
     },
 
     renderRegistry: (container) => {
-        //administador m o xarlie
-        if (app.myPlayerName.toLowerCase() !== 'administrador m' &&app.myPlayerName.toLowerCase() !== 'xarlie') {
+        if (!app.beber.isAdmin()) {
             container.innerHTML = "<p style='color:#ff4757'>No tienes permisos de administrador.</p>";
             return;
         }
@@ -251,9 +261,10 @@ window.app.beber = {
         records.forEach(r => {
             const d = new Date(r.date);
             const dStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${(d.getMinutes()<10?'0':'')+d.getMinutes()}`;
+            // Las comillas alrededor de '${r.id}' aseguran que no se rompa la llamada a la función si el ID es largo
             html += `
             <div class="card" style="background:#222; border:1px solid #444; padding:5px; position:relative; text-align:center; min-width:0;">
-                <button onclick="app.beber.deleteDrink(${r.id})" style="position:absolute; top:2px; right:2px; background:transparent; color:#ff4757; border:none; font-weight:bold; cursor:pointer; padding:0; font-size:1.2em; line-height:1;">✖</button>
+                <button onclick="app.beber.deleteDrink('${r.id}')" style="position:absolute; top:2px; right:2px; background:transparent; color:#ff4757; border:none; font-weight:bold; cursor:pointer; padding:0; font-size:1.2em; line-height:1;">✖</button>
                 <div style="font-size:2em;">${DRINK_EMOJIS[r.drink] || '🍹'}</div>
                 <div style="font-weight:bold; font-size:0.8em; color:#74b9ff; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.user}</div>
                 <div style="font-size:0.6em; color:#aaa;">${dStr}</div>
@@ -281,7 +292,7 @@ window.app.beber = {
 
     deleteDrink: (id) => {
         if(confirm("¿Eliminar este registro de bebida?")) {
-            socket.emit('beber_deleteDrink', { admin: app.myPlayerName, id });
+            socket.emit('beber_deleteDrink', { admin: app.myPlayerName, id: id });
         }
     }
 };
