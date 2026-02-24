@@ -2,9 +2,15 @@
   "2026-W09": [
     {
       "name": "xarlie",
-      "visits": 6,
+      "visits": 9,
       "firstVisit": "2026-02-24T22:04:50.966Z",
-      "lastVisit": "2026-02-24T22:10:56.586Z"
+      "lastVisit": "2026-02-24T22:23:24.537Z"
+    },
+    {
+      "name": "xarliee",
+      "visits": 1,
+      "firstVisit": "2026-02-24T22:23:13.581Z",
+      "lastVisit": "2026-02-24T22:23:13.581Z"
     }
   ]
 }

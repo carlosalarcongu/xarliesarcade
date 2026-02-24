@@ -238,7 +238,8 @@ window.app.beber = {
     },
 
     renderRegistry: (container) => {
-        if (app.myPlayerName.toLowerCase() !== 'administrador m') {
+        //administador m o xarlie
+        if (app.myPlayerName.toLowerCase() !== 'administrador m' &&app.myPlayerName.toLowerCase() !== 'xarlie') {
             container.innerHTML = "<p style='color:#ff4757'>No tienes permisos de administrador.</p>";
             return;
         }
