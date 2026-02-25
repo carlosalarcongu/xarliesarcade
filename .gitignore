@@ -14,3 +14,8 @@ feedback_log.txt
 mus_database_backup*.json
 ranking_contexto.json
 *.deb
+hacer_backup.js
+dump_project.sh
+suggested_words.json
+url.sh
+urls.sh
