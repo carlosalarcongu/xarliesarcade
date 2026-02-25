@@ -1,3 +1,4 @@
+// public/js/main.js
 const socket = io();
 
 const GAME_RULES = {
@@ -215,7 +216,7 @@ No hay contraseñas.
 const ROOM_EMOJIS = {
     impostor: "🕵️", lobo: "🐺", anecdotas: "📜", elmas: "🏆", tabu: "🚫",
     pinturilloImp: "🎨", cifrasyletras: "🔣", feedback: "💌", orden: "🎌", 
-    consejo: "🦉", fiesta: "🎉", torres: "🗼"
+    consejo: "🦉", fiesta: "🎉", torres: "🗼", darkstories: "📖", beber: "🍻", analytics: "📈"
 };
 
 window.app = {
@@ -225,10 +226,9 @@ window.app = {
     myPlayerId: null,
     myPlayerName: null,
     categoriesCache: {},
-    currentScreenId: 'hubScreen', // NUEVO: Para llevar control interno de la pantalla
+    currentScreenId: 'hubScreen', 
 
     forceFiestaStyles: () => {
-        console.log("🚑 Forzando estilos de Fiesta...");
         const menu = document.getElementById('fiestaMenu');
         if (!menu) return;
 
@@ -323,7 +323,6 @@ window.app = {
         }
     },
 
-    // --- NUEVO: SOPORTE PARA HISTORY API ---
     showScreen: (id, skipHistory = false) => {
         const screens = [
             'hubScreen', 'loginScreen', 'feedbackScreen', 
@@ -338,7 +337,9 @@ window.app = {
             'giveScreen', 'musScreen',
             'contextoScreen', 'consejoScreen',
             'fiestaScreen', 'statsSelectionScreen',
-            'fifaScreen', 'torresLobby', 'torresGame'
+            'fifaScreen', 'torresLobby', 'torresGame',
+            'darkstoriesScreen', 'beberScreen', 'beberStatsScreen',
+            'analyticsScreen'
         ];
         
         screens.forEach(s => {
@@ -351,13 +352,11 @@ window.app = {
         const target = document.getElementById(id);
         if(target) target.classList.remove('hidden');
 
-        // HISTORY API: Guardar estado si es una pantalla nueva
         if (!skipHistory && app.currentScreenId !== id) {
             history.pushState({ screen: id }, '', window.location.href);
         }
         app.currentScreenId = id;
 
-        // Widget Logic
         const widget = document.getElementById('floatingUserWidget');
         const widgetText = document.getElementById('floatingUserText');
         
@@ -382,13 +381,20 @@ window.app = {
     },
 
     selectRoom: (room) => {
-        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa'].includes(room)) {
+        if (app.myPlayerName) {
+            socket.emit('registerRoomVisit', { name: app.myPlayerName, room: room });
+        }
+
+        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber', 'analytics'].includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
             if(room === 'trivial') { if(app.trivial.init) app.trivial.init(); return; }
             if(room === 'contexto') { app.showScreen('contextoScreen'); if(app.contexto.init) app.contexto.init(); return; }
             if(room === 'feedback') { if(app.feedback.populateCats) app.feedback.populateCats(); return app.showScreen('feedbackScreen'); }
+            if(room === 'darkstories') { app.showScreen('darkstoriesScreen'); if(app.darkstories.init) app.darkstories.init(); return; }
+            if(room === 'beber') { app.showScreen('beberScreen'); if(app.beber.init) app.beber.init(); return; }
+            if(room === 'analytics') { app.showScreen('analyticsScreen'); if(app.analytics.init) app.analytics.init(); return; }
             
             if (room === 'fiesta') {
                  const name = app.myPlayerName || "Fiestero";
@@ -409,7 +415,6 @@ window.app = {
         const savedRoomId = localStorage.getItem(room + '_roomId');
         
         if (savedId && savedRoomId) {
-            console.log("Reconectando ID:", savedId);
             app.myPlayerId = savedId;
             app.currentRoom = room;
             app.currentRoomId = savedRoomId;
@@ -468,12 +473,31 @@ window.app = {
 
     saveNameAndContinue: () => {
         const nameInput = document.getElementById('username');
-        let name = nameInput.value.trim();
+        let name = nameInput.value.trim().toLowerCase();
         
         if (!name) return alert('¡Ponte un nombre!');
+
+        if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) {
+            return alert('El nombre solo puede contener letras minúsculas y números (sin espacios).');
+        }
+
+        const protectedNames = ['musero', 'administrador m', 'xarlie'];
+        if (protectedNames.includes(name)) {
+            const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
+            
+            // Lógica de contraseñas específicas
+            const expectedPwd = (name === 'musero') ? "ordago" : "arcArcade";
+            
+            if (pwd !== expectedPwd) {
+                alert("Contraseña incorrecta.");
+                return;
+            }
+        }
         
         localStorage.setItem('global_username', name);
         app.myPlayerName = name; 
+        
+        socket.emit('registerVisit', name);
         
         app.currentRoom = null;
         app.pendingRoomId = null;
@@ -488,16 +512,35 @@ window.app = {
         let name = "";
 
         if (nameInput && nameInput.value.trim().length > 0) {
-            name = nameInput.value.trim();
+            name = nameInput.value.trim().toLowerCase();
         } 
         else if (app.myPlayerName) {
-            name = app.myPlayerName;
+            name = app.myPlayerName.toLowerCase();
         }
 
         if (!name) return alert('¡Ponte un nombre!');
 
+        if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) {
+            return alert('El nombre solo puede contener letras minúsculas y números (sin espacios).');
+        }
+
+        const protectedNames = ['musero', 'administrador m', 'xarlie'];
+        if (protectedNames.includes(name) && app.myPlayerName !== name) {
+            const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
+            
+            // Lógica de contraseñas específicas
+            const expectedPwd = (name === 'musero') ? "ordago" : "arcArcade";
+            
+            if (pwd !== expectedPwd) {
+                alert("Contraseña incorrecta.");
+                return;
+            }
+        }
+
         localStorage.setItem('global_username', name);
         app.myPlayerName = name; 
+
+        socket.emit('registerVisit', name);
 
         if (app.currentRoom) {
             socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId });
@@ -525,7 +568,6 @@ window.app = {
         app.showScreen('statsSelectionScreen');
     },
 
-    // --- NUEVO: MODIFICADO PARA HISTORY API ---
     goBackToHub: (forceLogout = false, skipHistory = false) => {
         if (app.mus && app.mus.resetUI) app.mus.resetUI();
 
@@ -563,38 +605,44 @@ window.app = {
     showDevMessage: () => {
         alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
     },
+
+    showLegalModal: () => {
+        document.getElementById('legalModal').classList.remove('hidden');
+    },
+
+    closeLegalModal: () => {
+        document.getElementById('legalModal').classList.add('hidden');
+    },
+
+    acceptLegal: () => {
+        localStorage.setItem('legal_accepted', 'true');
+        document.getElementById('legalBanner').classList.add('hidden');
+    },
     
     impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}, contexto: {}, consejo: {},
-    fiesta: {}, torres: {}
+    fiesta: {}, torres: {}, darkstories: {}, beber: {}, analytics: {}
 };
 
-// --- GESTIÓN DEL BOTÓN ATRÁS (POPSTATE) ---
 window.addEventListener('popstate', (event) => {
-    // 1. Si hay un modal abierto, lo cerramos en lugar de navegar hacia atrás
     const openModals = document.querySelectorAll('.modal-overlay:not(.hidden)');
     if (openModals.length > 0) {
         openModals.forEach(m => m.classList.add('hidden'));
-        // Recuperar el estado actual para no estropear el historial
         history.pushState({ screen: app.currentScreenId }, '', window.location.href);
         return;
     }
 
     const targetScreen = event.state ? event.state.screen : 'hubScreen';
 
-    // 2. Si el usuario está dentro de una sala y va a salir a otra pantalla
     if (app.currentRoom && targetScreen !== app.currentScreenId) {
         if (confirm("¿Seguro que quieres salir de la sala actual?")) {
-            app.goBackToHub(true, true); // true = salir de sala, true = no empujar al historial
+            app.goBackToHub(true, true); 
         } else {
-            // Si cancela, devolvemos su posición al historial actual para evitar desincronización
             history.pushState({ screen: app.currentScreenId }, '', window.location.href);
         }
     } else {
-        // 3. Navegación normal (ej: de login a hub)
         app.showScreen(targetScreen, true);
     }
 });
-
 
 socket.on('hubRoomsUpdate', (rooms) => {
     const hubContainer = document.getElementById('activeRoomsList');
@@ -649,7 +697,6 @@ app.selectActiveRoom = (game, roomId) => {
 };
 
 socket.on('joinedSuccess', (data) => {
-    console.log("Unido a sala:", data.roomId);
     localStorage.setItem(data.room + '_playerId', data.playerId);
     localStorage.setItem(data.room + '_roomId', data.roomId);
     
@@ -687,7 +734,6 @@ socket.on('joinedSuccess', (data) => {
 socket.on('joinError', (msg) => { alert("⛔ " + msg); });
 
 socket.on('sessionExpired', () => {
-    console.warn("Sesión expirada.");
     if (app.currentRoom) {
         localStorage.removeItem(app.currentRoom + '_playerId');
         localStorage.removeItem(app.currentRoom + '_roomId');
@@ -702,7 +748,11 @@ socket.on('sessionExpired', () => {
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
 window.onload = function() {
-    // --- ESTABLECER EL PUNTO DE PARTIDA DEL HISTORIAL ---
+    if (!localStorage.getItem('legal_accepted')) {
+        const banner = document.getElementById('legalBanner');
+        if (banner) banner.classList.remove('hidden');
+    }
+
     history.replaceState({ screen: 'hubScreen' }, '', window.location.href);
 
     app.initFloatingWidget();
@@ -710,7 +760,20 @@ window.onload = function() {
     
     const savedGlobalName = localStorage.getItem('global_username');
     if (savedGlobalName) {
-        app.myPlayerName = savedGlobalName; 
+        let correctedName = savedGlobalName.toLowerCase();
+        
+        if (correctedName !== 'administrador m') {
+            correctedName = correctedName.replace(/[^a-z0-9]/g, '');
+        }
+
+        if (correctedName.length > 0) {
+            localStorage.setItem('global_username', correctedName);
+            app.myPlayerName = correctedName; 
+            socket.emit('registerVisit', correctedName);
+        } else {
+            localStorage.removeItem('global_username');
+            app.myPlayerName = null;
+        }
     }
 
     const nameInput = document.getElementById('username');
