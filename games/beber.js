@@ -1,42 +1,14 @@
-// games/beber.js
-const fs = require('fs');
 const path = require('path');
+const Database = require('better-sqlite3');
 
-const DB_FILE = path.join(__dirname, '../beber_database.json');
+// Conectamos con la nueva base de datos
+const db = new Database(path.join(__dirname, '../arcade.db'));
 
-let beberData = {
-    whitelist: [],
-    records: []
-};
-
-const loadData = () => {
-    if (fs.existsSync(DB_FILE)) {
-        try {
-            const raw = fs.readFileSync(DB_FILE, 'utf8');
-            if (raw) beberData = JSON.parse(raw);
-            
-            let changed = false;
-            beberData.records.forEach(r => {
-                if (!r.id) {
-                    r.id = Date.now() + Math.floor(Math.random() * 100000);
-                    changed = true;
-                }
-            });
-            if (changed) saveData();
-            
-        } catch (e) {}
-    } else {
-        saveData();
-    }
-};
-
-const saveData = () => {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(beberData, null, 2));
-    } catch (e) {}
-};
-
-loadData();
+// Por seguridad, aseguramos que las tablas existan
+db.exec(`
+  CREATE TABLE IF NOT EXISTS beber_whitelist (name TEXT PRIMARY KEY);
+  CREATE TABLE IF NOT EXISTS beber_records (id TEXT PRIMARY KEY, user TEXT, drink TEXT, date TEXT);
+`);
 
 const isAdmin = (name) => {
     if (!name) return false;
@@ -44,46 +16,58 @@ const isAdmin = (name) => {
     return lower === 'administrador m' || lower === 'xarlie';
 };
 
+// Función auxiliar: lee la base de datos SQL y la empaqueta como la esperaba tu frontend
+const getFullData = () => {
+    const whitelist = db.prepare('SELECT name FROM beber_whitelist').all().map(row => row.name);
+    const records = db.prepare('SELECT * FROM beber_records').all();
+    return { whitelist, records };
+};
+
 module.exports = {
     init: (io) => {},
     handleSocket: (io, socket) => {
+        
         socket.on('beber_requestData', () => {
-            socket.emit('beber_data', beberData);
+            socket.emit('beber_data', getFullData());
         });
 
         socket.on('beber_addDrink', (data) => {
-            beberData.records.push({
-                id: Date.now() + Math.floor(Math.random() * 100000),
-                user: data.user,
-                drink: data.drink,
-                date: new Date().toISOString()
-            });
-            saveData();
-            io.emit('beber_data', beberData);
+            const id = String(Date.now() + Math.floor(Math.random() * 100000));
+            const date = new Date().toISOString();
+            
+            // Inserción profesional SQL
+            const stmt = db.prepare('INSERT INTO beber_records (id, user, drink, date) VALUES (?, ?, ?, ?)');
+            stmt.run(id, data.user, data.drink, date);
+            
+            io.emit('beber_data', getFullData());
         });
 
         socket.on('beber_deleteDrink', (data) => {
             if (!isAdmin(data.admin)) return;
-            beberData.records = beberData.records.filter(r => String(r.id) !== String(data.id));
-            saveData();
-            io.emit('beber_data', beberData);
+            
+            const stmt = db.prepare('DELETE FROM beber_records WHERE id = ?');
+            stmt.run(String(data.id));
+            
+            io.emit('beber_data', getFullData());
         });
 
         socket.on('beber_addWhitelist', (data) => {
             if (!isAdmin(data.admin)) return;
             const name = data.name.trim();
-            if (name && !beberData.whitelist.map(n=>n.toLowerCase()).includes(name.toLowerCase())) {
-                beberData.whitelist.push(name);
-                saveData();
-                io.emit('beber_data', beberData);
+            if (name) {
+                const stmt = db.prepare('INSERT OR IGNORE INTO beber_whitelist (name) VALUES (?)');
+                stmt.run(name);
+                io.emit('beber_data', getFullData());
             }
         });
 
         socket.on('beber_removeWhitelist', (data) => {
             if (!isAdmin(data.admin)) return;
-            beberData.whitelist = beberData.whitelist.filter(n => n.toLowerCase() !== data.name.toLowerCase());
-            saveData();
-            io.emit('beber_data', beberData);
+            
+            const stmt = db.prepare('DELETE FROM beber_whitelist WHERE LOWER(name) = LOWER(?)');
+            stmt.run(data.name);
+            
+            io.emit('beber_data', getFullData());
         });
     },
     getRooms: () => [] 
