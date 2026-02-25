@@ -605,6 +605,19 @@ window.app = {
     showDevMessage: () => {
         alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
     },
+
+    showLegalModal: () => {
+        document.getElementById('legalModal').classList.remove('hidden');
+    },
+
+    closeLegalModal: () => {
+        document.getElementById('legalModal').classList.add('hidden');
+    },
+
+    acceptLegal: () => {
+        localStorage.setItem('legal_accepted', 'true');
+        document.getElementById('legalBanner').classList.add('hidden');
+    },
     
     impostor: {}, lobo: {}, anecdotas: {}, elmas: {}, tabu: {}, feedback: {}, pinturilloImp: {}, mus: {}, cyl: {}, orden: {}, contexto: {}, consejo: {},
     fiesta: {}, torres: {}, darkstories: {}, beber: {}, analytics: {}
@@ -735,6 +748,11 @@ socket.on('sessionExpired', () => {
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
 window.onload = function() {
+    if (!localStorage.getItem('legal_accepted')) {
+        const banner = document.getElementById('legalBanner');
+        if (banner) banner.classList.remove('hidden');
+    }
+
     history.replaceState({ screen: 'hubScreen' }, '', window.location.href);
 
     app.initFloatingWidget();

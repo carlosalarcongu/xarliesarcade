@@ -156,7 +156,11 @@
                 🤠 Ver el proyecto en GitHub 🤠
             </a>
         </div>
-  
+
+        <div style="text-align:center; margin-top:40px; margin-bottom:20px;">
+            <a href="javascript:void(0)" onclick="app.showLegalModal()" style="color:#666; font-size:0.7em; text-decoration:underline;">Política de Privacidad y Términos de Uso</a>
+        </div>
+    
     </div>
 
     <div id="loginScreen" class="hidden">
@@ -1668,6 +1672,38 @@
         </div>
 
         <div id="analyticsDataContainer" style="width:100%; text-align:center;"></div>
+    </div>
+
+    <div id="legalBanner" class="hidden" style="position:fixed; bottom:0; left:0; width:100%; background:#2f3542; color:#fff; padding:15px; text-align:center; box-shadow:0 -2px 10px rgba(0,0,0,0.5); z-index:9999; font-size:0.9em; border-top: 3px solid #3498db;">
+        <p style="margin:0 0 10px 0;">
+            ⚠️ Usamos almacenamiento local para mantener tu sesión y registramos tu IP por seguridad. <br>
+            Al continuar, confirmas que aceptas nuestra <a href="javascript:void(0)" onclick="app.showLegalModal()" style="color:#74b9ff; text-decoration:underline;">Política de Privacidad y Términos de Uso</a>.
+        </p>
+        <button onclick="app.acceptLegal()" style="background:#2ed573; color:#fff; border:none; padding:8px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">Entendido y Acepto</button>
+    </div>
+
+    <div id="legalModal" class="modal-overlay hidden" style="z-index:10000; display:flex; justify-content:center; align-items:center;">
+        <div class="card" style="background:#222; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; text-align:left; padding:20px; border:1px solid #444; position:relative;">
+            <button onclick="app.closeLegalModal()" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#ff4757; font-size:1.5em; cursor:pointer;">✖</button>
+            
+            <h2 style="color:#f1c40f; margin-top:0;">📜 Textos Legales</h2>
+            
+            <h3 style="color:#74b9ff; border-bottom:1px solid #444; padding-bottom:5px;">Aviso Legal</h3>
+            <p style="font-size:0.85em; color:#ccc;">Este sitio web es un proyecto personal sin fines de lucro, destinado al entretenimiento privado. No se realizan transacciones económicas.</p>
+            
+            <h3 style="color:#74b9ff; border-bottom:1px solid #444; padding-bottom:5px;">Política de Privacidad</h3>
+            <p style="font-size:0.85em; color:#ccc;">
+                <strong>1. Datos recopilados:</strong> Al introducir un nombre, el sistema almacena tu IP, el identificador de tu dispositivo (User-Agent), tu historial de salas y la hora de conexión. Tu nombre se guarda en tu dispositivo mediante <i>localStorage</i>.<br>
+                <strong>2. Finalidad:</strong> Los datos se usan exclusivamente para mantener la sesión, generar estadísticas internas y garantizar la seguridad bloqueando comportamientos abusivos.<br>
+                <strong>3. Derechos:</strong> Si deseas que tus registros sean eliminados, comunícaselo al administrador ("administrador m").
+            </p>
+
+            <h3 style="color:#74b9ff; border-bottom:1px solid #444; padding-bottom:5px;">Términos de Uso y Responsabilidad</h3>
+            <p style="font-size:0.85em; color:#ccc;">
+                <strong>1. Módulo "Beber":</strong> Esta función es estrictamente lúdica y su uso está reservado a <strong>mayores de 18 años</strong>. El creador de la web no fomenta el consumo irresponsable de alcohol y queda eximido de cualquier responsabilidad derivada de las acciones o problemas de salud que los usuarios puedan sufrir.<br>
+                <strong>2. Propiedad Intelectual:</strong> Los nombres de ciertos juegos alojados son marcas registradas de sus propietarios. Este sitio es un proyecto <i>fan-made</i>, gratuito y no tiene afiliación con dichas empresas.
+            </p>
+        </div>
     </div>
 
 
