@@ -11,3 +11,6 @@ feedback_log.txt
 *.db
 *.sqlite
 *.sqlite3
+mus_database_backup*.json
+ranking_contexto.json
+*.deb
