@@ -482,26 +482,31 @@ window.app = {
         }
 
         const protectedNames = ['musero', 'administrador m', 'xarlie'];
+        
+        const finalizeLogin = () => {
+            localStorage.setItem('global_username', name);
+            app.myPlayerName = name; 
+            socket.emit('registerVisit', name);
+            app.currentRoom = null;
+            app.pendingRoomId = null;
+            app.showScreen('hubScreen'); 
+        };
+
         if (protectedNames.includes(name)) {
             const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            
-            // Lógica de contraseñas específicas
-            const expectedPwd = (name === 'musero') ? "ordago" : "arcArcade";
-            
-            if (pwd !== expectedPwd) {
-                alert("Contraseña incorrecta.");
-                return;
-            }
+            if (!pwd) return; // Si cancela, no hacemos nada
+
+            // Preguntamos al servidor de forma invisible
+            socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
+                if (!response.success) {
+                    alert("Contraseña incorrecta.");
+                    return;
+                }
+                finalizeLogin();
+            });
+        } else {
+            finalizeLogin();
         }
-        
-        localStorage.setItem('global_username', name);
-        app.myPlayerName = name; 
-        
-        socket.emit('registerVisit', name);
-        
-        app.currentRoom = null;
-        app.pendingRoomId = null;
-        app.showScreen('hubScreen'); 
     },
 
     joinGame: (roomIdOverride = null) => {
@@ -525,27 +530,33 @@ window.app = {
         }
 
         const protectedNames = ['musero', 'administrador m', 'xarlie'];
+
+        const finalizeJoin = () => {
+            localStorage.setItem('global_username', name);
+            app.myPlayerName = name; 
+            socket.emit('registerVisit', name);
+
+            if (app.currentRoom) {
+                socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId });
+            } else {
+                app.showScreen('hubScreen');
+            }
+        };
+
         if (protectedNames.includes(name) && app.myPlayerName !== name) {
             const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            
-            // Lógica de contraseñas específicas
-            const expectedPwd = (name === 'musero') ? "ordago" : "arcArcade";
-            
-            if (pwd !== expectedPwd) {
-                alert("Contraseña incorrecta.");
-                return;
-            }
-        }
+            if (!pwd) return;
 
-        localStorage.setItem('global_username', name);
-        app.myPlayerName = name; 
-
-        socket.emit('registerVisit', name);
-
-        if (app.currentRoom) {
-            socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId });
+            // Preguntamos al servidor de forma invisible
+            socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
+                if (!response.success) {
+                    alert("Contraseña incorrecta.");
+                    return;
+                }
+                finalizeJoin();
+            });
         } else {
-            app.showScreen('hubScreen');
+            finalizeJoin();
         }
     },
     
