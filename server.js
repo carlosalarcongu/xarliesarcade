@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -38,6 +40,22 @@ Object.keys(gamesModules).forEach(key => {
 });
 
 io.on('connection', (socket) => {
+
+    // --- VERIFICACIÓN DE CONTRASEÑAS SEGURA ---
+        socket.on('verifyPassword', (data, callback) => {
+            const { username, password } = data;
+            let isValid = false;
+            
+            if (username === 'musero' && password === process.env.MUSERO_PASSWORD) {
+                isValid = true;
+            } else if (['administrador m', 'xarlie'].includes(username) && password === process.env.ADMIN_PASSWORD) {
+                isValid = true;
+            }
+            
+            // Devuelve la respuesta al cliente sin enviar nunca la contraseña real
+            callback({ success: isValid });
+        });
+        
     Object.keys(gamesModules).forEach(key => {
         const module = gamesModules[key];
         if (module && typeof module.handleSocket === 'function') {
