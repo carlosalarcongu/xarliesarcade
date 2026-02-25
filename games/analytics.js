@@ -82,6 +82,24 @@ module.exports = {
                 socket.emit('analytics_data', getFullAnalytics());
             }
         });
+
+        // --- BORRAR REGISTROS DE ANALYTICS ---
+        socket.on('analytics_deleteRecord', (data) => {
+            if (!data || !data.admin) return;
+            const adminLower = data.admin.toLowerCase();
+            
+            if (['administrador m', 'xarlie'].includes(adminLower)) {
+                if (data.type === 'last') {
+                    // Borra solo el registro más reciente de ese usuario específico
+                    db.prepare('DELETE FROM analytics WHERE name = ? AND week = (SELECT MAX(week) FROM analytics WHERE name = ?)').run(data.name, data.name);
+                } else if (data.type === 'all') {
+                    // Borra absolutamente todo el historial de ese usuario
+                    db.prepare('DELETE FROM analytics WHERE name = ?').run(data.name);
+                }
+                
+                socket.emit('analytics_data', getFullAnalytics());
+            }
+        });
     },
     getRooms: () => []
 };

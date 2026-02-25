@@ -559,6 +559,20 @@ window.app = {
             finalizeJoin();
         }
     },
+
+    deleteAnalyticsRecord: (name, type) => {
+        const msg = type === 'last' 
+            ? `¿Seguro que quieres borrar el ÚLTIMO acceso registrado de "${name}"?`
+            : `🚨 ATENCIÓN: ¿Seguro que quieres borrar TODOS los registros históricos de "${name}"? Esto no se puede deshacer.`;
+        
+        if (confirm(msg)) {
+            socket.emit('analytics_deleteRecord', {
+                admin: app.myPlayerName,
+                name: name,
+                type: type
+            });
+        }
+    },
     
     changeName: () => {
         if (app.currentRoom) {
