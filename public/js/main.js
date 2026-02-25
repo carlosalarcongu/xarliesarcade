@@ -367,8 +367,14 @@ window.app = {
             const name = app.myPlayerName || "Sin Nombre";
             const roomName = app.currentRoom ? app.currentRoom.toUpperCase() : "HUB";
             const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
-            const emoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
-            widgetText.innerHTML = `<span style="opacity:0.7">${emoji} ${roomName}${roomId}</span><br><strong>👤 ${name}</strong>`;
+            
+            // --- CAMBIO AQUÍ: Emoji condicional para el Administrador ---
+            const lowerName = name.toLowerCase();
+            const userEmoji = (lowerName === 'administrador m' || lowerName === 'xarlie') ? "👮" : "👤";
+            // -------------------------------------------------------------
+
+            const roomEmoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
+            widgetText.innerHTML = `<span style="opacity:0.7">${roomEmoji} ${roomName}${roomId}</span><br><strong>${userEmoji} ${name}</strong>`;
         }
     },
 
@@ -557,6 +563,20 @@ window.app = {
             });
         } else {
             finalizeJoin();
+        }
+    },
+
+    deleteAnalyticsRecord: (name, type) => {
+        const msg = type === 'last' 
+            ? `¿Seguro que quieres borrar el ÚLTIMO acceso registrado de "${name}"?`
+            : `🚨 ATENCIÓN: ¿Seguro que quieres borrar TODOS los registros históricos de "${name}"? Esto no se puede deshacer.`;
+        
+        if (confirm(msg)) {
+            socket.emit('analytics_deleteRecord', {
+                admin: app.myPlayerName,
+                name: name,
+                type: type
+            });
         }
     },
     

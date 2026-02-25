@@ -63,6 +63,15 @@ window.app.analytics = {
                     <div><span style="color:#aaa;">Salas recientes:</span><br><span style="color:#f1c40f">${rooms}</span></div>
                     <div style="font-size:0.7em; color:#777; margin-top:5px; word-break: break-all;">${user.userAgent || ''}</div>
                 </div>
+                
+                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #444; display: flex; gap: 10px;">
+                    <button onclick="app.deleteAnalyticsRecord('${user.name}', 'last')" style="flex: 1; background:#e1b12c; color:#fff; border:none; padding:8px; border-radius:5px; cursor:pointer; font-size:0.85em; font-weight:bold;">
+                        🗑️ Borrar último
+                    </button>
+                    <button onclick="app.deleteAnalyticsRecord('${user.name}', 'all')" style="flex: 1; background:#e84118; color:#fff; border:none; padding:8px; border-radius:5px; cursor:pointer; font-size:0.85em; font-weight:bold;">
+                        🚨 Borrar todos
+                    </button>
+                </div>
             </div>`;
         });
 
