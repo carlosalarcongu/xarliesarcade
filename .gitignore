@@ -4,3 +4,7 @@ node_modules/
 logs/
 *.log
 estado_proyecto.txt
+node_modules/
+*_database.json
+feedback_log.txt
+.env
