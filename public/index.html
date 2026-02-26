@@ -6,6 +6,7 @@
     <title>Xarlie's Arcade</title>
     <link rel="stylesheet" href="css/style.css?v=7.1">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 <body>
 
@@ -569,8 +570,19 @@
                 <option value="general">💬 Comentario</option>
             </select>
             <div id="fbWordForm">
-                <input id="fbWord" type="text" placeholder="Palabra sugerida..." style="margin-bottom:5px;">
-                <input id="fbHint" type="text" placeholder="Pista (opcional)...">
+                <label style="color:#74b9ff; font-weight:bold; font-size: 0.9em;">Categoría existente:</label>
+                <select id="fbCategory" style="width:100%; margin-bottom:10px; padding:8px; border-radius:5px; background:#fff; color:#000;">
+                    <option value="">-- Cargando categorías... --</option>
+                </select>
+
+                <label style="color:#74b9ff; font-weight:bold; font-size: 0.9em;">O sugiere una nueva categoría:</label>
+                <input type="text" id="fbNewCategory" placeholder="Ej: Videojuegos retro" style="width:100%; margin-bottom:15px; padding:8px; border-radius:5px; background:#fff; color:#000;">
+
+                <label style="color:#2ed573; font-weight:bold; font-size: 0.9em;">Palabra sugerida:</label>
+                <input type="text" id="fbWord" placeholder="Ej: Pac-Man" style="width:100%; margin-bottom:10px; padding:8px; border-radius:5px; background:#fff; color:#000;">
+
+                <label style="color:#eccc68; font-weight:bold; font-size: 0.9em;">Pista (opcional):</label>
+                <input type="text" id="fbHint" placeholder="Ej: Come fantasmas" style="width:100%; margin-bottom:15px; padding:8px; border-radius:5px; background:#fff; color:#000;">
             </div>
             <div id="fbStandardForm" class="hidden">
                 <textarea id="fbContent" rows="3" style="width:100%; border-radius:5px; padding:5px;" placeholder="Escribe aquí..."></textarea>
@@ -580,6 +592,11 @@
         <button onclick="app.feedback.toggleReadMode()" class="secondary">📖 Leer Feedback</button>
         <div id="feedbackReadSection" class="hidden">
             <ul id="feedbackList" style="margin-top:10px; max-height:300px; overflow-y:auto; background:#222; padding:10px; border-radius:5px;"></ul>
+        </div>
+
+        <div id="feedbackReadSection" class="hidden" style="margin-top:20px;">
+            <h3 style="color:#fff;">Aportes de la Comunidad</h3>
+            <div id="feedbackList"></div>
         </div>
     </div>
 
@@ -1703,6 +1720,20 @@
                 <strong>1. Módulo "Beber":</strong> Esta función es estrictamente lúdica y su uso está reservado a <strong>mayores de 18 años</strong>. El creador de la web no fomenta el consumo irresponsable de alcohol y queda eximido de cualquier responsabilidad derivada de las acciones o problemas de salud que los usuarios puedan sufrir.<br>
                 <strong>2. Propiedad Intelectual:</strong> Los nombres de ciertos juegos alojados son marcas registradas de sus propietarios. Este sitio es un proyecto <i>fan-made</i>, gratuito y no tiene afiliación con dichas empresas.
             </p>
+        </div>
+    </div>
+
+    <div id="passwordModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; justify-content:center; align-items:center;">
+        <div style="background:#2f3542; padding:20px; border-radius:10px; text-align:center; width:90%; max-width:300px; border: 2px solid #f1c40f;">
+            <h3 style="color:#f1c40f; margin-bottom:15px;">👑 Cuenta Protegida</h3>
+            <p style="color:#aaa; font-size:0.9em; margin-bottom:15px;">Introduce la contraseña para verificar tu identidad:</p>
+            
+            <input type="password" id="adminPasswordInput" placeholder="********" style="width:100%; padding:10px; margin-bottom:15px; border-radius:5px; border:none; text-align:center; font-size:1.2em;" onkeydown="if(event.key === 'Enter') app.submitPassword()">
+            
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="app.cancelPassword()" style="background:#e74c3c; color:white; padding:10px; border:none; border-radius:5px; width:50%; font-weight:bold; cursor:pointer;">Cancelar</button>
+                <button onclick="app.submitPassword()" style="background:#2ed573; color:white; padding:10px; border:none; border-radius:5px; width:50%; font-weight:bold; cursor:pointer;">Entrar</button>
+            </div>
         </div>
     </div>
 

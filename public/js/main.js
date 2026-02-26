@@ -228,6 +228,46 @@ window.app = {
     categoriesCache: {},
     currentScreenId: 'hubScreen', 
 
+    // --- NUEVAS FUNCIONES PARA EL MODAL DE CONTRASEÑA ---
+    pendingAuthCallback: null,
+    pendingAuthName: null,
+
+    showPasswordModal: (name, callback) => {
+        app.pendingAuthName = name;
+        app.pendingAuthCallback = callback;
+        document.getElementById('passwordModal').classList.remove('hidden');
+        const input = document.getElementById('adminPasswordInput');
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 100);
+        }
+    },
+
+    cancelPassword: () => {
+        document.getElementById('passwordModal').classList.add('hidden');
+        app.pendingAuthCallback = null;
+        app.pendingAuthName = null;
+    },
+
+    submitPassword: () => {
+        const pwd = document.getElementById('adminPasswordInput').value;
+        const name = app.pendingAuthName;
+        const callback = app.pendingAuthCallback;
+        
+        if (!pwd) return alert("Introduce la contraseña.");
+
+        socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
+            if (!response.success) {
+                alert("Contraseña incorrecta.");
+                document.getElementById('adminPasswordInput').value = ''; // Borra lo escrito si falla
+                return;
+            }
+            document.getElementById('passwordModal').classList.add('hidden');
+            if (callback) callback();
+        });
+    },
+    // ----------------------------------------------------
+
     forceFiestaStyles: () => {
         const menu = document.getElementById('fiestaMenu');
         if (!menu) return;
@@ -368,14 +408,13 @@ window.app = {
             const roomName = app.currentRoom ? app.currentRoom.toUpperCase() : "HUB";
             const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
             
-            // --- CAMBIO AQUÍ: Emoji condicional para el Administrador ---
             const lowerName = name.toLowerCase();
             const userEmoji = (lowerName === 'administrador m' || lowerName === 'xarlie') ? "👮" : "👤";
-            // -------------------------------------------------------------
 
             const roomEmoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
             widgetText.innerHTML = `<span style="opacity:0.7">${roomEmoji} ${roomName}${roomId}</span><br><strong>${userEmoji} ${name}</strong>`;
         }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
     findActiveSession: () => {
@@ -499,17 +538,7 @@ window.app = {
         };
 
         if (protectedNames.includes(name)) {
-            const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            if (!pwd) return; // Si cancela, no hacemos nada
-
-            // Preguntamos al servidor de forma invisible
-            socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
-                if (!response.success) {
-                    alert("Contraseña incorrecta.");
-                    return;
-                }
-                finalizeLogin();
-            });
+            app.showPasswordModal(name, finalizeLogin);
         } else {
             finalizeLogin();
         }
@@ -550,17 +579,7 @@ window.app = {
         };
 
         if (protectedNames.includes(name) && app.myPlayerName !== name) {
-            const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            if (!pwd) return;
-
-            // Preguntamos al servidor de forma invisible
-            socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
-                if (!response.success) {
-                    alert("Contraseña incorrecta.");
-                    return;
-                }
-                finalizeJoin();
-            });
+            app.showPasswordModal(name, finalizeJoin);
         } else {
             finalizeJoin();
         }

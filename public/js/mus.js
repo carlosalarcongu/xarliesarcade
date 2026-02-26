@@ -3,6 +3,11 @@ app.mus = {
     chartInstance: null,
     currentRoom: "Entre Nosotros (Las monjas)", 
     
+    // Estados nuevos para el modo Día a Día y la selección de jugador
+    dayByDayActive: false,
+    dayByDayLimit: 0,
+    rachasPlayerSelected: "",
+    
     emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷','🕸','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦚','🦜','🦢','🦩','🕊','🐇','🦝','🦨','🦡','🦦','🦫','🐁','🐀','🐿','🦔','🐉','🐲'],
 
     init: () => {
@@ -80,6 +85,7 @@ app.mus = {
     changeRoom: () => {
         const sel = document.getElementById('musRoomSelect');
         app.mus.currentRoom = sel.value;
+        app.mus.dayByDayActive = false; // Resetear el día a día al cambiar de sala
         app.mus.changeView(); 
     },
 
@@ -250,227 +256,22 @@ app.mus = {
         }
     },
 
-    renderAdminPanel: (container) => {
-        if (app.myPlayerName.toLowerCase() !== 'administrador m') return;
-        
-        let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
-        
-        html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
-        html += `<ul style="list-style:none; padding:0; text-align:left; max-height: 250px; overflow-y: auto;">`;
-        app.mus.data.players.forEach(p => {
-            html += `<li style="margin-bottom:5px; background:#222; padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:#fff; font-weight:bold;">${p}</span>
-                <div style="display:flex; gap:5px;">
-                    <button onclick="app.mus.adminRenamePlayer('${p}')" style="background:#3498db; padding:4px 8px; font-size:0.8em; width:auto;">✏️ Modificar</button>
-                    <button onclick="app.mus.adminDeletePlayer('${p}')" style="background:#e74c3c; padding:4px 8px; font-size:0.8em; width:auto;">🗑️ Eliminar</button>
-                </div>
-            </li>`;
-        });
-        html += `</ul>`;
-
-        html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; margin-top:20px; text-align:left;">📝 Partidas (Sala: ${app.mus.currentRoom})</h4>`;
-        const matches = app.mus.getRoomMatches().sort((a,b) => b.id - a.id);
-        
-        if (matches.length === 0) {
-            html += `<p style="text-align:left;">No hay partidas registradas en esta sala.</p>`;
-        } else {
-            html += `<div style="display:flex; flex-direction:column; gap:10px; max-height: 500px; overflow-y: auto;">`;
-            matches.forEach(m => {
-                const d = new Date(m.date);
-                const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()<10?'0':''}${d.getMinutes()}`;
-                
-                html += `<div style="background:#222; padding:10px; border-radius:5px; text-align:left; border-left:3px solid #f1c40f;">
-                    <div style="font-size:0.8em; color:#aaa; margin-bottom:5px; display:flex; justify-content:space-between;">
-                        <span>🗓️ ${dateStr}</span>
-                        <span>ID: ${m.id}</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="color:#fff; font-size:0.9em; flex:1;">
-                            <span style="color:#74b9ff">${m.p1} y ${m.p2}</span> (<span style="color:#fff; font-weight:bold">${m.s1}</span>)<br>
-                            <span style="color:#aaa; font-size:0.8em">VS</span><br>
-                            <span style="color:#ff7675">${m.p3} y ${m.p4}</span> (<span style="color:#fff; font-weight:bold">${m.s2}</span>)
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
-                            <button onclick="app.mus.adminEditMatchPlayers(${m.id})" style="background:#9b59b6; padding:4px 8px; font-size:0.8em; width:auto;">👥 Jugadores</button>
-                            <button onclick="app.mus.adminEditMatchScore(${m.id})" style="background:#e67e22; padding:4px 8px; font-size:0.8em; width:auto;">🔢 Resultado</button>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            html += `</div>`;
-        }
-        
-        container.innerHTML = html;
+    // Controles para el modo Día a Día
+    toggleDayByDay: (active, max) => {
+        app.mus.dayByDayActive = active;
+        if (active) app.mus.dayByDayLimit = max;
+        app.mus.changeView();
     },
 
-    renderRanking: (container, mode) => {
-        const matches = app.mus.getFilteredMatches();
-        const stats = {}; 
-        
-        const add = (k, myS, oppS) => {
-            if(!stats[k]) stats[k] = {rWon:0, rLost:0, pPlayed:0};
-            stats[k].pPlayed++;
-            stats[k].rWon += myS;
-            stats[k].rLost += oppS;
-        };
-
-        if (mode === 'ranking_pair') {
-             matches.forEach(m => {
-                add([m.p1, m.p2].sort().join(' y '), m.s1, m.s2);
-                add([m.p3, m.p4].sort().join(' y '), m.s2, m.s1);
-            });
-        } else {
-            matches.forEach(m => {
-                [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
-                    const pTeam = (idx < 2) ? 1 : 2;
-                    add(p, pTeam === 1 ? m.s1 : m.s2, pTeam === 1 ? m.s2 : m.s1);
-                });
-            });
-        }
-        
-        let rows = Object.keys(stats).map(k => {
-             const s = stats[k];
-             const totalR = s.rWon + s.rLost;
-             return {
-                 name: k,
-                 rWon: s.rWon,
-                 rLost: s.rLost,
-                 pPlayed: s.pPlayed,
-                 pct: totalR > 0 ? (s.rWon / totalR) * 100 : 0,
-                 dgp: s.rWon - s.rLost
-             };
-        });
-        
-        rows.sort((a,b) => {
-            if (Math.abs(b.pct - a.pct) > 0.01) return b.pct - a.pct;
-            const totalA = a.rWon + a.rLost;
-            const totalB = b.rWon + b.rLost;
-            if (a.pct > 50) return totalB - totalA; 
-            if (a.pct < 50) return totalA - totalB; 
-            if (b.dgp !== a.dgp) return b.dgp - a.dgp; 
-            return totalB - totalA; 
-        }); 
-        
-        const percentages = rows.map(r => r.pct);
-        const maxPct = percentages.length > 0 ? Math.max(...percentages) : 100;
-        const minPct = percentages.length > 0 ? Math.min(...percentages) : 0;
-        const range = (maxPct - minPct) || 1; 
-
-        let html = `<div class="mus-table-wrapper"><table class="mus-table">
-            <tr>
-                <th>Pareja / Jugador</th>
-                <th>% WR</th>
-                <th>DGP</th>
-                <th>R.G.</th>
-                <th>R.P.</th>
-            </tr>`;
-        
-        rows.forEach(r => {
-            let nameHtml = "";
-            if (mode === 'ranking_pair') {
-                const [n1, n2] = r.name.split(' y ');
-                nameHtml = `<span class="player-avatar">${app.mus.getAvatar(n1)}</span>${n1} & <span class="player-avatar">${app.mus.getAvatar(n2)}</span>${n2}`;
-            } else {
-                nameHtml = `<span class="player-avatar">${app.mus.getAvatar(r.name)}</span>${r.name}`;
-            }
-
-            const norm = (r.pct - minPct) / range;
-            const hue = 120 + ((1 - norm) * 240); 
-            const winRateColor = `hsl(${hue}, 85%, 60%)`;
-
-            const dgpColor = r.dgp > 0 ? '#2ed573' : (r.dgp < 0 ? '#ff4757' : '#aaa');
-            const dgpStr = r.dgp > 0 ? `+${r.dgp}` : r.dgp;
-            
-            html += `<tr>
-                <td style="font-weight:bold; color:#fff" title="${r.name}">${nameHtml}</td>
-                <td style="color:${winRateColor}; font-weight:900">${r.pct.toFixed(1)}%</td>
-                <td style="color:${dgpColor}; font-weight:bold;">${dgpStr}</td>
-                <td style="color:#2ed573">${r.rWon}</td>
-                <td style="color:#ff4757">${r.rLost}</td>
-            </tr>`;
-        });
-        html += `</table></div>`;
-
-        const ascMatches = [...matches].sort((a,b) => a.id - b.id);
-        let streaks = {};
-        let allWinStreaks = [];
-
-        ascMatches.forEach(m => {
-            const t1 = [m.p1, m.p2].sort().join(' y ');
-            const t2 = [m.p3, m.p4].sort().join(' y ');
-            
-            let t1Won = null;
-            if (m.s1 > m.s2) t1Won = true;
-            else if (m.s1 < m.s2) t1Won = false;
-
-            const dObj = new Date(m.date);
-            const dateStr = `${dObj.getDate()}/${dObj.getMonth()+1}/${dObj.getFullYear()}`;
-
-            const processStreak = (entity, won, myScore, oppNames) => {
-                if (won === null) return;
-                if (!streaks[entity]) streaks[entity] = { val: 0 };
-                
-                if (won) {
-                    streaks[entity].val += myScore;
-                } else {
-                    if (streaks[entity].val > 0) {
-                        allWinStreaks.push({ n: entity, val: streaks[entity].val, endedBy: oppNames, end: dateStr });
-                    }
-                    streaks[entity].val = 0;
-                }
-            };
-
-            const t1Names = `${m.p1} & ${m.p2}`;
-            const t2Names = `${m.p3} & ${m.p4}`;
-
-            if (mode === 'ranking_pair') {
-                processStreak(t1, t1Won, m.s1, t2Names);
-                processStreak(t2, t1Won === null ? null : !t1Won, m.s2, t1Names);
-            } else {
-                [m.p1, m.p2].forEach(p => processStreak(p, t1Won, m.s1, t2Names));
-                [m.p3, m.p4].forEach(p => processStreak(p, t1Won === null ? null : !t1Won, m.s2, t1Names));
-            }
-        });
-
-        Object.entries(streaks).forEach(([n, data]) => {
-            if (data.val > 0) {
-                allWinStreaks.push({ n, val: data.val, endedBy: '-', end: 'AÚN ACTIVA' });
-            }
-        });
-
-        const top10Streaks = allWinStreaks.sort((a,b) => b.val - a.val).slice(0, 10);
-
-        if (top10Streaks.length > 0) {
-            html += `<h3 style="color:#e1b12c; margin-top:25px; margin-bottom:10px;">🏆 Top 10 Rachas Históricas (${mode === 'ranking_pair' ? 'Parejas' : 'Individual'})</h3>`;
-            html += `<div style="background:#222; border-left: 4px solid #e1b12c; padding:15px; border-radius:5px; text-align:left;">`;
-            
-            top10Streaks.forEach((s, i) => {
-                let nameHtml = "";
-                if (mode === 'ranking_pair') {
-                    const [n1, n2] = s.n.split(' y ');
-                    nameHtml = `<span class="player-avatar">${app.mus.getAvatar(n1)}</span>${n1} & <span class="player-avatar">${app.mus.getAvatar(n2)}</span>${n2}`;
-                } else {
-                    nameHtml = `<span class="player-avatar">${app.mus.getAvatar(s.n)}</span>${s.n}`;
-                }
-
-                let endText = s.end === 'AÚN ACTIVA' 
-                    ? '<span style="color:#2ed573; font-weight:bold;">🟢 AÚN ACTIVA</span>' 
-                    : `<span style="color:#aaa;">Cortada por <span style="color:#ff7675;">${s.endedBy}</span> el ${s.end}</span>`;
-                
-                html += `<div style="margin-bottom:12px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span><b>${i+1}.</b> ${nameHtml}</span>
-                        <span style="color:#2ed573; font-weight:bold; font-size:1.1em;">+${s.val} rondas</span>
-                    </div>
-                    <div style="font-size:0.85em; margin-top:4px;">${endText}</div>
-                </div>`;
-            });
-            html += `</div>`;
-        }
-
-        container.innerHTML = html;
+    changeDayByDay: (delta) => {
+        const max = app.mus.getFilteredMatches().length;
+        app.mus.dayByDayLimit += delta;
+        if (app.mus.dayByDayLimit < 0) app.mus.dayByDayLimit = 0;
+        if (app.mus.dayByDayLimit > max) app.mus.dayByDayLimit = max;
+        app.mus.changeView();
     },
 
+    // FUNCIÓN RENDERLOG QUE FALTABA
     renderLog: (container, filterAuthor = 'ALL') => {
         const allMatches = app.mus.getRoomMatches();
         if(allMatches.length === 0) { container.innerHTML = "<p>Sin partidas registradas.</p>"; return; }
@@ -526,53 +327,267 @@ app.mus = {
         container.innerHTML = html;
     },
 
-    renderImprovement: (container) => {
-        const matches = app.mus.getRoomMatches();
-        const now = new Date();
-        const twoWeeksAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+    renderAdminPanel: (container) => {
+        if (app.myPlayerName.toLowerCase() !== 'administrador m') return;
         
-        const oldStats = {};
-        const recentStats = {};
+        let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
         
-        matches.forEach(m => {
-            const mDate = new Date(m.date);
-            const isRecent = mDate >= twoWeeksAgo;
-            [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
-                const target = isRecent ? recentStats : oldStats;
-                if(!target[p]) target[p] = { rounds: 0, total: 0 };
-                const pTeam = (idx < 2) ? 1 : 2;
-                const myRounds = pTeam === 1 ? m.s1 : m.s2;
-                const oppRounds = pTeam === 1 ? m.s2 : m.s1;
-                target[p].rounds += myRounds;
-                target[p].total += (myRounds + oppRounds);
+        html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
+        html += `<ul style="list-style:none; padding:0; text-align:left; max-height: 250px; overflow-y: auto;">`;
+        app.mus.data.players.forEach(p => {
+            html += `<li style="margin-bottom:5px; background:#222; padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#fff; font-weight:bold;">${p}</span>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="app.mus.adminRenamePlayer('${p}')" style="background:#3498db; padding:4px 8px; font-size:0.8em; width:auto;">✏️ Modificar</button>
+                    <button onclick="app.mus.adminDeletePlayer('${p}')" style="background:#e74c3c; padding:4px 8px; font-size:0.8em; width:auto;">🗑️ Eliminar</button>
+                </div>
+            </li>`;
+        });
+        html += `</ul>`;
+
+        html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; margin-top:20px; text-align:left;">📝 Partidas (Sala: ${app.mus.currentRoom})</h4>`;
+        const matches = app.mus.getRoomMatches().sort((a,b) => b.id - a.id);
+        
+        if (matches.length === 0) {
+            html += `<p style="text-align:left;">No hay partidas registradas en esta sala.</p>`;
+        } else {
+            html += `<div style="display:flex; flex-direction:column; gap:10px; max-height: 500px; overflow-y: auto;">`;
+            matches.forEach(m => {
+                const d = new Date(m.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()<10?'0':''}${d.getMinutes()}`;
+                
+                html += `<div style="background:#222; padding:10px; border-radius:5px; text-align:left; border-left:3px solid #f1c40f;">
+                    <div style="font-size:0.8em; color:#aaa; margin-bottom:5px; display:flex; justify-content:space-between;">
+                        <span>🗓️ ${dateStr}</span>
+                        <span>ID: ${m.id}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="color:#fff; font-size:0.9em; flex:1;">
+                            <span style="color:#74b9ff">${m.p1} y ${m.p2}</span> (<span style="color:#fff; font-weight:bold">${m.s1}</span>)<br>
+                            <span style="color:#aaa; font-size:0.8em">VS</span><br>
+                            <span style="color:#ff7675">${m.p3} y ${m.p4}</span> (<span style="color:#fff; font-weight:bold">${m.s2}</span>)
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                            <button onclick="app.mus.adminEditMatchPlayers(${m.id})" style="background:#9b59b6; padding:4px 8px; font-size:0.8em; width:auto;">👥 Jugadores</button>
+                            <button onclick="app.mus.adminEditMatchScore(${m.id})" style="background:#e67e22; padding:4px 8px; font-size:0.8em; width:auto;">🔢 Resultado</button>
+                        </div>
+                    </div>
+                </div>`;
             });
+            html += `</div>`;
+        }
+        
+        container.innerHTML = html;
+    },
+
+    renderRanking: (container, mode) => {
+        const matches = app.mus.getFilteredMatches();
+        let matchesToProcess = [...matches].sort((a,b) => a.id - b.id);
+        const totalMatches = matchesToProcess.length;
+        
+        // Recorte de array si el modo Día a Día está activo
+        if (app.mus.dayByDayActive) {
+            matchesToProcess = matchesToProcess.slice(0, app.mus.dayByDayLimit);
+        }
+
+        const stats = {}; 
+        
+        const add = (k, myS, oppS) => {
+            if(!stats[k]) stats[k] = {rWon:0, rLost:0, pPlayed:0};
+            stats[k].pPlayed++;
+            stats[k].rWon += myS;
+            stats[k].rLost += oppS;
+        };
+
+        if (mode === 'ranking_pair') {
+             matchesToProcess.forEach(m => {
+                add([m.p1, m.p2].sort().join(' y '), m.s1, m.s2);
+                add([m.p3, m.p4].sort().join(' y '), m.s2, m.s1);
+            });
+        } else {
+            matchesToProcess.forEach(m => {
+                [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
+                    const pTeam = (idx < 2) ? 1 : 2;
+                    add(p, pTeam === 1 ? m.s1 : m.s2, pTeam === 1 ? m.s2 : m.s1);
+                });
+            });
+        }
+        
+        let rows = Object.keys(stats).map(k => {
+             const s = stats[k];
+             const totalR = s.rWon + s.rLost;
+             return {
+                 name: k,
+                 rWon: s.rWon,
+                 rLost: s.rLost,
+                 pPlayed: s.pPlayed,
+                 pct: totalR > 0 ? (s.rWon / totalR) * 100 : 0,
+                 dgp: s.rWon - s.rLost
+             };
         });
         
-        let improvements = [];
-        Object.keys(recentStats).forEach(p => {
-            if(!oldStats[p]) return; 
-            if(recentStats[p].total < 10) return; 
-            const oldWR = (oldStats[p].rounds / oldStats[p].total) * 100;
-            const newWR = (recentStats[p].rounds / recentStats[p].total) * 100;
-            const diff = newWR - oldWR;
-            if (diff > 0) improvements.push({ name: p, diff: diff.toFixed(1), old: oldWR.toFixed(1), cur: newWR.toFixed(1) });
-        });
+        rows.sort((a,b) => {
+            if (Math.abs(b.pct - a.pct) > 0.01) return b.pct - a.pct;
+            const totalA = a.rWon + a.rLost;
+            const totalB = b.rWon + b.rLost;
+            if (a.pct > 50) return totalB - totalA; 
+            if (a.pct < 50) return totalA - totalB; 
+            if (b.dgp !== a.dgp) return b.dgp - a.dgp; 
+            return totalB - totalA; 
+        }); 
         
-        improvements.sort((a,b) => b.diff - a.diff);
+        const percentages = rows.map(r => r.pct);
+        const maxPct = percentages.length > 0 ? Math.max(...percentages) : 100;
+        const minPct = percentages.length > 0 ? Math.min(...percentages) : 0;
+        const range = (maxPct - minPct) || 1; 
+
+        // 1. DIBUJAR TABLA PRINCIPAL
+        let html = `<div class="mus-table-wrapper"><table class="mus-table">
+            <tr>
+                <th>Pareja / Jugador</th>
+                <th>% WR</th>
+                <th>DGP</th>
+                <th>R.G.</th>
+                <th>R.P.</th>
+            </tr>`;
         
-        let html = `<h3>🚀 Mejora (últimos 14 días)</h3>
-        <div class="mus-table-wrapper"><table class="mus-table"><tr><th>Jugador</th><th>Mejora</th><th>Antes</th><th>Ahora</th></tr>`;
-        improvements.slice(0, 5).forEach(i => {
+        rows.forEach(r => {
+            let nameHtml = "";
+            if (mode === 'ranking_pair') {
+                const [n1, n2] = r.name.split(' y ');
+                nameHtml = `<span class="player-avatar">${app.mus.getAvatar(n1)}</span>${n1} & <span class="player-avatar">${app.mus.getAvatar(n2)}</span>${n2}`;
+            } else {
+                nameHtml = `<span class="player-avatar">${app.mus.getAvatar(r.name)}</span>${r.name}`;
+            }
+
+            const norm = (r.pct - minPct) / range;
+            const hue = 120 + ((1 - norm) * 240); 
+            const winRateColor = `hsl(${hue}, 85%, 60%)`;
+
+            const dgpColor = r.dgp > 0 ? '#2ed573' : (r.dgp < 0 ? '#ff4757' : '#aaa');
+            const dgpStr = r.dgp > 0 ? `+${r.dgp}` : r.dgp;
+            
             html += `<tr>
-                <td style="text-align:left">${app.mus.getAvatar(i.name)} ${i.name}</td>
-                <td style="color:#2ed573; font-weight:bold">+${i.diff}%</td>
-                <td>${i.old}%</td>
-                <td>${i.cur}%</td>
+                <td style="font-weight:bold; color:#fff" title="${r.name}">${nameHtml}</td>
+                <td style="color:${winRateColor}; font-weight:900">${r.pct.toFixed(1)}%</td>
+                <td style="color:${dgpColor}; font-weight:bold;">${dgpStr}</td>
+                <td style="color:#2ed573">${r.rWon}</td>
+                <td style="color:#ff4757">${r.rLost}</td>
             </tr>`;
         });
-        html += "</table></div>";
-        if(improvements.length === 0) html += "<p style='color:#aaa; margin-top:10px;'>Faltan datos para calcular mejoras.</p>";
+        html += `</table></div>`;
+
+        // 2. BOTÓN DISCRETO DE DÍA A DÍA JUSTO DEBAJO DE LA TABLA A LA DERECHA
+        html += `
+        <div style="text-align: right; margin-top: 5px; margin-bottom: 20px;">
+            <label style="color:#666; font-size: 0.75em; cursor:pointer;">
+                <input type="checkbox" ${app.mus.dayByDayActive ? 'checked' : ''} onchange="app.mus.toggleDayByDay(this.checked, ${totalMatches})" style="vertical-align: middle; margin-right: 3px; opacity: 0.5;">
+                Día a Día
+            </label>
+            ${app.mus.dayByDayActive ? `
+            <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top: 5px;">
+                <button onclick="app.mus.changeDayByDay(-2)" style="background:transparent; border:none; color:#e74c3c; cursor:pointer; font-size:1.2em; padding:0;">⬅️</button>
+                <span style="color:#888; font-size:0.8em; font-family:monospace;">Partidas: ${app.mus.dayByDayLimit} / ${totalMatches}</span>
+                <button onclick="app.mus.changeDayByDay(2)" style="background:transparent; border:none; color:#2ed573; cursor:pointer; font-size:1.2em; padding:0;">➡️</button>
+            </div>
+            ` : ''}
+        </div>`;
+
+        // 3. CÁLCULO DE LAS 15 RACHAS ESPECÍFICAS
+        let streaks = {}; 
+        let allWinStreaks = [];
+        let allLossStreaks = [];
+
+        matchesToProcess.forEach(m => {
+            let t1Won = null;
+            if (m.s1 > m.s2) t1Won = true;
+            else if (m.s1 < m.s2) t1Won = false;
+
+            const processEntity = (entity, won, myScore, oppScore, oppNames) => {
+                if (won === null) return; 
+                if (!streaks[entity]) streaks[entity] = { type: null, val: 0 };
+                
+                if (won) {
+                    if (streaks[entity].type === 'loss') {
+                        allLossStreaks.push({ n: entity, val: streaks[entity].val, endedBy: oppNames });
+                        streaks[entity] = { type: 'win', val: myScore };
+                    } else {
+                        streaks[entity].type = 'win';
+                        streaks[entity].val += myScore;
+                    }
+                } else {
+                    if (streaks[entity].type === 'win') {
+                        allWinStreaks.push({ n: entity, val: streaks[entity].val, endedBy: oppNames });
+                        streaks[entity] = { type: 'loss', val: oppScore };
+                    } else {
+                        streaks[entity].type = 'loss';
+                        streaks[entity].val += oppScore;
+                    }
+                }
+            };
+
+            const t1Names = `${m.p1} & ${m.p2}`;
+            const t2Names = `${m.p3} & ${m.p4}`;
+
+            if (mode === 'ranking_pair') {
+                const t1 = [m.p1, m.p2].sort().join(' y ');
+                const t2 = [m.p3, m.p4].sort().join(' y ');
+                processEntity(t1, t1Won, m.s1, m.s2, t2Names);
+                processEntity(t2, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names);
+            } else {
+                [m.p1, m.p2].forEach(p => processEntity(p, t1Won, m.s1, m.s2, t2Names));
+                [m.p3, m.p4].forEach(p => processEntity(p, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names));
+            }
+        });
+
+        // Añadir las rachas que siguen activas
+        Object.entries(streaks).forEach(([n, data]) => {
+            if (data.type === 'win') allWinStreaks.push({ n, val: data.val, endedBy: '-' });
+            if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, endedBy: '-' });
+        });
+
+        allWinStreaks.sort((a,b) => b.val - a.val);
+        allLossStreaks.sort((a,b) => b.val - a.val);
+
+        const titleText = mode === 'ranking_pair' ? 'Parejas' : 'Individual';
+
+        // 4. PINTAR LAS RACHAS AL FINAL DE LA VISTA
+        html += `
+            <h3 style="color:#e1b12c; margin-top:20px; margin-bottom:5px;">🔥 Top 15 Rachas (${titleText})</h3>
+            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
+                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:250px; overflow-y:auto;">
+                    <div style="font-size:1em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Victoria</div>
+                    ${allWinStreaks.slice(0,15).map((s, i) => `
+                        <div style="margin-bottom:8px; font-size:0.9em; border-bottom:1px solid #333; padding-bottom:5px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span><b>${i+1}.</b> ${s.n}</span>
+                                <span style="color:#2ed573; font-weight:bold;">+${s.val}</span>
+                            </div>
+                            <div style="font-size:0.8em; color:#aaa;">${s.endedBy === '-' ? '<span style="color:#2ed573">🟢 ACTIVA</span>' : `Cortada por <span style="color:#ff7675">${s.endedBy}</span>`}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:250px; overflow-y:auto;">
+                    <div style="font-size:1em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Derrota</div>
+                    ${allLossStreaks.slice(0,15).map((s, i) => `
+                        <div style="margin-bottom:8px; font-size:0.9em; border-bottom:1px solid #333; padding-bottom:5px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span><b>${i+1}.</b> ${s.n}</span>
+                                <span style="color:#ff4757; font-weight:bold;">-${s.val}</span>
+                            </div>
+                            <div style="font-size:0.8em; color:#aaa;">${s.endedBy === '-' ? '<span style="color:#ff4757">🔴 ACTIVA</span>' : `Salvados vs <span style="color:#74b9ff">${s.endedBy}</span>`}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
         container.innerHTML = html;
+    },
+
+    updateRachasPlayer: (playerName) => {
+        app.mus.rachasPlayerSelected = playerName;
+        app.mus.changeView();
     },
 
     renderRachas: (container) => {
@@ -668,6 +683,7 @@ app.mus = {
             const mean = arr.reduce((a, b) => a + b) / arr.length;
             return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
         };
+        
         let mostIrregularP = {n: '-', dev: 0};
         Object.keys(pDiffHistory).forEach(p => {
             const dev = getStdDev(pDiffHistory[p]);
@@ -679,10 +695,8 @@ app.mus = {
             if (dev > mostIrregularPair.dev) mostIrregularPair = {n: pair, dev};
         });
 
-        const limit14 = Date.now() - (14 * 24 * 3600 * 1000);
+        // Viciados (últimos 7 días)
         const limit7 = Date.now() - (7 * 24 * 3600 * 1000);
-        
-        const recentMatches14 = ascMatches.filter(m => new Date(m.date).getTime() > limit14);
         const recentMatches7 = ascMatches.filter(m => new Date(m.date).getTime() > limit7);
         
         let pRoundsCount = {};
@@ -690,8 +704,17 @@ app.mus = {
             const totalRounds = m.s1 + m.s2;
             [m.p1, m.p2, m.p3, m.p4].forEach(p => pRoundsCount[p] = (pRoundsCount[p] || 0) + totalRounds);
         });
-        let maxRecentP = {n: '-', c: 0};
-        Object.entries(pRoundsCount).forEach(([n, c]) => { if (c > maxRecentP.c) maxRecentP = {n, c}; });
+        let pRoundsArray = Object.entries(pRoundsCount).map(([n, c]) => ({n, c})).sort((a,b) => b.c - a.c);
+        const top3Viciados = pRoundsArray.slice(0, 3);
+        
+        let viciadosHtml = "";
+        const medals = ['🥇', '🥈', '🥉'];
+        top3Viciados.forEach((v, i) => {
+            viciadosHtml += `<div style="font-size:1.2em; font-weight:bold; color:#fff; margin-bottom:5px;">
+                ${medals[i]} ${v.n} <span style="color:#74b9ff; font-weight:900; font-size:0.9em;">(${v.c} Rondas)</span>
+            </div>`;
+        });
+        if(top3Viciados.length === 0) viciadosHtml = "<span style='color:#aaa;'>Nadie ha jugado esta semana.</span>";
 
         let histPairRounds = {};
         ascMatches.forEach(m => {
@@ -705,6 +728,7 @@ app.mus = {
                                 .sort((a,b) => b[1] - a[1])
                                 .slice(0, 3);
 
+        // Stompeadas (Top 15)
         let stomps = [];
         ascMatches.forEach(m => {
             const diff = Math.abs(m.s1 - m.s2);
@@ -720,10 +744,72 @@ app.mus = {
             }
         });
         stomps.sort((a,b) => b.diff - a.diff);
-        const top5Stomps = stomps.slice(0, 5);
+        const top15Stomps = stomps.slice(0, 15);
+
+        let stompsTableHtml = `<div class="mus-table-wrapper"><table class="mus-table" style="font-size:0.9em;">
+            <tr><th>#</th><th>Fecha</th><th>Ganadores</th><th>Perdedores</th><th>Dif</th></tr>`;
+        top15Stomps.forEach((s, i) => {
+            stompsTableHtml += `<tr>
+                <td style="font-weight:bold;">${i+1}</td>
+                <td style="color:#aaa;">${s.date}</td>
+                <td style="color:#2ed573; font-weight:bold;">${s.winner} <span style="color:#fff">(${s.wScore})</span></td>
+                <td style="color:#ff4757;">${s.loser} <span style="color:#fff">(${s.lScore})</span></td>
+                <td style="color:#f1c40f; font-weight:900;">+${s.diff}</td>
+            </tr>`;
+        });
+        stompsTableHtml += `</table></div>`;
+
+        // 10 Mejores victorias de jugador elegido
+        let playersList = [...new Set(ascMatches.flatMap(m => [m.p1, m.p2, m.p3, m.p4]))].sort();
+        let playerSelectHtml = `<select id="rachasPlayerSelect" onchange="app.mus.updateRachasPlayer(this.value)" style="padding:5px; background:#fff; color:#000; border-radius:5px;">
+            <option value="">-- Selecciona jugador --</option>
+            ${playersList.map(p => `<option value="${p}" ${p===app.mus.rachasPlayerSelected?'selected':''}>${p}</option>`).join('')}
+        </select>`;
+
+        let playerVictoriesHtml = "";
+        if (app.mus.rachasPlayerSelected) {
+            let pWins = [];
+            ascMatches.forEach(m => {
+                let p12 = [m.p1, m.p2];
+                let p34 = [m.p3, m.p4];
+                let isT1 = p12.includes(app.mus.rachasPlayerSelected);
+                let isT2 = p34.includes(app.mus.rachasPlayerSelected);
+                
+                if (isT1 && m.s1 > m.s2) {
+                    pWins.push({ partner: p12.find(x => x !== app.mus.rachasPlayerSelected), rivals: p34.join(' y '), sW: m.s1, sL: m.s2, diff: m.s1 - m.s2, date: m.date });
+                } else if (isT2 && m.s2 > m.s1) {
+                    pWins.push({ partner: p34.find(x => x !== app.mus.rachasPlayerSelected), rivals: p12.join(' y '), sW: m.s2, sL: m.s1, diff: m.s2 - m.s1, date: m.date });
+                }
+            });
+            pWins.sort((a,b) => b.diff - a.diff);
+            
+            playerVictoriesHtml = `<div class="mus-table-wrapper" style="margin-top:10px;"><table class="mus-table" style="font-size:0.9em;">
+                <tr><th>#</th><th>Fecha</th><th>Pareja</th><th>Contra</th><th>Res.</th><th>Dif</th></tr>`;
+            pWins.slice(0, 10).forEach((w, i) => {
+                const d = new Date(w.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                playerVictoriesHtml += `<tr>
+                    <td style="font-weight:bold;">${i+1}</td>
+                    <td style="color:#aaa;">${dateStr}</td>
+                    <td style="color:#74b9ff;">${w.partner}</td>
+                    <td style="color:#ff7675;">${w.rivals}</td>
+                    <td><span style="color:#2ed573; font-weight:bold">${w.sW}</span> - <span style="color:#ff4757; font-weight:bold">${w.sL}</span></td>
+                    <td style="color:#f1c40f; font-weight:900;">+${w.diff}</td>
+                </tr>`;
+            });
+            if(pWins.length === 0) playerVictoriesHtml += `<tr><td colspan="6">No tiene victorias registradas.</td></tr>`;
+            playerVictoriesHtml += `</table></div>`;
+        }
 
 
         let rHTML = `
+            <h3 style="color:#0984e3; margin-bottom:5px;">📅 Más Viciados (Últimos 7 Días)</h3>
+            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
+                <div class="card" style="background:#222; border-left: 4px solid #74b9ff;">
+                    ${viciadosHtml}
+                </div>
+            </div>
+
             <h3 style="color:#ffa502; margin-bottom:5px;">🔥 Rachas Actuales (Activas)</h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left; margin-bottom:20px;">
                 <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
@@ -748,41 +834,49 @@ app.mus = {
                 </div>
             </div>
 
-            <h3 style="color:#e1b12c; margin-bottom:5px;">📜 Salón de la Fama: Top Rachas Históricas</h3>
+            <h3 style="color:#e1b12c; margin-bottom:5px;">📜 Salón de la Fama: Top 20 Rachas Históricas</h3>
             <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:200px; overflow-y:auto;">
-                    <div style="font-size:0.9em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Top 5 Rachas de Victoria</div>
-                    ${allWinStreaks.slice(0,5).map((s, i) => `
-                        <div style="margin-bottom:8px; font-size:0.9em;">
-                            <b>${i+1}. ${s.n}</b> (+${s.val} rondas)<br>
-                            <span style="font-size:0.8em; color:#aaa;">${s.end === 'AÚN ACTIVA' ? '🟢 AÚN ACTIVA' : `Cortada el ${s.end} por ${s.endedBy}`}</span>
+                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:300px; overflow-y:auto;">
+                    <div style="font-size:1em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Mayores Rachas de Victoria</div>
+                    ${allWinStreaks.slice(0,20).map((s, i) => `
+                        <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span><b>${i+1}. ${s.n}</b></span>
+                                <span style="color:#2ed573; font-weight:bold;">+${s.val} rondas</span>
+                            </div>
+                            <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
+                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#2ed573">🟢 AÚN ACTIVA</span>' : `Cortada el ${s.end} por <b style="color:#ff7675">${s.endedBy}</b>`}
+                            </div>
                         </div>
                     `).join('')}
                 </div>
-                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:200px; overflow-y:auto;">
-                    <div style="font-size:0.9em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Top 5 Rachas de Derrota</div>
-                    ${allLossStreaks.slice(0,5).map((s, i) => `
-                        <div style="margin-bottom:8px; font-size:0.9em;">
-                            <b>${i+1}. ${s.n}</b> (-${s.val} rondas)<br>
-                            <span style="font-size:0.8em; color:#aaa;">${s.end === 'AÚN ACTIVA' ? '🔴 AÚN ACTIVA' : `Salvados el ${s.end} contra ${s.endedBy}`}</span>
+                
+                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:300px; overflow-y:auto;">
+                    <div style="font-size:1em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Mayores Rachas de Derrota</div>
+                    ${allLossStreaks.slice(0,20).map((s, i) => `
+                        <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span><b>${i+1}. ${s.n}</b></span>
+                                <span style="color:#ff4757; font-weight:bold;">-${s.val} rondas</span>
+                            </div>
+                            <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
+                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#ff4757">🔴 AÚN ACTIVA</span>' : `Salvados el ${s.end} contra <b style="color:#74b9ff">${s.endedBy}</b>`}
+                            </div>
                         </div>
                     `).join('')}
                 </div>
             </div>
 
-            <h3 style="color:#f1c40f; margin-bottom:5px;">🥊 Top 5 Mayores Palizas (Stomps)</h3>
-            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #f1c40f;">
-                    ${top5Stomps.map((s, i) => `
-                        <div style="margin-bottom:10px; padding-bottom:5px; border-bottom:1px solid #444;">
-                            <div style="font-size:0.8em; color:#aaa;">${i+1}. ${s.date} <span style="float:right; color:#f1c40f; font-weight:bold;">+${s.diff} Diff</span></div>
-                            <div style="font-size:0.9em;">
-                                <span style="color:#2ed573; font-weight:bold;">${s.winner} (${s.wScore})</span> destrozó a 
-                                <span style="color:#ff4757;">${s.loser} (${s.lScore})</span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+            <h3 style="color:#f1c40f; margin-bottom:5px;">🥊 Top 15 Mayores Palizas (Stomps)</h3>
+            <div style="margin-bottom:20px;">
+                ${stompsTableHtml}
+            </div>
+            
+            <h3 style="color:#3498db; margin-bottom:5px;">🎖️ Mejores Victorias Individuales</h3>
+            <div class="card" style="background:#222; border-left: 4px solid #3498db; text-align:left; margin-bottom:20px;">
+                <label style="color:#aaa; font-size:0.9em; margin-right:10px;">Elige a un jugador:</label>
+                ${playerSelectHtml}
+                ${playerVictoriesHtml}
             </div>
 
             <h3 style="color:#a55eea; margin-bottom:5px;">⚖️ Curiosidades Históricas</h3>
@@ -804,15 +898,6 @@ app.mus = {
                     <div style="font-size:0.8em; color:#aaa;">🎢 Pareja más irregular (Desv. Est.)</div>
                     <div style="font-size:1.2em; font-weight:bold; color:#fff;">${mostIrregularPair.n}</div>
                     <div style="color:#e056fd; font-weight:900; font-size:0.9em;">${mostIrregularPair.dev.toFixed(2)}</div>
-                </div>
-            </div>
-
-            <h3 style="color:#0984e3; margin-bottom:5px;">📅 Últimos Días (Rondas)</h3>
-            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left;">
-                <div class="card" style="background:#222; border-left: 4px solid #74b9ff;">
-                    <div style="font-size:0.8em; color:#aaa;">⏱️ Más viciado (7 días)</div>
-                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxRecentP.n}</div>
-                    <div style="color:#74b9ff; font-weight:900;">${maxRecentP.c} Rondas jugadas</div>
                 </div>
             </div>
         `;
