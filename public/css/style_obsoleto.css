@@ -1,0 +1,1473 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
+/* =========================================
+   1. RESET, BASE Y LAYOUT GENERAL
+   ========================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+body { 
+    background-color: #1e272e; 
+    color: white; 
+    font-family: 'Poppins', sans-serif; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    min-height: 100vh; 
+    padding: 15px; 
+    padding-bottom: 50px; 
+}
+
+h1, h2, h3 { text-align: center; margin-bottom: 15px; }
+.hidden { display: none !important; }
+
+/* Contenedores principales de pantallas */
+div[id$="Lobby"], div[id$="Game"], div[id$="Screen"] { 
+    width: 100%; 
+    max-width: 500px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    padding-bottom: 80px; 
+}
+
+/* Tarjetas Genéricas (Contenedores de info) */
+.card {
+    background-color: #2f3542;
+    padding: 20px;
+    border-radius: 15px;
+    width: 100%;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    text-align: center;
+    border: 2px solid #404856;
+}
+
+/* =========================================
+   2. BOTONES GLOBALES (Estilo Arcade/Original)
+   ========================================= */
+button { 
+    cursor: pointer; border: none; outline: none; border-radius: 12px; 
+    font-weight: bold; font-size: 1rem; transition: transform 0.1s, filter 0.2s; 
+    font-family: 'Poppins', sans-serif;
+}
+button:active { transform: scale(0.96); }
+
+.main-btn, .start-btn, .kick-btn {
+    background-color: #ff4757;
+    color: white;
+    padding: 18px;
+    width: 100%;
+    margin-top: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 5px 0 #c0392b;
+    letter-spacing: 1px;
+}
+
+.main-btn-aux {
+    background-color: #66ff47;
+    color: white;
+    padding: 18px;
+    width: 100%;
+    margin-top: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 5px 0 #26a430;
+    letter-spacing: 1px;
+}
+
+/* Botones de navegación superior */
+.back-nav { width: 100%; display: flex; justify-content: space-between; margin-bottom: 15px; }
+.back-nav button { background: transparent; border: 2px solid #57606f; color: #a4b0be; padding: 8px 15px; font-size: 0.85em; box-shadow: none; border-radius: 20px;}
+.logout-btn { background: #57606f; color: white; padding: 8px 15px; width: auto; font-size: 0.8em; margin-bottom: 15px; box-shadow: 0 3px 0 #3a414c; }
+
+/* =========================================
+   3. PANELES DE ADMINISTRADOR (ESTILO SPOTIFY)
+   ========================================= */
+.admin-panel { 
+    width: 100%; 
+    background-color: #121212; /* Fondo Negro Spotify */
+    padding: 20px; 
+    border-radius: 8px; /* Bordes menos redondeados, más modernos */
+    margin-bottom: 20px; 
+    border: none; /* Sin borde de color, limpio */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Sombra difusa */
+}
+
+/* Filas de control dentro del admin panel */
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent; /* Fondo transparente */
+    padding: 12px 0;
+    border-bottom: 1px solid #282828; /* Línea separadora sutil */
+    margin-bottom: 5px;
+    color: white;
+    font-weight: 600;
+    box-shadow: none;
+    width: 100%;
+}
+.control-row:last-child { border-bottom: none; }
+
+/* Botones circulares +/- minimalistas */
+.control-row button {
+    background: transparent;
+    color: #b3b3b3;
+    border: 2px solid #535353;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 1.2em; padding: 0; margin: 0 5px;
+    transition: all 0.2s;
+    box-shadow: none;
+}
+.control-row button:hover { border-color: #1db954; color: #1db954; transform: scale(1.1); }
+.control-row button:active { transform: scale(0.9); }
+.control-row span { font-size: 1.1em; color: #1db954; font-weight: bold; margin: 0 5px; text-shadow: none; }
+
+/* Inputs numéricos limpios */
+.admin-panel input[type="number"] {
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid #1db954; /* Subrayado verde */
+    border-radius: 0;
+    color: white;
+    font-size: 1.2em;
+    height: 30px;
+    text-align: right;
+    padding: 0 5px;
+    width: 60px;
+    font-weight: bold;
+    margin: 0;
+}
+.admin-panel input[type="number"]:focus { outline: none; border-bottom-color: white; }
+
+/* Selectores dropdown estilo moderno */
+.admin-panel select {
+    background-color: #282828; 
+    color: white; 
+    border: none; 
+    padding: 8px 12px;
+    border-radius: 4px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    text-align: right;
+}
+
+/* Checkboxes estilo "Toggle Switch" (Interruptor) */
+.admin-panel input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    width: 42px; height: 24px;
+    background: #535353;
+    border-radius: 20px;
+    position: relative;
+    outline: none; cursor: pointer; border: none;
+    padding: 0; margin: 0;
+    transition: background 0.3s;
+}
+.admin-panel input[type="checkbox"]::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; background: white; border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.admin-panel input[type="checkbox"]:checked { background: #1db954; } /* Verde activo */
+.admin-panel input[type="checkbox"]:checked::after { left: 20px; }
+
+/* Botones de Categoría (Grid 2 columnas) */
+.category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin: 15px 0;
+}
+.cat-btn {
+    background-color: #282828;
+    color: #fff;
+    padding: 12px; 
+    border-radius: 4px; 
+    font-size: 0.85em; 
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex; justify-content: center; align-items: center; text-align: center;
+    min-height: 50px; 
+    font-weight: 600;
+    box-shadow: none;
+}
+.cat-btn:hover { background-color: #3e3e3e; }
+.cat-btn.selected {
+    background-color: #1db954 !important; /* Verde fondo */
+    color: #000 !important; /* Texto negro */
+    font-weight: 800;
+    transform: none; 
+    box-shadow: none;
+    border: none !important;
+}
+.cat-btn.selected::before { display: none; } /* Quitar el tick antiguo */
+
+/* =========================================
+   4. HUB (MENÚ PRINCIPAL - 2 COLUMNAS)
+   ========================================= */
+.header-wrapper { position: relative; width: 100%; margin-bottom: 25px; padding-top: 10px; }
+.header-tools-left { position: absolute; top: 0; left: 0; display: flex; flex-direction: column; gap: 8px; z-index: 10; }
+
+.ignored-btn {
+    background-color: rgba(255, 255, 255, 0.026); color: #b3b3b3a4; border: 1px solid #2f354280; border-radius: 4px;
+    padding: 6px 10px; font-size: 0.75em; font-weight: normal; text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s; text-align: left; display: flex; align-items: center; gap: 5px; box-shadow: none; width: auto;
+}
+.ignored-btn:hover { color: #b2bec3; border-color: #57606f; background-color: rgba(255,255,255,0.05); }
+.ignored-btn:active { transform: translateY(1px); }
+.ignored-btn span { font-size: 1.1em; filter: grayscale(0.5); }
+
+/* GRID DE 2 COLUMNAS */
+.hub-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; /* DOS COLUMNAS */
+    gap: 15px; 
+    width: 100%; 
+}
+
+/* Tarjeta del Hub adaptada a rejilla */
+.hub-card {
+    background-color: #2f3542; 
+    border-left: 6px solid #ccc;
+    padding: 15px; 
+    border-radius: 12px; 
+    display: flex; 
+    flex-direction: column; /* Icono arriba */
+    align-items: center;
+    justify-content: center; 
+    cursor: pointer; 
+    transition: transform 0.2s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    text-align: center;
+    height: 100%;
+    min-height: 140px; 
+    position: relative;
+}
+
+.hub-card:active { transform: scale(0.98); margin-top: 2px; box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+
+.hub-icon { 
+    font-size: 2.5em; 
+    margin-right: 0; 
+    margin-bottom: 10px; 
+}
+
+.hub-info { width: 100%; }
+.hub-title { font-weight: 900; font-size: 1.1em; display: block; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.hub-desc { font-size: 0.75em; color: #a4b0be; line-height: 1.2; display: none; }
+@media (min-width: 600px) { .hub-desc { display: block; } }
+
+/* Ocultar la flecha derecha en modo rejilla */
+.hub-card > div:last-child { display: none; } 
+
+/* Cartas deshabilitadas */
+.hub-card.disabled {
+    filter: grayscale(100%); opacity: 0.5; cursor: help; background-color: #202020; box-shadow: none; transition: none;
+}
+.hub-card.disabled:active { transform: none; margin-top: 0; }
+
+/* =========================================
+   5. COMPONENTES DE JUEGO (Listas, Inputs Login)
+   ========================================= */
+ul { list-style: none; width: 100%; padding: 0; }
+li {
+    background-color: #2f3542;
+    margin-bottom: 8px; padding: 12px 20px; border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 500; border-left: 4px solid #57606f;
+}
+
+input[type="text"] {
+    width: 100%; padding: 15px; border-radius: 10px;
+    border: 2px solid #57606f; background-color: #2f3542;
+    color: white; font-size: 1rem; margin-bottom: 15px; outline: none; text-align: center;
+}
+input[type="text"]:focus { border-color: #ff4757; }
+
+/* =========================================
+   6. CARTAS DE ROL Y JUEGO
+   ========================================= */
+#roleCard, #loboCard, #ordenCard, #pintuImpRoleCard {
+    position: relative; cursor: pointer; background: #2f3542; border: 3px dashed #57606f; overflow: hidden;
+    min-height: 250px; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    transition: all 0.3s; margin-bottom: 5px;
+}
+#pintuImpRoleCard { min-height: 150px; }
+
+#roleCard h1 { font-size: 2.5em; margin-bottom: 10px; }
+#roleCard p { font-size: 1.2em; }
+#myRoleWord { font-size: 3em !important; text-align: center !important; width: 100%; margin: 20px 0 !important; line-height: 1.1; }
+#myRoleTitle { width: 100%; text-align: left !important; padding-left: 15px; font-size: 1.5em !important; }
+#myRoleInfo { width: 100%; text-align: left !important; padding-left: 15px; }
+
+/* Efecto Blur */
+.blur-content > * { filter: blur(20px); opacity: 0.3; pointer-events: none; }
+.blur-content::after {
+    content: "🔒 TOCA PARA VER"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: white; font-weight: 900; font-size: 1.5em; text-shadow: 0 4px 10px rgba(0,0,0,1); pointer-events: none; z-index: 10;
+}
+.reveal-content { background: #2f3542; border: 3px solid #74b9ff; }
+.reveal-content > * { filter: none; opacity: 1; }
+.card-note { text-align: center; color: #aaa; font-size: 0.8em; margin-bottom: 5px; pointer-events: none; }
+
+/* --- CHAT PINTURILLO FLOTANTE --- */
+#pintuChatContainer {
+    position: fixed; /* CAMBIO IMPORTANTE: Fixed para arrastre suave */
+    bottom: 15px;    /* Posición inicial */
+    right: 15px;     /* Posición inicial */
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    z-index: 2000;   /* Muy por encima */
+    pointer-events: none;
+}
+
+/* Caja de mensajes */
+#pintuChatBox {
+    width: 220px;
+    max-height: 150px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 5px;
+    font-size: 0.75em;
+    color: #eee;
+    pointer-events: auto;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* Ocultamos la barra de scroll visualmente pero permitimos scroll */
+    scrollbar-width: none; 
+}
+#pintuChatBox::-webkit-scrollbar { display: none; }
+
+/* Grupo de Input */
+#pintuChatInputGroup {
+    width: 220px;
+    display: flex;
+    gap: 5px;
+    pointer-events: auto;
+    background: rgba(0,0,0,0.85);
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #57606f;
+}
+
+#pintuChatInput {
+    flex: 1;
+    padding: 5px;
+    border-radius: 4px;
+    border: none;
+    background: #2f3542;
+    color: white;
+    font-size: 0.8em;
+    outline: none;
+}
+
+/* Botón flotante (El "Handle" para arrastrar) */
+#btnOpenChat {
+    background: rgba(9, 132, 227, 0.9);
+    color: white;
+    border: 2px solid white;
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    font-size: 1.3em;
+    cursor: grab; /* Icono de mano */
+    pointer-events: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    display: flex; justify-content: center; align-items: center;
+    transition: transform 0.1s;
+    touch-action: none; /* Crítico para arrastrar en móvil */
+}
+
+#btnOpenChat:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+/* =========================================
+   7. JUEGOS ESPECÍFICOS
+   ========================================= */
+
+/* --- ANÉCDOTAS --- */
+.anecdota-input, .anecdota-card, .anecdota-read {
+    font-family: 'Times New Roman', Times, serif; font-size: 1.3em; line-height: 1.4; font-style: italic;
+}
+.anecdota-input {
+    width: 100%; height: 120px; padding: 15px; border-radius: 10px;
+    border: 2px solid #a29bfe; background: #dfe6e9; color: #2d3436;
+    resize: none; outline: none;
+}
+.anecdota-card {
+    background: #f1f2f6; color: #2d3436; padding: 25px;
+    border: 1px solid #ccc; box-shadow: 5px 5px 0 #bdc3c7;
+    transform: rotate(-1deg); margin: 20px 0; width: 100%;
+}
+
+/* --- PINTURILLO --- */
+.canvas-container {
+    background: #fff; border-radius: 10px; overflow: hidden; touch-action: none;
+    margin: 10px auto; border: 4px solid #57606f; position: relative; width: 300px; height: 300px;
+}
+canvas { display: block; cursor: crosshair; }
+.canvas-controls { display: flex; justify-content: space-between; width: 300px; margin: 0 auto; }
+.draw-status {
+    background: #2f3542; padding: 10px; border-radius: 8px; margin-bottom: 10px;
+    border: 1px solid #74b9ff; color: #74b9ff; font-weight: bold;
+}
+
+/* --- CONTEXTO --- */
+.contexto-input-area { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
+#contextoList { width: 100%; display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; padding-bottom: 50px; }
+.contexto-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 8px; background: #2f3542; border-left: 8px solid #57606f; transition: transform 0.2s; animation: fadeIn 0.3s ease-out; }
+.ctx-word { font-size: 1.1em; color: white; font-weight: bold; text-transform: capitalize; }
+.ctx-dist { font-size: 1.3em; font-weight: 900; }
+.ctx-red { border-color: #ff4757; background: rgba(255, 71, 87, 0.05); } 
+.ctx-red .ctx-dist { color: #ff4757; }
+.ctx-orange { border-color: #ffa502; background: rgba(255, 165, 2, 0.1); } 
+.ctx-orange .ctx-dist { color: #ffa502; }
+.ctx-green { border-color: #2ed573; background: rgba(46, 213, 115, 0.15); } 
+.ctx-green .ctx-dist { color: #2ed573; }
+.ctx-win { border-color: #a55eea; background: rgba(165, 94, 234, 0.3); box-shadow: 0 0 15px #a55eea; }
+.ctx-win .ctx-dist { color: #fff; }
+
+/* --- ORDEN --- */
+.orden-item {
+    background: #2f3542; padding: 10px; margin-bottom: 5px; border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-left: 4px solid #74b9ff; transition: all 0.2s;
+}
+.pulse-anim { animation: pulse-green 0.3s ease-in-out; }
+@keyframes pulse-green { 
+    0% { transform: scale(1); } 50% { transform: scale(1.2); filter: brightness(1.5); } 100% { transform: scale(1); } 
+}
+
+ 
+/* =========================================
+   ESTILOS EXCLUSIVOS PARA LA SALA DE MUS
+   (Tipografía Clásica y Botones 3D)
+   ========================================= */
+
+/* 1. Tipografía Global del Mus */
+/* #musScreen {
+    font-family: 'Times New Roman', Times, serif;
+    letter-spacing: 0.5px;
+} */
+
+#musScreen h1, #musScreen h2, #musScreen h3, #musScreen h4 {
+    font-family: 'Times New Roman', Times, serif;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.6); /* Sombra dura para efecto retro */
+    margin-bottom: 15px;
+}
+
+/* 2. Botones "Táctiles" 3D (Solo en Mus) */
+#musScreen button {
+    font-family: 'Times New Roman', Times, serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 15px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.05s ease;
+    outline: none;
+    position: relative;
+    top: 0;
+    
+    /* El truco del 3D: Sombra sólida abajo */
+    box-shadow: 0 5px 0 rgba(0,0,0,0.4), 0 5px 10px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1); /* Brillo superior */
+}
+
+/* Efecto al pulsar (se hunde) */
+#musScreen button:active {
+    top: 5px; /* Se mueve lo mismo que medía la sombra */
+    box-shadow: 0 0 0 rgba(0,0,0,0.4), inset 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Checkbox de jugadores para el generador */
+.player-check-item {
+    padding: 8px;
+    border-bottom: 1px solid #444;
+}
+.player-check-item input {
+    width: auto;
+    margin-right: 10px;
+}
+
+/* 3. Inputs y Selectores (Estilo Pergamino Oscuro) */
+#musScreen select, #musScreen input {
+    background-image: linear-gradient(to bottom, #3c40c6, #3c40c6); /* Simular botón */
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 0 #2d3436;
+    transition: all 0.1s;
+    cursor: pointer;
+}
+
+#musScreen select:focus, #musScreen input:focus {
+    border-color: #e1b12c;
+    background-color: #2f3640;
+}
+
+/* 4. Tablas de Estadísticas (Elegantes) */
+.mus-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.85em;
+    table-layout: fixed; /* CRÍTICO: Para controlar anchos exactos */
+}
+
+#musScreen select:active {
+    box-shadow: 0 2px 0 #2d3436;
+    transform: translateY(2px);
+}
+
+.mus-table th {
+    text-align: center; /* Cabeceras centradas */
+    color: #a4b0be;
+    border-bottom: 1px solid #57606f;
+    padding: 8px 2px;
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 0.75em; /* Un poco más pequeño para que quepa todo */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mus-table td {
+    background: rgba(0,0,0,0.3);
+    padding: 12px;
+    font-size: 1.2em;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.mus-table tr:hover td {
+    background: rgba(255,255,255,0.05); /* Brillo al pasar ratón */
+}
+
+/* Bordes redondeados para las filas de la tabla */
+.mus-table td:first-child { border-radius: 6px 0 0 6px; border-left: 2px solid rgba(255,255,255,0.1); }
+.mus-table td:last-child { border-radius: 0 6px 6px 0; }
+
+/* Columna de victorias destacada */
+.mus-table td.win-col {
+    color: #4cd137;
+    font-weight: bold;
+    font-size: 1.3em;
+    text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+}
+
+/* 5. Cajas de Estadísticas Grandes */
+.stat-big-box {
+    background: linear-gradient(to bottom, #353b48, #2f3640);
+    border: 2px solid #487eb0; /* Borde azulado elegante */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    margin-top: 20px;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.stat-big-box div:first-child {
+    font-size: 5em !important; /* Número gigante */
+    text-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+}
+
+#musScreen input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); /* Poner icono blanco */
+    cursor: pointer;
+}
+
+/* Wrapper para hacer scroll horizontal en tablas Mus si no caben */
+.mus-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 1px solid #57606f;
+}
+
+/* Enfrentamientos VS */
+.vs-container {
+    background: rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.vs-score {
+    font-size: 2.5em;
+    font-weight: 900;
+    margin: 10px 0;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.vs-detail {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    color: #aaa;
+    border-top: 1px solid #444;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+/* Ajustes para celdas en móvil */
+@media (max-width: 600px) {
+    .mus-table th, .mus-table td {
+        padding: 8px 2px; /* Menos padding lateral */
+        font-size: 0.8em;
+    }
+}
+/* =========================================
+   8. GIVE (TIENDA XP) Y OTROS
+   ========================================= */
+.give-main-container { padding: 5px; text-align: center; }
+.give-section-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+.give-item-btn {
+    background-color: #353b48; border: 1px solid #57606f; border-radius: 8px;
+    padding: 8px 2px; cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    min-height: 90px; box-shadow: 0 3px 0 rgba(0,0,0,0.3);
+}
+.give-item-btn:hover { background-color: #3d4655; transform: translateY(-2px); border-color: #74b9ff; }
+.give-item-btn:active { transform: translateY(1px); box-shadow: none; }
+.give-icon { font-size: 2em; margin-bottom: 5px; }
+.give-name { font-size: 0.7em; color: #dfe6e9; line-height: 1.1; margin-bottom: 5px; font-weight: bold; word-break: break-word; }
+.give-cost { font-size: 0.75em; color: #2ed573; font-weight: 900; background: rgba(46, 213, 115, 0.1); padding: 2px 6px; border-radius: 4px; width: 100%; }
+@media (max-width: 400px) { .give-section-grid { grid-template-columns: repeat(3, 1fr); } .give-icon { font-size: 1.5em; } }
+
+/* =========================================
+   9. VOTACIÓN Y MODALES GLOBALES
+   ========================================= */
+.vote-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; width: 100%; }
+.vote-card, .vote-btn, .elmas-vote-card {
+    background-color: #353b48; color: white; padding: 15px 5px; border-radius: 20px !important;
+    font-size: 0.9em; border: 3px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.1s; min-height: 80px; position: relative;
+}
+.voted-tick { position: absolute; top: 5px; right: 5px; color: #2ed573; font-size: 1.2em; font-weight: bold; text-shadow: 0 2px 2px rgba(0,0,0,0.5); }
+.vote-btn.dead { opacity: 0.7; background-color: #2d3436; border: 2px solid #ff4757; pointer-events: none; }
+.eliminated-text { color: #ff4757; font-weight: bold; font-size: 0.9em; text-transform: uppercase; margin-top: 5px; }
+.vote-card:active, .vote-btn:active, .elmas-vote-card:active { transform: scale(0.95); }
+.selected, .selected-vote { border-color: #2ed573 !important; background-color: rgba(46, 213, 115, 0.2) !important; box-shadow: 0 0 15px #2ed573 !important; transform: scale(1.05); }
+.vote-btn.dead, .vote-card.dead { opacity: 0.5; text-decoration: line-through; pointer-events: none; background-color: #2f3542; }
+
+/* Modales */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
+#globalRulesText { white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 0.95em; color: #e0e0e0; line-height: 1.6; }
+#globalRulesModal .card { max-width: 600px; width: 95%; background: #2f3542; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+
+/* Podio */
+.podium-container { display: flex; align-items: flex-end; gap: 10px; margin-top: 20px; }
+.podium-bar { width: 70px; border-radius: 5px 5px 0 0; color: #2d3436; font-weight: bold; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 5px; }
+.p-gold { height: 180px; background: #f1c40f; border: 2px solid white; box-shadow: 0 0 20px #f1c40f; order: 2; }
+.p-silver { height: 120px; background: #bdc3c7; order: 1; }
+.p-bronze { height: 90px; background: #cd6133; order: 3; }
+.p-name { font-size: 0.8em; margin-bottom: 5px; color:white; text-shadow: 1px 1px 0 #000; }
+
+/* Tabú Equipos */
+.team-btn { font-weight: bold; opacity: 0.6; transition: 0.3s; box-shadow: 0 4px 0 rgba(0,0,0,0.3); border-radius: 10px;}
+.team-btn.selected { opacity: 1; transform: scale(1.05); }
+.team-blue { background: #0984e3; color: white; }
+.team-red { background: #d63031; color: white; }
+.elmas-question { font-size: 1.4em; font-weight: bold; color: white; margin: 20px 0; }
+.waiting-text { color: #a4b0be; font-style: italic; margin-top: 20px; animation: pulse 1.5s infinite; }
+
+/* Widget Flotante */
+#floatingUserWidget {
+    position: fixed; top: 10px; right: 10px; z-index: 99999;
+    background: rgba(44, 62, 80, 0.9); padding: 8px 15px; border-radius: 25px;
+    border: 1px solid #ffffff55; color: #fff; cursor: grab;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: right;
+    font-size: 0.85em; user-select: none; backdrop-filter: blur(5px);
+    min-width: 120px; touch-action: none; transition: transform 0.1s;
+}
+#floatingUserWidget:active { cursor: grabbing; transform: scale(0.98); } 
+
+/*Fin*/
+
+/* Forzar que el contenedor principal ocupe espacio */
+#fiestaContent {
+    width: 100%;
+    display: block;
+}
+
+/* --- CORRECCIONES FIESTA --- */
+/* =========================================
+   CORRECCIONES ESPECÍFICAS PARA FIESTA
+   ========================================= */
+
+/* 1. Forzar la cuadrícula de 2 columnas */
+#fiestaMenu .hub-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+/* 2. Arreglar las cartas para que sean cuadradas/verticales */
+#fiestaMenu .hub-card {
+    display: flex !important;
+    flex-direction: column !important; /* Icono arriba, texto abajo */
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 120px !important; /* Darles altura forzada */
+    height: auto !important;
+    background-color: #2f3542 !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2) !important;
+    opacity: 1 !important; /* Asegurar que se ven */
+    cursor: pointer !important;
+}
+
+/* Efecto al pulsar */
+#fiestaMenu .hub-card:active {
+    transform: scale(0.95) !important;
+}
+
+/* 3. Asegurar que el icono se ve y está centrado */
+#fiestaMenu .hub-icon {
+    font-size: 2.5em !important;
+    margin: 0 0 10px 0 !important; /* Quitar margen derecho, poner margen abajo */
+    display: block !important;
+    width: auto !important;
+}
+
+/* 4. Asegurar que el texto se ve */
+#fiestaMenu .hub-info {
+    width: 100% !important;
+    text-align: center !important;
+}
+
+#fiestaMenu .hub-title {
+    color: white !important;
+    font-weight: 900 !important;
+    font-size: 0.9em !important;
+    display: block !important;
+    white-space: normal !important; /* Permitir que el texto salte de línea si no cabe */
+}
+
+/* =========================================
+   ESTILOS MINIMALISTAS (NUEVO)
+   ========================================= */
+
+.mini-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 columnas */
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.mini-card {
+    background-color: #2f3542;
+    border-radius: 8px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.mini-card.disabled {
+    filter: grayscale(100%); opacity: 0.5; cursor: help; background-color: #202020; box-shadow: none; transition: none;
+}
+
+.mini-card:active {
+    transform: scale(0.96);
+    background-color: #353b48;
+}
+
+.mini-icon {
+    font-size: 1.5em;
+    line-height: 1;
+}
+
+.mini-title {
+    font-weight: bold;
+    font-size: 0.95em;
+    color: #dfe6e9;
+    text-transform: uppercase;
+}
+
+/* Línea divisoria sombreada */
+.shaded-divider {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0));
+    margin: 25px 0 20px 0;
+    width: 80%;
+}
+
+/* =========================================
+   ESTILOS EXCLUSIVOS MUS: TEMA COMPLETO + TABLA COMPACTA
+   ========================================= */
+
+/* 1. FONDO Y TIPOGRAFÍA */
+
+/* =========================================
+   ESTILOS EXCLUSIVOS MUS
+   ========================================= */
+
+#musScreen {
+    font-family: 'Cinzel', serif !important;
+    
+    /* 1. OCUPAR PANTALLA COMPLETA (Fixed robusto) */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0; 
+    bottom: 0;
+    width: auto;
+    height: auto;
+    max-width: none !important;
+    
+    /* 2. CENTRADO PERFECTO */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Esto centra los hijos horizontalmente */
+    
+    /* 3. SCROLL CONTROLADO */
+    overflow-y: auto;
+    overflow-x: hidden; /* Evita scroll lateral */
+    
+    margin: 0;
+    padding: 15px;
+    padding-bottom: 80px;
+    z-index: 9999;
+    
+    background-color: #2d5a36 !important; 
+}
+
+/* Regla para limitar el ancho del contenido en PC */
+#musScreen > * {
+    width: 100%;
+    max-width: 500px;
+}
+
+/* FONDO ANIMADO CORREGIDO */
+#musScreen::before {
+    content: " ";
+    /* CAMBIO CLAVE: Fixed para que no estire el scroll del padre */
+    position: fixed; 
+    width: 200%; 
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    z-index: -1;
+    opacity: 0.15;
+    pointer-events: none;
+    
+    background-image: url('image.png');
+    background-repeat: repeat;
+    background-size: 120px auto; 
+    
+    animation: floatingCards 60s linear infinite alternate;
+}
+
+@keyframes floatingCards {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-50px, -50px) rotate(5deg); }
+}
+
+#musScreen * {
+    font-family: 'Cinzel', serif !important;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+
+/* 2. BOTONES: ESTILO BARAJA FRANCESA */
+/* Fondo blanco, bordes de color, sombra dura */
+#musScreen .kick-btn {
+    background-color: #f5f6fa !important; 
+    border: 2px solid #2d3436 !important;
+    border-radius: 6px !important;
+    padding: 10px 15px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    position: relative;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.5) !important;
+    transition: transform 0.1s !important;
+    min-width: 100px;
+    background-image: linear-gradient(135deg, transparent 90%, #2d3436 90%);
+}
+
+/* Alternar Rojo y Negro (Picas/Trébol vs Corazones/Diamantes) */
+#musScreen .kick-btn:nth-child(odd) { 
+    color: #2d3436 !important; 
+    border-color: #2d3436 !important; 
+} 
+#musScreen .kick-btn:nth-child(even) { 
+    color: #c0392b !important; 
+    border-color: #c0392b !important; 
+    background-image: linear-gradient(135deg, transparent 90%, #c0392b 90%); 
+}
+
+/* Botón Guardar (Cuadrado con icono) */
+#musScreen .kick-btn2 {
+    background-color: #f5f6fa !important;
+    color: #c0392b !important;
+    border: 2px solid #c0392b !important;
+    border-radius: 8px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.4em !important;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.5) !important;
+    background-image: none !important;
+}
+
+#musScreen button:active {
+    transform: translate(2px, 2px) !important;
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.5) !important;
+}
+
+/* 3. INPUTS Y SELECTORES: ESTILO PIEDRA */
+#musScreen select, #musScreen input {
+    background-color: #b2bec3 !important; /* Gris piedra */
+    background-image: none !important; 
+    color: #2d3436 !important;
+    border: 3px solid #636e72 !important;
+    border-radius: 2px !important;
+    padding: 10px !important;
+    font-weight: bold !important;
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2) !important;
+    cursor: pointer;
+    text-align: center;
+    /* Recorte irregular para efecto piedra */
+    clip-path: polygon(2% 0, 100% 2%, 98% 100%, 0 98%);
+}
+
+#musScreen select:focus, #musScreen input:focus {
+    background-color: #dfe6e9 !important;
+    border-color: #2d3436 !important;
+    outline: none;
+}
+
+/* 4. TABLA COMPACTA (Optimizada para Móvil) */
+.mus-table-wrapper {
+    width: 100%;
+    margin-bottom: 20px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 10px;
+    border: 2px solid #e1b12c; /* Borde Dorado */
+    overflow-x: auto;
+}
+
+.mus-table {
+    width: 100%;
+    /* Quitamos el ancho mínimo para que se comprima */
+    /* min-width: auto !important;  */
+    /* border-collapse: collapse; */
+    table-layout: auto; 
+}
+
+.mus-table th, .mus-table td {
+    white-space: nowrap;
+    /* Padding muy reducido para ganar espacio */
+    padding: 8px 2px !important; 
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.95em !important; /* Letra más pequeña */
+    text-align: center;
+}
+
+.mus-table th {
+    background-color: rgba(0,0,0,0.5);
+    color: #e1b12c;
+    border-bottom: 2px solid #e1b12c;
+}
+
+/* Columna de Nombres (Izquierda Fija) */
+.mus-table th:first-child,
+.mus-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: #2f3640; 
+    border-right: 1px solid #e1b12c;
+    text-align: left;
+    padding-left: 5px !important;
+    
+    /* Ancho muy controlado */
+    width: auto;
+    /* max-width: 90px; */
+    
+    /* Cortar nombres largos con "..." */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mus-table th:first-child {
+    background-color: #252a30; 
+    z-index: 3;
+}
+
+/* Ocultar avatares en móvil para ganar espacio */
+.player-avatar {
+    display: none;
+}
+
+/* Estilos para Pantallas Grandes (PC) */
+@media (min-width: 600px) {
+    .mus-table th, .mus-table td {
+        padding: 12px 8px !important;
+        font-size: 0.9em !important;
+    }
+    .mus-table th:first-child, .mus-table td:first-child {
+        width: 150px;
+        max-width: 150px;
+    }
+    .player-avatar {
+        display: inline;
+    }
+}
+
+/* Cajas de Modales estilo Mus */
+#musScreen .card, #musAddMatchModal > div, #musPairGenModal > div {
+    background-color: #2f3640 !important;
+    border: 2px solid #e1b12c !important;
+}
+
+
+
+
+
+/* =========================================
+   TRIVIAL PREMIUM STYLES
+   ========================================= */
+
+/* --- HUD SUPERIOR --- */
+.triv-hud-container {
+    display: flex;
+    gap: 15px;
+    padding: 10px;
+    background: linear-gradient(to bottom, #2f3640, #1e272e);
+    border-bottom: 2px solid #57606f;
+    overflow-x: auto;
+    width: 100%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.triv-team-badge {
+    background: #353b48;
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 120px;
+    position: relative;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.triv-team-badge.active {
+    border-color: #f1c40f;
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+    background: #404856;
+    transform: scale(1.05);
+}
+
+.triv-team-name { font-weight: bold; font-size: 0.9em; margin-bottom: 5px; color: white; }
+.triv-team-members { font-size: 0.7em; color: #a4b0be; margin-bottom: 5px; text-align: center; line-height: 1.1; }
+
+/* Indicador de Quesitos (Ficha plana en HUD) */
+.triv-cheese-holder {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #2f3640;
+    border: 2px solid #7f8fa6;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+}
+.triv-wedge {
+    position: absolute; width: 50%; height: 50%;
+    transform-origin: 100% 100%;
+    left: 0; top: 0;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+/* Posiciones de las cuñas en el HUD */
+.wedge-0 { transform: rotate(0deg) translate(100%, 100%); }
+.wedge-1 { transform: rotate(60deg) translate(100%, 100%); }
+.wedge-2 { transform: rotate(120deg) translate(100%, 100%); }
+.wedge-3 { transform: rotate(180deg) translate(100%, 100%); }
+.wedge-4 { transform: rotate(240deg) translate(100%, 100%); }
+.wedge-5 { transform: rotate(300deg) translate(100%, 100%); }
+
+
+/* --- TABLERO GRANDE (Estilo Rueda) --- */
+.triv-board-wrapper {
+    position: relative;
+    width: 360px; height: 360px;
+    margin: 20px auto;
+    background: radial-gradient(circle, #2f3640 20%, #1e272e 80%);
+    border-radius: 50%;
+    border: 8px solid #192a56;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+/* Casillas */
+.triv-node {
+    position: absolute;
+    width: 30px; height: 30px;
+    border-radius: 6px; /* Cuadrado redondeado */
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255,255,255,0.3);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    z-index: 1;
+    transition: transform 0.2s;
+}
+.triv-node.hub {
+    width: 40px; height: 40px;
+    border-radius: 50%; /* Quesitos redondos */
+    border: 3px solid white;
+    z-index: 2;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 1.2em;
+}
+.triv-node.highlight {
+    cursor: pointer;
+    animation: pulse-node 1s infinite;
+    border-color: #f1c40f;
+    box-shadow: 0 0 15px #f1c40f;
+    z-index: 10;
+}
+@keyframes pulse-node { 0% {transform:translate(-50%, -50%) scale(1);} 50% {transform:translate(-50%, -50%) scale(1.3);} 100% {transform:translate(-50%, -50%) scale(1);} }
+
+
+/* --- FICHAS DE JUGADOR (PEONES 3D) --- */
+.triv-pawn {
+    position: absolute;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    border: 2px solid white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex; justify-content: center; align-items: center;
+    font-size: 0.6em; color: white; font-weight: bold;
+}
+/* Efecto de "stack" si hay varias fichas en la misma casilla: se ajustará con JS */
+
+
+/* --- DADO 3D --- */
+.dice-stage {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    perspective: 600px;
+    z-index: 20;
+    pointer-events: none; /* Click a través, lo manejamos en un div transparente si es necesario */
+}
+.dice-cube {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 1s ease-out;
+}
+.dice-face {
+    position: absolute;
+    width: 60px; height: 60px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 35px; color: black;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+.df-1 { transform: rotateY(0deg) translateZ(30px); }
+.df-2 { transform: rotateY(90deg) translateZ(30px); }
+.df-3 { transform: rotateY(180deg) translateZ(30px); }
+.df-4 { transform: rotateY(-90deg) translateZ(30px); }
+.df-5 { transform: rotateX(90deg) translateZ(30px); }
+.df-6 { transform: rotateX(-90deg) translateZ(30px); }
+
+/* Botón transparente encima del dado para clicar */
+.dice-trigger {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; height: 80px;
+    z-index: 21; cursor: pointer;
+    background: transparent;
+}
+.shake-3d { animation: rolling 0.5s infinite linear; }
+@keyframes rolling { 
+    0% { transform: rotateX(0) rotateY(0); } 
+    100% { transform: rotateX(360deg) rotateY(360deg); } 
+}
+
+
+/* --- TARJETA (Flip Controlado) --- */
+.triv-card-container {
+    perspective: 1000px;
+    width: 300px; height: 420px;
+    position: relative;
+}
+.triv-card-inner {
+    width: 100%; height: 100%;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+    position: relative;
+}
+.triv-card-inner.flipped { transform: rotateY(180deg); }
+
+.triv-card-front, .triv-card-back {
+    position: absolute; width: 100%; height: 100%;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    background: #f5f6fa;
+    text-align: center;
+    border: 5px solid; /* El color se pone inline */
+}
+.triv-card-back { transform: rotateY(180deg); background: #2f3542; color: white; border-color: #57606f !important;}
+
+.locked-overlay {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 50;
+    border-radius: 15px;
+    text-align: center; padding: 20px;
+}
+
+
+/* --- GAME LOG --- */
+.triv-log-container {
+    width: 95%; max-width: 500px;
+    margin: 20px auto;
+    background: #1e272e;
+    border: 1px solid #57606f;
+    border-radius: 5px;
+    height: 150px;
+    overflow-y: auto;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.85em;
+}
+.log-entry { margin-bottom: 5px; border-bottom: 1px solid #2f3640; padding-bottom: 2px; }
+.log-time { color: #7f8fa6; margin-right: 5px; }
+.log-sys { color: #f19066; }
+.log-success { color: #2ed573; }
+.log-error { color: #ff4757; }
+.log-cheese { color: #f1c40f; font-weight: bold; background: rgba(241, 196, 15, 0.1); padding: 2px; }
+.log-gold { color: #ffd700; text-transform: uppercase; text-align: center; display: block; border: 1px solid #ffd700; }
+
+
+
+
+
+/* =========================================
+   FIFA 14 THEME
+   ========================================= */
+
+/* Fuente importada para estilo deportivo */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
+
+/* =========================================
+   FIFA 14 THEME
+   ========================================= */
+
+#fifaScreen {
+    font-family: 'Oswald', sans-serif !important;
+    text-transform: uppercase;
+    
+    background: 
+        linear-gradient(135deg, rgba(20, 30, 80, 0.95), rgba(10, 10, 30, 0.95)),
+        url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBMOF4wTTQwIDBMMCA0MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+');
+    background-color: #0c1430 !important;
+    
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    max-width: none !important; /* <--- CRUCIAL: ROMPE EL LÍMITE DE 500PX */
+    
+    overflow-y: auto; 
+    overflow-x: hidden; 
+    
+    margin: 0; 
+    padding: 15px; 
+    padding-bottom: 80px; 
+    z-index: 9999;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#fifaScreen > div, #fifaScreen > .back-nav, #fifaScreen > .fifa-header {
+    width: 100%;
+    max-width: 500px;
+}
+
+#fifaScreen .modal-overlay {
+    max-width: none;
+    left: 0;
+    width: 100%;
+}
+
+#fifaScreen * {
+    font-family: 'Oswald', sans-serif;
+}
+
+/* Encabezado */
+.fifa-header {
+    text-align: right;
+    border-bottom: 4px solid #00d2d3; /* Cyan característico */
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* Botones Inclinados (Skewed) */
+.fifa-btn {
+    background: linear-gradient(90deg, #1e272e, #353b48);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    transform: skewX(-15deg); /* La inclinación clave de FIFA 14 */
+    font-weight: bold;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-left: 4px solid #00d2d3;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 100px;
+}
+
+.fifa-btn:active {
+    background: #00d2d3;
+    color: #000;
+    transform: skewX(-15deg) scale(0.95);
+}
+
+/* Panel de controles */
+.fifa-panel {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Selectores FIFA */
+#fifaScreen select, #fifaScreen input {
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 0;
+    transform: skewX(-10deg);
+    padding: 8px;
+    font-weight: bold;
+    width: 100%;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+/* TABLA RANKING */
+.fifa-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 5px; /* Espacio entre filas */
+}
+
+.fifa-table thead th {
+    color: #00d2d3;
+    font-style: italic;
+    text-align: center;
+    padding-bottom: 10px;
+    font-weight: 400;
+}
+
+.fifa-table tbody tr {
+    background: rgba(255, 255, 255, 0.1);
+    transition: transform 0.1s;
+}
+
+.fifa-table td {
+    padding: 12px 5px;
+    text-align: center;
+    border: none;
+}
+
+.fifa-table td:first-child {
+    border-left: 4px solid #ff005c; /* Borde rosa neón */
+    text-align: left;
+    padding-left: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.fifa-pts {
+    color: #ff005c;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+/* LOG DE PARTIDOS */
+.fifa-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fifa-match-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+    padding: 10px;
+    border-right: 3px solid #00d2d3;
+}
+
+.f-team { font-size: 0.9em; width: 40%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.f-team:last-child { text-align: right; }
+.f-score { font-size: 1.5em; font-weight: bold; color: #fff; width: 20%; text-align: center; background: rgba(0,0,0,0.3); transform: skewX(-10deg); }
+
+/* MODAL */
+.fifa-modal-box {
+    background: linear-gradient(135deg, #131d38, #000);
+    padding: 25px;
+    border: 2px solid #00d2d3;
+    width: 90%;
+    max-width: 400px;
+    transform: skewX(-5deg); /* Todo el modal inclinado */
+    box-shadow: 0 0 20px #00d2d3;
+}
+
+.fifa-score-input {
+    font-size: 2em !important;
+    background: transparent !important;
+    color: #ff005c !important;
+    border-bottom: 2px solid white !important;
+}

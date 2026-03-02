@@ -2,215 +2,18 @@
 const socket = io();
 
 const GAME_RULES = {
-    impostor: `🕵️ EL IMPOSTOR
---------------------------------
-🎯 OBJETIVO
-- Civiles: Descubrir quién es el impostor.
-- Impostor: Descubrir la palabra secreta o sobrevivir sin ser detectado.
-
-🕹️ DINÁMICA
-1. Configuración: El admin elige número de impostores, categoría (ej. Comida) y si hay Pistas o no.
-
-2. Roles:
-   - Toca tu tarjeta para ver tu rol.
-   - Civiles ven la "Palabra Secreta" (ej. "Pizza").
-   - El Impostor ve "IMPOSTOR" (y una pista vaga si están activas).
-
-3. Descripción:
-   - Por turnos, cada jugador dice UNA sola palabra relacionada con la secreta.
-   - Civiles: Sed vagos para que el impostor no sepa la palabra, pero claros para que sepan que sois ciudadanos.
-   - Impostor: Escucha, deduce y miente para encajar.
-   
-4. Votación:
-   - Pulsad los nombres en la pantalla para votar al sospechoso.
-
-5. Resolución:
-   - Si se expulsa a todos los impostores: Ganan Civiles.
-   - Si el número de impostores es el mismo al de ciudadanos: Gana los Impostores.
-   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
-
-    lobo: `🐺 EL LOBO (Werewolf)
---------------------------------
-🎯 OBJETIVO
-- Pueblo: Eliminar a todos los Lobos.
-- Lobos: Eliminar al Pueblo hasta igualarlos en número.
-
-🕹️ DINÁMICA
-(Una persona que no esté en la sala actúa como Narrador y guía las fases de viva voz)
-(En el futuro se desarrollará un modo en el que cada jugador interactúe con la pantalla)
-
-1. Roles Especiales:
-   - 🔮 Vidente: Ve el rol de un jugador cada noche.
-   - 👧 Niña: Puede abrir los ojos con cuidado (si la pillan, muere).
-   - 💘 Cupido: Enamora a dos (si uno muere, el otro también).
-   - 🔫 Cazador: Si muere, mata a otro inmediatamente.
-
-2. La Noche (Ojos cerrados):
-   - El Admin despierta a los Lobos. Ellos miran su móvil (ven a sus compañeros) y eligen víctima en silencio.
-   - El Admin despierta a los roles especiales para sus acciones secuencialmente.
-
-3. El Día (Ojos abiertos):
-   - Se anuncia quién murió. Debate y acusaciones.
-   - Votación: Usad la interfaz para linchar a un sospechoso.
-   - El más votado muere y revela rol.`,
-
-    anecdotas: `📜 ANÉCDOTAS
---------------------------------
-🎯 OBJETIVO
-Adivinar de quién es la anécdota leída y ganar puntos.
-
-🕹️ DINÁMICA
-1. Escritura:
-   - Escribe una anécdota breve, secreto o historia (real o inventada).
-   - Pulsa "Listo".
-
-2. Lectura:
-   - El juego muestra una anécdota anónima en pantalla grande.
-   - Alguien la lee en voz alta.
-
-3. Votación:
-   - Vota en tu móvil quién crees que es el autor.
-   - No puedes votarte a ti mismo.
-
-4. Puntos:
-   - Ganas puntos si adivinas el autor.
-   - El autor gana puntos sial menos una persona acierta y al menos otra persona falla .`,
-
-    elmas: `🏆 EL MÁS...
---------------------------------
-🎯 OBJETIVO
-Juego social de votación. Sin ganadores, solo opiniones.
-
-🕹️ DINÁMICA
-1. La Pregunta:
-   - Aparece una pregunta tipo: "¿Quién es más probable que acabe en la cárcel?" o "¿Quién liga más?".
-
-2. Votación:
-   - Vota al jugador que mejor encaje con la descripción.
-
-3. Resultados:
-   - Se muestran gráficas con los votos.
-   - Los puntos son proporcionales a la opinión popular`,
-
-    tabu: `🚫 TABÚ
---------------------------------
-🎯 OBJETIVO
-Que tu equipo adivine la palabra clave sin decir las prohibidas.
-
-🕹️ DINÁMICA
-1. Equipos:
-   - Uníos al Equipo Azul o Rojo en el lobby.
-
-2. El Turno:
-   - Un jugador sale al frente con su móvil.
-   - Tarjeta: Muestra la PALABRA CLAVE (Grande) y las PROHIBIDAS (Pequeñas).
-
-3. Controles (Quien describe):
-   - ✅ BIEN: Tu equipo acierta (+1 punto).
-   - ⏭️ SALTAR: Pasas palabra (Saltos limitados).
-   - 🚫 MAL: Has dicho una prohibida (Rival vigila y pulsa). Anula tarjeta.
-
-4. Tiempo:
-   - Al llegar a 0, cambio de turno.`,
-   torres: `🗼 TORRES
---------------------------------
-🎯 OBJETIVO
-Adivinar qué palabra tienes asignada viendo las palabras de los demás.
-
-🕹️ DINÁMICA
-1. Tú no puedes ver tu palabra ("???"), pero ves las de los demás.
-2. Hablad (o escribid en Modo Silencioso) haciendo preguntas de sí o no, o dando pistas sutiles.
-3. El Administrador marcará como "Ganador" a quien la adivine, y "Eliminado" a quien se rinda o falle catastróficamente.`,
-
-    pinturilloImp: `🎨 EL FALSO ARTISTA
---------------------------------
-🎯 OBJETIVO
-Todos dibujan algo sobre la misma palabra secreta. El impostor debe hacerse pasar por artista sin saber qué es.
-
-🕹️ DINÁMICA
-1. Roles:
-   - Artistas: Ven la palabra (ej. "Gato").
-   - Impostor: Ve "X" (no sabe qué dibujar) + la pista.
-
-2. Dibujo:
-   - Por turnos, cada uno dibuja UN solo trazo (una línea) en el lienzo común.
-   - El trazo debe ser suficiente para demostrar que sabes la palabra, pero no tan claro para regalársela al impostor.
-
-3. Votación:
-   - Tras X vueltas, se vota quién es el Falso Artista.
-   
-4. Desenlace:
-   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
-
-    mus: `🐄 REGISTRO DE MUS
---------------------------------
-Herramienta de seguimiento estadístico.
-
-🕹️ USO
-- + Jugador: Registra un nuevo nombre en la base de datos.
-- + Partida: Registra un resultado (Pareja 1 vs Pareja 2).
-- Estadísticas: Consulta Rankings, porcentajes de victoria y evolución histórica.`,
-
-    cifrasyletras: `🔢 CIFRAS Y LETRAS
---------------------------------
-🎯 OBJETIVO
-Conseguir el número exacto o la palabra más larga.
-
-🕹️ DINÁMICA
-1. Ronda Cifras:
-   - Se muestra un OBJETIVO (ej: 450) y 6 números.
-   - Tienes 60s para calcular.
-   - Puntuación: 
-     ❌ (0 pts): Fallo.
-     <10 (2 pts): Te has quedado a menos de 10 de distancia.
-     ✅ (5 pts): Exacto.
-
-2. Ronda Letras:
-   - Salen 12 letras. Tienes 60s para buscar la palabra más larga.
-   - Puntuación: 1 punto por cada letra de tu palabra válida.`,
-
-   orden: `🔢 ORDEN
---------------------------------
-🎯 OBJETIVO
-Ordenad a los jugadores en la lista según el valor de su carta oculta.
-
-🕹️ DINÁMICA
-1. Tu Carta: Toca la tarjeta superior para ver tu número o acción.
-2. Cooperación: 
-   - Usa las flechas ▲ ▼ para SUGERIR dónde debe ir cada jugador.
-   - El número bajo la flecha indica cuántos jugadores opinan lo mismo.
-3. El Admin: Es el único que puede MOVER realmente a los jugadores basándose en las sugerencias.
-4. Listo: Cuando creas que tu posición es correcta, pulsa LISTO.
-5. Resolución: El Admin finalizará la ronda. ¡Necesitáis un 80% de aciertos para ganar!`,
-
-consejo: `🦉 CONSEJO DE SABIOS
---------------------------------
-Herramienta para gestionar debates o decisiones.
-
-1. Añade a los "Sabios" (jugadores) en la lista superior.
-2. Elige un tema (Filosofía, Salseo, Dilemas...).
-3. Pulsa "Pregunta" para sacar un tema de conversación al azar.
-4. Pulsa "Elegido" para seleccionar aleatoriamente a uno de los sabios para que empiece a hablar.`,
-
-    tecnico: `🛠️ AYUDA TÉCNICA
-================================
-
-🔑 ADMINISTRADOR (Admin)
-No hay contraseñas.
-1. Primer Llegado: Si entras a una sala vacía, eres Admin (👑).
-2. Nombres Clave: Entra como "Admin" para ser Administrador de una sala.
-3. Poderes: Configurar partida, Kick (Echar), Kill (Matar en juego) y Reset.
-
-♻️ SISTEMA
-- Sala Vacía: Si todos salen, la sala se reinicia (Soft Reset).
-- Reconexión: Si cierras y vuelves, el sistema te recuerda. Para cambiar de nombre o sala, pulsa "❌ Salir"(botón ROJO) arriba.
-- Observador: Si entras a una partida empezada, podrás mirar pero no votar.
-
-⚠️ SOLUCIÓN DE PROBLEMAS
-1. ¿No hay botón empezar?: No eres admin. Que el admin salga y entre, o entra tú con nombre "Admin".
-2. Pantalla pillada: Refresca el navegador. Si no funciona: Pide al Administrador que pulse "Reset" o "Finalizar".
-3. Tarjeta cortada: Gira el móvil o sal del modo escritorio (tres puntitos: "Vista" (o "Versión") para ordenador).
-4. Lag: Recarga la página (F5). No perderás tu puesto.`
+    impostor: `🕵️ EL IMPOSTOR\n--------------------------------\n🎯 OBJETIVO\n- Civiles: Descubrir quién es el impostor.\n- Impostor: Descubrir la palabra secreta o sobrevivir sin ser detectado.\n\n🕹️ DINÁMICA\n1. Configuración: El admin elige número de impostores, categoría (ej. Comida) y si hay Pistas o no.\n\n2. Roles:\n   - Toca tu tarjeta para ver tu rol.\n   - Civiles ven la "Palabra Secreta" (ej. "Pizza").\n   - El Impostor ve "IMPOSTOR" (y una pista vaga si están activas).\n\n3. Descripción:\n   - Por turnos, cada jugador dice UNA sola palabra relacionada con la secreta.\n   - Civiles: Sed vagos para que el impostor no sepa la palabra, pero claros para que sepan que sois ciudadanos.\n   - Impostor: Escucha, deduce y miente para encajar.\n   \n4. Votación:\n   - Pulsad los nombres en la pantalla para votar al sospechoso.\n\n5. Resolución:\n   - Si se expulsa a todos los impostores: Ganan Civiles.\n   - Si el número de impostores es el mismo al de ciudadanos: Gana los Impostores.\n   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
+    lobo: `🐺 EL LOBO (Werewolf)\n--------------------------------\n🎯 OBJETIVO\n- Pueblo: Eliminar a todos los Lobos.\n- Lobos: Eliminar al Pueblo hasta igualarlos en número.\n\n🕹️ DINÁMICA\n(Una persona que no esté en la sala actúa como Narrador y guía las fases de viva voz)\n(En el futuro se desarrollará un modo en el que cada jugador interactúe con la pantalla)\n\n1. Roles Especiales:\n   - 🔮 Vidente: Ve el rol de un jugador cada noche.\n   - 👧 Niña: Puede abrir los ojos con cuidado (si la pillan, muere).\n   - 💘 Cupido: Enamora a dos (si uno muere, el otro también).\n   - 🔫 Cazador: Si muere, mata a otro inmediatamente.\n\n2. La Noche (Ojos cerrados):\n   - El Admin despierta a los Lobos. Ellos miran su móvil (ven a sus compañeros) y eligen víctima en silencio.\n   - El Admin despierta a los roles especiales para sus acciones secuencialmente.\n\n3. El Día (Ojos abiertos):\n   - Se anuncia quién murió. Debate y acusaciones.\n   - Votación: Usad la interfaz para linchar a un sospechoso.\n   - El más votado muere y revela rol.`,
+    anecdotas: `📜 ANÉCDOTAS\n--------------------------------\n🎯 OBJETIVO\nAdivinar de quién es la anécdota leída y ganar puntos.\n\n🕹️ DINÁMICA\n1. Escritura:\n   - Escribe una anécdota breve, secreto o historia (real o inventada).\n   - Pulsa "Listo".\n\n2. Lectura:\n   - El juego muestra una anécdota anónima en pantalla grande.\n   - Alguien la lee en voz alta.\n\n3. Votación:\n   - Vota en tu móvil quién crees que es el autor.\n   - No puedes votarte a ti mismo.\n\n4. Puntos:\n   - Ganas puntos si adivinas el autor.\n   - El autor gana puntos sial menos una persona acierta y al menos otra persona falla .`,
+    elmas: `🏆 EL MÁS...\n--------------------------------\n🎯 OBJETIVO\nJuego social de votación. Sin ganadores, solo opiniones.\n\n🕹️ DINÁMICA\n1. La Pregunta:\n   - Aparece una pregunta tipo: "¿Quién es más probable que acabe en la cárcel?" o "¿Quién liga más?".\n\n2. Votación:\n   - Vota al jugador que mejor encaje con la descripción.\n\n3. Resultados:\n   - Se muestran gráficas con los votos.\n   - Los puntos son proporcionales a la opinión popular`,
+    tabu: `🚫 TABÚ\n--------------------------------\n🎯 OBJETIVO\nQue tu equipo adivine la palabra clave sin decir las prohibidas.\n\n🕹️ DINÁMICA\n1. Equipos:\n   - Uníos al Equipo Azul o Rojo en el lobby.\n\n2. El Turno:\n   - Un jugador sale al frente con su móvil.\n   - Tarjeta: Muestra la PALABRA CLAVE (Grande) y las PROHIBIDAS (Pequeñas).\n\n3. Controles (Quien describe):\n   - ✅ BIEN: Tu equipo acierta (+1 punto).\n   - ⏭️ SALTAR: Pasas palabra (Saltos limitados).\n   - 🚫 MAL: Has dicho una prohibida (Rival vigila y pulsa). Anula tarjeta.\n\n4. Tiempo:\n   - Al llegar a 0, cambio de turno.`,
+    torres: `🗼 TORRES\n--------------------------------\n🎯 OBJETIVO\nAdivinar qué palabra tienes asignada viendo las palabras de los demás.\n\n🕹️ DINÁMICA\n1. Tú no puedes ver tu palabra ("???"), pero ves las de los demás.\n2. Hablad (o escribid en Modo Silencioso) haciendo preguntas de sí o no, o dando pistas sutiles.\n3. El Administrador marcará como "Ganador" a quien la adivine, y "Eliminado" a quien se rinda o falle catastróficamente.`,
+    pinturilloImp: `🎨 EL FALSO ARTISTA\n--------------------------------\n🎯 OBJETIVO\nTodos dibujan algo sobre la misma palabra secreta. El impostor debe hacerse pasar por artista sin saber qué es.\n\n🕹️ DINÁMICA\n1. Roles:\n   - Artistas: Ven la palabra (ej. "Gato").\n   - Impostor: Ve "X" (no sabe qué dibujar) + la pista.\n\n2. Dibujo:\n   - Por turnos, cada uno dibuja UN solo trazo (una línea) en el lienzo común.\n   - El trazo debe ser suficiente para demostrar que sabes la palabra, pero no tan claro para regalársela al impostor.\n\n3. Votación:\n   - Tras X vueltas, se vota quién es el Falso Artista.\n   \n4. Desenlace:\n   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
+    mus: `🐄 REGISTRO DE MUS\n--------------------------------\nHerramienta de seguimiento estadístico.\n\n🕹️ USO\n- + Jugador: Registra un nuevo nombre en la base de datos.\n- + Partida: Registra un resultado (Pareja 1 vs Pareja 2).\n- Estadísticas: Consulta Rankings, porcentajes de victoria y evolución histórica.`,
+    cifrasyletras: `🔢 CIFRAS Y LETRAS\n--------------------------------\n🎯 OBJETIVO\nConseguir el número exacto o la palabra más larga.\n\n🕹️ DINÁMICA\n1. Ronda Cifras:\n   - Se muestra un OBJETIVO (ej: 450) y 6 números.\n   - Tienes 60s para calcular.\n   - Puntuación: \n     ❌ (0 pts): Fallo.\n     <10 (2 pts): Te has quedado a menos de 10 de distancia.\n     ✅ (5 pts): Exacto.\n\n2. Ronda Letras:\n   - Salen 12 letras. Tienes 60s para buscar la palabra más larga.\n   - Puntuación: 1 punto por cada letra de tu palabra válida.`,
+    orden: `🔢 ORDEN\n--------------------------------\n🎯 OBJETIVO\nOrdenad a los jugadores en la lista según el valor de su carta oculta.\n\n🕹️ DINÁMICA\n1. Tu Carta: Toca la tarjeta superior para ver tu número o acción.\n2. Cooperación: \n   - Usa las flechas ▲ ▼ para SUGERIR dónde debe ir cada jugador.\n   - El número bajo la flecha indica cuántos jugadores opinan lo mismo.\n3. El Admin: Es el único que puede MOVER realmente a los jugadores basándose en las sugerencias.\n4. Listo: Cuando creas que tu posición es correcta, pulsa LISTO.\n5. Resolución: El Admin finalizará la ronda. ¡Necesitáis un 80% de aciertos para ganar!`,
+    consejo: `🦉 CONSEJO DE SABIOS\n--------------------------------\nHerramienta para gestionar debates o decisiones.\n\n1. Añade a los "Sabios" (jugadores) en la lista superior.\n2. Elige un tema (Filosofía, Salseo, Dilemas...).\n3. Pulsa "Pregunta" para sacar un tema de conversación al azar.\n4. Pulsa "Elegido" para seleccionar aleatoriamente a uno de los sabios para que empiece a hablar.`,
+    tecnico: `🛠️ AYUDA TÉCNICA\n================================\n\n🔑 ADMINISTRADOR (Admin)\nNo hay contraseñas.\n1. Primer Llegado: Si entras a una sala vacía, eres Admin (👑).\n2. Nombres Clave: Entra como "Admin" para ser Administrador de una sala.\n3. Poderes: Configurar partida, Kick (Echar), Kill (Matar en juego) y Reset.\n\n♻️ SISTEMA\n- Sala Vacía: Si todos salen, la sala se reinicia (Soft Reset).\n- Reconexión: Si cierras y vuelves, el sistema te recuerda. Para cambiar de nombre o sala, pulsa "❌ Salir"(botón ROJO) arriba.\n- Observador: Si entras a una partida empezada, podrás mirar pero no votar.\n\n⚠️ SOLUCIÓN DE PROBLEMAS\n1. ¿No hay botón empezar?: No eres admin. Que el admin salga y entre, o entra tú con nombre "Admin".\n2. Pantalla pillada: Refresca el navegador. Si no funciona: Pide al Administrador que pulse "Reset" o "Finalizar".\n3. Tarjeta cortada: Gira el móvil o sal del modo escritorio (tres puntitos: "Vista" (o "Versión") para ordenador).\n4. Lag: Recarga la página (F5). No perderás tu puesto.`
 };
 
 const ROOM_EMOJIS = {
@@ -225,34 +28,147 @@ window.app = {
     pendingRoomId: null,
     myPlayerId: null,
     myPlayerName: null,
+    isAuthenticatedUser: false, // Nueva variable para saber si ingresó contraseña válida
     categoriesCache: {},
     currentScreenId: 'hubScreen', 
+
+    // --- NUEVAS FUNCIONES DE REGISTRO Y AUTENTICACIÓN ---
+    auth: {
+        pendingCallback: null,
+        pendingName: null,
+        checkTimeout: null,
+
+        openRegister: () => {
+            document.getElementById('registerModal').classList.remove('hidden');
+            document.getElementById('regUsername').value = document.getElementById('username').value.trim();
+            app.auth.checkAvailability();
+        },
+
+        closeRegister: () => {
+            document.getElementById('registerModal').classList.add('hidden');
+        },
+
+        checkAvailability: () => {
+            clearTimeout(app.auth.checkTimeout);
+            const nameRaw = document.getElementById('regUsername').value.trim();
+            const name = nameRaw.toLowerCase();
+            const statusEl = document.getElementById('regStatus');
+            
+            if (name.length < 3) {
+                statusEl.innerHTML = "Mínimo 3 letras";
+                statusEl.style.color = "var(--accent-red)";
+                return;
+            }
+            if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) {
+                statusEl.innerHTML = "Sin espacios, solo letras/números";
+                statusEl.style.color = "var(--accent-red)";
+                return;
+            }
+
+            statusEl.innerHTML = "Comprobando... ⏳";
+            statusEl.style.color = "var(--text-muted)";
+
+            app.auth.checkTimeout = setTimeout(() => {
+                socket.emit('checkUsernameAvailability', name, (res) => {
+                    if (res.available) {
+                        statusEl.innerHTML = "✅ Disponible";
+                        statusEl.style.color = "var(--accent-green)";
+                    } else if (res.pending) {
+                        statusEl.innerHTML = "⚠️ Pendiente de aprobación";
+                        statusEl.style.color = "var(--accent-gold)";
+                    } else {
+                        statusEl.innerHTML = "❌ Nombre ya registrado";
+                        statusEl.style.color = "var(--accent-red)";
+                    }
+                });
+            }, 500);
+        },
+
+        submitRegistration: () => {
+            const nameRaw = document.getElementById('regUsername').value.trim();
+            const name = nameRaw.toLowerCase();
+            const pass = document.getElementById('regPassword').value;
+            const email = document.getElementById('regEmail').value.trim();
+
+            if (name.length < 3) return alert("Nombre demasiado corto.");
+            if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) {
+                return alert("El nombre solo puede contener letras minúsculas y números (sin espacios).");
+            }
+            if (pass.length < 4) return alert("Contraseña mínima de 4 caracteres.");
+            
+            socket.emit('submitAuthRequest', { type: 'register', username: name, password: pass, email: email }, () => {
+                alert("Solicitud enviada. Los administradores revisarán tu petición pronto. Puedes usar el nombre mientras tanto, pero si se aprueba necesitarás la contraseña.");
+                app.auth.closeRegister();
+            });
+        },
+
+        openForgotPassword: () => {
+            app.cancelPassword();
+            const pass = prompt(`¿Has olvidado la contraseña de "${app.auth.pendingName}"?\nEscribe aquí una NUEVA contraseña. Se enviará a los administradores para que la aprueben:`);
+            if (!pass || pass.length < 4) {
+                alert("Operación cancelada o contraseña muy corta.");
+                return;
+            }
+            socket.emit('submitAuthRequest', { type: 'forgot', username: app.auth.pendingName, password: pass, email: '' }, () => {
+                alert("Petición de cambio de contraseña enviada a los administradores.");
+            });
+        },
+
+        // Panel Admin Auth
+        openAdminPanel: () => {
+            app.showScreen('authAdminScreen');
+            socket.emit('getAuthRequests', app.myPlayerName);
+        },
+
+        resolveRequest: (reqId, action) => {
+            if (confirm(`¿Estás seguro de ${action === 'approve' ? 'APROBAR' : 'RECHAZAR'} esta solicitud?`)) {
+                socket.emit('resolveAuthRequest', { adminName: app.myPlayerName, reqId, action });
+            }
+        }
+    },
+
+    showPasswordModal: (name, callback) => {
+        app.auth.pendingName = name;
+        app.auth.pendingCallback = callback;
+        document.getElementById('passwordModal').classList.remove('hidden');
+        const input = document.getElementById('adminPasswordInput');
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 100);
+        }
+    },
+
+    cancelPassword: () => {
+        document.getElementById('passwordModal').classList.add('hidden');
+        app.auth.pendingCallback = null;
+    },
+
+    submitPassword: () => {
+        const pwd = document.getElementById('adminPasswordInput').value;
+        const name = app.auth.pendingName;
+        const callback = app.auth.pendingCallback;
+        
+        if (!pwd) return alert("Introduce la contraseña.");
+
+        socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
+            if (!response.success) {
+                alert("Contraseña incorrecta.");
+                document.getElementById('adminPasswordInput').value = '';
+                return;
+            }
+            app.isAuthenticatedUser = true; // Confirmar identidad real
+            document.getElementById('passwordModal').classList.add('hidden');
+            if (callback) callback();
+        });
+    },
+
+    // ----------------------------------------------------
 
     forceFiestaStyles: () => {
         const menu = document.getElementById('fiestaMenu');
         if (!menu) return;
-
         menu.classList.remove('hidden');
         menu.style.display = 'block';
-        menu.style.width = '100%';
-
-        const grid = menu.querySelector('.hub-grid');
-        if (grid) {
-            grid.style.cssText = "display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 15px !important; width: 100% !important;";
-        }
-
-        const cards = menu.querySelectorAll('.hub-card');
-        cards.forEach(card => {
-            card.style.cssText = "display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; min-height: 120px !important; background-color: #2f3542 !important; border-radius: 12px !important; padding: 15px !important; box-shadow: 0 4px 0 rgba(0,0,0,0.2) !important; cursor: pointer !important; opacity: 1 !important; visibility: visible !important;";
-            
-            const originalBorder = card.getAttribute('style');
-            if(originalBorder && originalBorder.includes('border-left')) {
-                const colorMatch = originalBorder.match(/border-left:\s*4px\s*solid\s*(#[0-9a-fA-F]+)/);
-                if(colorMatch) {
-                    card.style.borderLeft = `4px solid ${colorMatch[1]}`;
-                }
-            }
-        });
     },
 
     initFloatingWidget: () => {
@@ -261,10 +177,13 @@ window.app = {
         let isDragging = false;
         let hasMoved = false; 
         let offsetX, offsetY;
+        let startX, startY; // Variables nuevas para medir toques temblorosos
 
         const startDrag = (x, y) => {
             isDragging = true;
             hasMoved = false;
+            startX = x;
+            startY = y;
             const rect = widget.getBoundingClientRect();
             offsetX = x - rect.left;
             offsetY = y - rect.top;
@@ -274,7 +193,12 @@ window.app = {
 
         const moveDrag = (x, y) => {
             if (!isDragging) return;
-            hasMoved = true;
+            
+            // Tolerancia de 5px: Si el dedo se mueve menos de eso, sigue contando como clic
+            if (Math.abs(x - startX) > 5 || Math.abs(y - startY) > 5) {
+                hasMoved = true;
+            }
+            
             let newX = x - offsetX;
             let newY = y - offsetY;
             newX = Math.max(0, Math.min(window.innerWidth - widget.offsetWidth, newX));
@@ -288,7 +212,10 @@ window.app = {
             if (!isDragging) return;
             isDragging = false;
             widget.style.cursor = 'grab';
-            if (!hasMoved) app.changeName(); 
+            if (!hasMoved) {
+                // El timeout de 50ms evita que iOS/Android bloqueen el alert/confirm táctil
+                setTimeout(() => app.changeName(), 50); 
+            }
         };
 
         widget.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
@@ -339,7 +266,7 @@ window.app = {
             'fiestaScreen', 'statsSelectionScreen',
             'fifaScreen', 'torresLobby', 'torresGame',
             'darkstoriesScreen', 'beberScreen', 'beberStatsScreen',
-            'analyticsScreen'
+            'analyticsScreen', 'authAdminScreen'
         ];
         
         screens.forEach(s => {
@@ -359,7 +286,21 @@ window.app = {
 
         const widget = document.getElementById('floatingUserWidget');
         const widgetText = document.getElementById('floatingUserText');
+        const btnAdminAuth = document.getElementById('btnAdminAuth');
+        const btnHubAnalytics = document.getElementById('btnHubAnalytics'); // <--- Añadido
         
+        // Controlar el botón de Panel Admin y Analytics en el Hub
+        if (id === 'hubScreen') {
+            const isAdm = ['musero', 'administrador m', 'xarlie'].includes((app.myPlayerName||'').toLowerCase());
+            if (isAdm && app.isAuthenticatedUser) {
+                if (btnAdminAuth) btnAdminAuth.classList.remove('hidden');
+                if (btnHubAnalytics) btnHubAnalytics.classList.remove('hidden');
+            } else {
+                if (btnAdminAuth) btnAdminAuth.classList.add('hidden');
+                if (btnHubAnalytics) btnHubAnalytics.classList.add('hidden');
+            }
+        }
+
         if (id === 'loginScreen' && !app.myPlayerName) {
             widget.classList.add('hidden');
         } else {
@@ -368,14 +309,13 @@ window.app = {
             const roomName = app.currentRoom ? app.currentRoom.toUpperCase() : "HUB";
             const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
             
-            // --- CAMBIO AQUÍ: Emoji condicional para el Administrador ---
             const lowerName = name.toLowerCase();
-            const userEmoji = (lowerName === 'administrador m' || lowerName === 'xarlie') ? "👮" : "👤";
-            // -------------------------------------------------------------
+            const userEmoji = (['administrador m', 'xarlie', 'musero'].includes(lowerName)) ? "👑" : (app.isAuthenticatedUser ? "🛡️" : "👤");
 
             const roomEmoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
             widgetText.innerHTML = `<span style="opacity:0.7">${roomEmoji} ${roomName}${roomId}</span><br><strong>${userEmoji} ${name}</strong>`;
         }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
     findActiveSession: () => {
@@ -472,6 +412,7 @@ window.app = {
     editName: () => {
         localStorage.removeItem('global_username');
         app.myPlayerName = null;
+        app.isAuthenticatedUser = false;
         const input = document.getElementById('username');
         if(input) input.value = "";
         app.renderLoginScreen(app.currentRoom);
@@ -482,37 +423,27 @@ window.app = {
         let name = nameInput.value.trim().toLowerCase();
         
         if (!name) return alert('¡Ponte un nombre!');
-
         if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) {
             return alert('El nombre solo puede contener letras minúsculas y números (sin espacios).');
         }
 
-        const protectedNames = ['musero', 'administrador m', 'xarlie'];
-        
-        const finalizeLogin = () => {
-            localStorage.setItem('global_username', name);
-            app.myPlayerName = name; 
-            socket.emit('registerVisit', name);
-            app.currentRoom = null;
-            app.pendingRoomId = null;
-            app.showScreen('hubScreen'); 
-        };
+        socket.emit('checkAuthRequirement', name, (res) => {
+            const finalizeLogin = () => {
+                localStorage.setItem('global_username', name);
+                app.myPlayerName = name; 
+                socket.emit('registerVisit', name);
+                app.currentRoom = null;
+                app.pendingRoomId = null;
+                app.showScreen('hubScreen'); 
+            };
 
-        if (protectedNames.includes(name)) {
-            const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            if (!pwd) return; // Si cancela, no hacemos nada
-
-            // Preguntamos al servidor de forma invisible
-            socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
-                if (!response.success) {
-                    alert("Contraseña incorrecta.");
-                    return;
-                }
+            if (res.needsPassword) {
+                app.showPasswordModal(name, finalizeLogin);
+            } else {
+                app.isAuthenticatedUser = false;
                 finalizeLogin();
-            });
-        } else {
-            finalizeLogin();
-        }
+            }
+        });
     },
 
     joinGame: (roomIdOverride = null) => {
@@ -524,24 +455,19 @@ window.app = {
 
         if (nameInput && nameInput.value.trim().length > 0) {
             name = nameInput.value.trim().toLowerCase();
-        } 
-        else if (app.myPlayerName) {
+        } else if (app.myPlayerName) {
             name = app.myPlayerName.toLowerCase();
         }
 
         if (!name) return alert('¡Ponte un nombre!');
-
         if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) {
             return alert('El nombre solo puede contener letras minúsculas y números (sin espacios).');
         }
-
-        const protectedNames = ['musero', 'administrador m', 'xarlie'];
 
         const finalizeJoin = () => {
             localStorage.setItem('global_username', name);
             app.myPlayerName = name; 
             socket.emit('registerVisit', name);
-
             if (app.currentRoom) {
                 socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId });
             } else {
@@ -549,20 +475,18 @@ window.app = {
             }
         };
 
-        if (protectedNames.includes(name) && app.myPlayerName !== name) {
-            const pwd = prompt("Esta cuenta está protegida. Introduce la contraseña:");
-            if (!pwd) return;
-
-            // Preguntamos al servidor de forma invisible
-            socket.emit('verifyPassword', { username: name, password: pwd }, (response) => {
-                if (!response.success) {
-                    alert("Contraseña incorrecta.");
-                    return;
-                }
-                finalizeJoin();
-            });
-        } else {
+        if (app.myPlayerName === name && app.isAuthenticatedUser) {
+            // Ya estaba validado
             finalizeJoin();
+        } else {
+            socket.emit('checkAuthRequirement', name, (res) => {
+                if (res.needsPassword) {
+                    app.showPasswordModal(name, finalizeJoin);
+                } else {
+                    app.isAuthenticatedUser = false;
+                    finalizeJoin();
+                }
+            });
         }
     },
 
@@ -579,8 +503,12 @@ window.app = {
             });
         }
     },
-    
+
     changeName: () => {
+        if (app.isAuthenticatedUser) {
+            if(!confirm("Tienes tu nombre protegido activado. Si lo cambias, tendrás que volver a introducir la contraseña la próxima vez. ¿Continuar?")) return;
+        }
+
         if (app.currentRoom) {
              if (!confirm(`Para cambiar de nombre debes salir de la sala actual. ¿Continuar?`)) return;
              app.goBackToHub(true); 
@@ -589,6 +517,7 @@ window.app = {
         
         localStorage.removeItem('global_username');
         app.myPlayerName = null;
+        app.isAuthenticatedUser = false;
         app.currentRoom = null;
         app.currentRoomId = null;
         
@@ -675,18 +604,55 @@ window.addEventListener('popstate', (event) => {
     }
 });
 
+// --- RECEPTORES DE SOCKET.IO ---
+
+socket.on('forceKickIfUnregistered', (kickedName) => {
+    // Si alguien usa el nombre sin autenticarse (porque justo lo registraron)
+    if (app.myPlayerName === kickedName && !app.isAuthenticatedUser) {
+        alert("⚠️ ATENCIÓN: Alguien acaba de registrar tu nickname oficialmente. Has sido desconectado.");
+        app.changeName(); 
+    }
+});
+
+socket.on('authRequestsList', (requests) => {
+    const list = document.getElementById('authAdminList');
+    if (!list) return;
+    if (requests.length === 0) {
+        list.innerHTML = "<p style='color:#aaa;'>No hay solicitudes pendientes.</p>";
+        return;
+    }
+    
+    let html = "";
+    requests.forEach(r => {
+        const typeEmoji = r.type === 'register' ? '🆕 Registro' : '🔑 Cambio de Clave';
+        const color = r.type === 'register' ? '#2ed573' : '#ffa502';
+        html += `
+        <div style="background:var(--bg-card); padding:15px; border-radius:10px; border-left:4px solid ${color}; margin-bottom:10px; text-align:left; box-shadow:var(--card-shadow-3d);">
+            <div style="font-weight:bold; color:${color}; margin-bottom:5px;">${typeEmoji}</div>
+            <div><span style="color:var(--text-muted);">Usuario:</span> <b style="color:var(--text-main); font-size:1.1em">${r.username}</b></div>
+            <div><span style="color:var(--text-muted);">Clave deseada:</span> <span style="font-family:monospace; color:var(--accent-red);">${r.password}</span></div>
+            <div><span style="color:var(--text-muted);">Email:</span> ${r.email || '<i>N/A</i>'}</div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="app.auth.resolveRequest('${r.id}', 'reject')" style="flex:1; background:var(--accent-red); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">❌ RECHAZAR</button>
+                <button onclick="app.auth.resolveRequest('${r.id}', 'approve')" style="flex:1; background:var(--accent-green); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">✅ ACEPTAR</button>
+            </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+});
+
 socket.on('hubRoomsUpdate', (rooms) => {
     const hubContainer = document.getElementById('activeRoomsList');
     if (hubContainer) {
         if (rooms.length === 0) {
-            hubContainer.innerHTML = "<p style='color:#555; font-size:0.8em'>No hay salas activas.</p>";
+            hubContainer.innerHTML = "<p style='color:var(--text-muted); font-size:0.8em'>No hay salas activas.</p>";
         } else {
             let html = "<h3>Salas Activas</h3><div class='hub-grid'>";
             rooms.forEach(r => {
                 html += `
                 <div class="hub-card" style="border-left-color: #00cec9; padding: 10px;" onclick="app.selectActiveRoom('${r.game}', '${r.id}')">
-                    <div style="font-weight:bold">${ROOM_EMOJIS[r.game] || '🎮'} ${r.id}</div>
-                    <div style="font-size:0.8em; color:#aaa">${r.players} Jugadores - ${r.status}</div>
+                    <div style="font-weight:bold; color:var(--text-main);">${ROOM_EMOJIS[r.game] || '🎮'} ${r.id}</div>
+                    <div style="font-size:0.8em; color:var(--text-muted);">${r.players} Jugadores - ${r.status}</div>
                 </div>`;
             });
             html += "</div>";
@@ -699,17 +665,17 @@ socket.on('hubRoomsUpdate', (rooms) => {
         const myGameRooms = rooms.filter(r => r.game === app.currentRoom);
         
         if (myGameRooms.length === 0) {
-            gameContainer.innerHTML = "<p style='color:#666; font-style:italic;'>No hay salas creadas. ¡Crea una!</p>";
+            gameContainer.innerHTML = "<p style='color:var(--text-muted); font-style:italic;'>No hay salas creadas. ¡Crea una!</p>";
         } else {
             let html = "";
             myGameRooms.forEach(r => {
                 html += `
-                <div class="hub-card" style="border-left-color: #2ed573; padding: 15px; margin-bottom:10px;" onclick="app.joinGame('${r.id}')">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:bold; font-size:1.2em;">${r.id}</span>
-                        <span style="background:#2f3542; padding:2px 8px; border-radius:5px; font-size:0.8em;">${r.status}</span>
+                <div class="hub-card" style="border-left-color: var(--accent-green); padding: 15px; margin-bottom:10px;" onclick="app.joinGame('${r.id}')">
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <span style="font-weight:bold; font-size:1.2em; color:var(--text-main);">${r.id}</span>
+                        <span style="background:var(--admin-row); padding:2px 8px; border-radius:5px; font-size:0.8em; color:var(--text-muted);">${r.status}</span>
                     </div>
-                    <div style="font-size:0.9em; color:#aaa; text-align:left;">👤 ${r.players} Jugadores</div>
+                    <div style="font-size:0.9em; color:var(--text-muted); text-align:left; width:100%; margin-top:5px;">👤 ${r.players} Jugadores</div>
                 </div>`;
             });
             gameContainer.innerHTML = html;
@@ -750,12 +716,7 @@ socket.on('joinedSuccess', (data) => {
     
     else if (data.room === 'fiesta') {
         app.showScreen('fiestaScreen');
-        
-        const screen = document.getElementById('fiestaScreen');
-        screen.classList.remove('hidden');
-
         app.forceFiestaStyles();
-
         setTimeout(() => {
             if (app.fiesta && app.fiesta.init) app.fiesta.init();
         }, 100);
@@ -800,11 +761,17 @@ window.onload = function() {
         if (correctedName.length > 0) {
             localStorage.setItem('global_username', correctedName);
             app.myPlayerName = correctedName; 
+            app.isAuthenticatedUser = true; // Confía en la sesión guardada al recargar
             socket.emit('registerVisit', correctedName);
         } else {
             localStorage.removeItem('global_username');
             app.myPlayerName = null;
+            // NUEVO: Registrar visita aunque el nombre guardado fuera inválido/vacío
+            socket.emit('registerVisit', 'Anónimo'); 
         }
+    } else {
+        // NUEVO: Registrar visita si es la primera vez que entra a la web y no tiene nombre
+        socket.emit('registerVisit', 'Anónimo');
     }
 
     const nameInput = document.getElementById('username');
