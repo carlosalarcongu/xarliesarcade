@@ -17,9 +17,12 @@
 
     <div id="hubScreen">
         <div class="header-wrapper">
-            <div class="header-tools-left">
+            <div class="header-tools-left" style="display:flex; flex-direction:column; gap:2px;">
                 <button class="ignored-btn" onclick="app.showStatsMenu()">
                     Stats
+                </button>
+                <button id="btnAdminAuth" class="ignored-btn hidden" onclick="app.auth.openAdminPanel()">
+                    Admins
                 </button>
             </div>
 
@@ -85,7 +88,7 @@
                 <div style="font-size:1.5em; color:#57606f">➜</div>
             </div>
 
-            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #1cff2f;">
+            <div class="hub-card disabled hidden" onclick="app.showDevMessage()" style="border-left-color: #1cff2f;">
                 <div class="hub-icon">🐺</div>
                 <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
                 <div style="font-size:1.5em; color:#57606f">➜</div>
@@ -117,7 +120,7 @@
                 <span class="mini-title">Fiesta</span>
             </div>
 
-            <div class="mini-card" onclick="app.selectRoom('consejo')" style="border-left: 3px solid #ecf0f1;">
+            <div class="mini-card hidden" onclick="app.selectRoom('consejo')" style="border-left: 3px solid #ecf0f1;">
                 <span class="mini-icon">🦉</span>
                 <span class="mini-title">Consejo</span>
             </div>
@@ -131,15 +134,15 @@
                 <span class="mini-icon">🎁</span>
                 <span class="mini-title">Give XP</span>
             </div>
-            <div class="mini-card" onclick="app.selectRoom('trivial')" style="border-left: 3px solid #f1c40f;">
+            <div class="mini-card hidden" onclick="app.selectRoom('trivial')" style="border-left: 3px solid #f1c40f;">
                 <span class="mini-icon">🧀</span>
                 <span class="mini-title">Trivial</span>
             </div>
             <div class="mini-card" onclick="app.selectRoom('darkstories')" style="border-left: 3px solid #8c7ae6;">
                 <span class="mini-icon">📖</span>
-                <span class="mini-title">Dark Stories</span>
+                <span class="mini-title">Stories</span>
             </div>
-            <div class="mini-card" onclick="app.selectRoom('analytics')" style="border-left: 3px solid #3498db;">
+            <div id="btnHubAnalytics" class="mini-card hidden" onclick="app.selectRoom('analytics')" style="border-left: 3px solid #3498db;">
                 <span class="mini-icon">📈</span>
                 <span class="mini-title">Analytics</span>
             </div>
@@ -172,6 +175,11 @@
         <div id="nameEntryArea" class="card">
             <p style="margin-bottom:10px;">¿Cómo te llamas?</p>
             <input type="text" id="username" placeholder="Tu nombre..." maxlength="18" autocomplete="off">
+            
+            <div style="text-align: right; margin-top: -10px; margin-bottom: 15px;">
+                <span onclick="app.auth.openRegister()" style="color:#74b9ff; font-size:0.8em; font-weight:bold; cursor:pointer; text-decoration:underline;">📝 Registrar mi nombre</span>
+            </div>
+
             <button class="main-btn" onclick="app.saveNameAndContinue()">GUARDAR</button>
         </div>
 
@@ -193,6 +201,15 @@
             <h3 style="margin-top:0; color: #fff;">📖 Cómo se juega:</h3>
             <div id="loginRulesText" style="line-height: 1.4em; color: #ccc;">...</div>
         </div>
+    </div>
+
+    <div id="authAdminScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Volver</button>
+        </div>
+        <h2 style="color:#ff4757;">🛡️ Panel de Registros</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">Aprueba los nuevos nicks y reseteos de clave.</p>
+        <div id="authAdminList" style="width:100%;"></div>
     </div>
 
     <div id="impostorLobby" class="hidden">
@@ -1723,13 +1740,39 @@
         </div>
     </div>
 
+    <div id="registerModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; justify-content:center; align-items:center;">
+        <div class="card" style="width:90%; max-width:350px; border: 2px solid #74b9ff; background: #2f3542;">
+            <h3 style="color:#74b9ff; margin-bottom:10px;">📝 Registrar Nickname</h3>
+            <p style="color:#aaa; font-size:0.8em; margin-bottom:15px;">Protege tu nombre con una contraseña para que nadie más pueda usarlo.</p>
+            
+            <label style="display:block; text-align:left; color:#aaa; font-size:0.8em; margin-bottom:5px;">Nickname:</label>
+            <input type="text" id="regUsername" oninput="app.auth.checkAvailability()" placeholder="Nickname..." style="margin-bottom:5px; padding:10px; width:100%;">
+            <div id="regStatus" style="font-size:0.8em; font-weight:bold; text-align:right; margin-bottom:15px; min-height:15px;"></div>
+
+            <label style="display:block; text-align:left; color:#aaa; font-size:0.8em; margin-bottom:5px;">Contraseña:</label>
+            <input type="password" id="regPassword" placeholder="********" style="margin-bottom:15px; padding:10px; width:100%;">
+
+            <label style="display:block; text-align:left; color:#aaa; font-size:0.8em; margin-bottom:5px;">Email (Opcional, para recuperar):</label>
+            <input type="text" id="regEmail" placeholder="correo@ejemplo.com" style="margin-bottom:20px; padding:10px; width:100%;">
+            
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="app.auth.closeRegister()" style="background:#57606f; color:white; padding:10px; border:none; border-radius:5px; width:50%; font-weight:bold; cursor:pointer;">Cancelar</button>
+                <button onclick="app.auth.submitRegistration()" style="background:#2ed573; color:white; padding:10px; border:none; border-radius:5px; width:50%; font-weight:bold; cursor:pointer;">Solicitar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="passwordModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; justify-content:center; align-items:center;">
         <div style="background:#2f3542; padding:20px; border-radius:10px; text-align:center; width:90%; max-width:300px; border: 2px solid #f1c40f;">
             <h3 style="color:#f1c40f; margin-bottom:15px;">👑 Cuenta Protegida</h3>
             <p style="color:#aaa; font-size:0.9em; margin-bottom:15px;">Introduce la contraseña para verificar tu identidad:</p>
             
-            <input type="password" id="adminPasswordInput" placeholder="********" style="width:100%; padding:10px; margin-bottom:15px; border-radius:5px; border:none; text-align:center; font-size:1.2em;" onkeydown="if(event.key === 'Enter') app.submitPassword()">
+            <input type="password" id="adminPasswordInput" placeholder="********" style="width:100%; padding:10px; margin-bottom:5px; border-radius:5px; border:none; text-align:center; font-size:1.2em;" onkeydown="if(event.key === 'Enter') app.submitPassword()">
             
+            <div style="text-align: right; margin-bottom: 15px;">
+                <span onclick="app.auth.openForgotPassword()" style="color:#74b9ff; font-size:0.8em; cursor:pointer; text-decoration:underline;">Olvidé la contraseña</span>
+            </div>
+
             <div style="display:flex; gap:10px; justify-content:center;">
                 <button onclick="app.cancelPassword()" style="background:#e74c3c; color:white; padding:10px; border:none; border-radius:5px; width:50%; font-weight:bold; cursor:pointer;">Cancelar</button>
                 <button onclick="app.submitPassword()" style="background:#2ed573; color:white; padding:10px; border:none; border-radius:5px; width:50%; font-weight:bold; cursor:pointer;">Entrar</button>

@@ -19,3 +19,7 @@ dump_project.sh
 suggested_words.json
 url.sh
 urls.sh
+register.sh
+*.sh
+pending*
+pending_requests.json

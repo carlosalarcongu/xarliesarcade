@@ -1,4 +1,3 @@
-// public/js/analytics.js
 window.app = window.app || {};
 
 window.app.analytics = {
@@ -33,7 +32,7 @@ window.app.analytics = {
         if (!container) return;
 
         if (!app.analytics.currentWeek || !app.analytics.data[app.analytics.currentWeek]) {
-            container.innerHTML = "<p style='color:#aaa'>No hay datos para esta semana.</p>";
+            container.innerHTML = "<p style='color:var(--text-muted)'>No hay datos para esta semana.</p>";
             return;
         }
 
@@ -52,23 +51,23 @@ window.app.analytics = {
                 : 'Ninguna';
 
             html += `
-            <div class="card" style="background:#222; border:1px solid #3498db; padding:15px; text-align:left;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #444; padding-bottom:5px; margin-bottom:10px;">
-                    <strong style="color:#3498db; font-size:1.2em;">${user.name}</strong>
-                    <span style="background:#3498db; color:#fff; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:bold;">${user.visits} visitas</span>
+            <div class="card" style="background:var(--bg-card); border:2px solid var(--accent-blue); padding:15px; text-align:left; box-shadow:var(--card-shadow-3d);">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-input); padding-bottom:5px; margin-bottom:10px;">
+                    <strong style="color:var(--accent-blue); font-size:1.2em; font-weight:var(--font-bold);">${user.name}</strong>
+                    <span style="background:var(--accent-blue); color:#fff; padding:4px 10px; border-radius:12px; font-size:0.8em; font-weight:bold; box-shadow:0 2px 0 rgba(0,0,0,0.2);">${user.visits} visitas</span>
                 </div>
-                <div style="font-size:0.85em; color:#ccc; display:grid; grid-template-columns: 1fr; gap:8px;">
-                    <div><span style="color:#aaa;">Última vez:</span> ${dStr}</div>
-                    <div><span style="color:#aaa;">IPs:</span><br>${ips}</div>
-                    <div><span style="color:#aaa;">Salas recientes:</span><br><span style="color:#f1c40f">${rooms}</span></div>
-                    <div style="font-size:0.7em; color:#777; margin-top:5px; word-break: break-all;">${user.userAgent || ''}</div>
+                <div style="font-size:0.85em; color:var(--text-main); display:grid; grid-template-columns: 1fr; gap:8px;">
+                    <div><span style="color:var(--text-muted); font-weight:bold;">Última vez:</span> ${dStr}</div>
+                    <div><span style="color:var(--text-muted); font-weight:bold;">IPs:</span><br>${ips}</div>
+                    <div><span style="color:var(--text-muted); font-weight:bold;">Salas recientes:</span><br><span style="color:var(--accent-gold); font-weight:bold;">${rooms}</span></div>
+                    <div style="font-size:0.75em; color:var(--text-muted); margin-top:5px; word-break: break-all; opacity:0.7;">${user.userAgent || ''}</div>
                 </div>
                 
-                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #444; display: flex; gap: 10px;">
-                    <button onclick="app.deleteAnalyticsRecord('${user.name}', 'last')" style="flex: 1; background:#e1b12c; color:#fff; border:none; padding:8px; border-radius:5px; cursor:pointer; font-size:0.85em; font-weight:bold;">
+                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border-input); display: flex; gap: 10px;">
+                    <button onclick="app.deleteAnalyticsRecord('${user.name}', 'last')" style="flex: 1; background:var(--accent-gold); color:#fff; border:none; padding:10px; border-radius:var(--btn-radius); cursor:pointer; font-size:0.85em; font-weight:bold; box-shadow:0 3px 0 rgba(0,0,0,0.2);">
                         🗑️ Borrar último
                     </button>
-                    <button onclick="app.deleteAnalyticsRecord('${user.name}', 'all')" style="flex: 1; background:#e84118; color:#fff; border:none; padding:8px; border-radius:5px; cursor:pointer; font-size:0.85em; font-weight:bold;">
+                    <button onclick="app.deleteAnalyticsRecord('${user.name}', 'all')" style="flex: 1; background:var(--accent-red); color:#fff; border:none; padding:10px; border-radius:var(--btn-radius); cursor:pointer; font-size:0.85em; font-weight:bold; box-shadow:0 3px 0 rgba(0,0,0,0.2);">
                         🚨 Borrar todos
                     </button>
                 </div>
