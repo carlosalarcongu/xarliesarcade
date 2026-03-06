@@ -7,7 +7,6 @@
    ========================================= */
 
 /* TEMA LUMINOSO (Gris claro + AliExpress + Instagram + Formas rectas + Letra gruesa) */
-
 :root {
     /* Fondos gris claro para no deslumbrar */
     --bg-main: #e2e5e9; 
@@ -62,21 +61,23 @@
     --card-shadow-active: 0 1px 0 var(--card-shadow-base), 0 2px 4px rgba(0,0,0,0.05);
     
     /* Variables Mus (Tapete Claro) */
-    --mus-bg: #f1f5f2; /* <<-- Verde ultra ligero casi blanco */
+    --mus-bg: #fcfdfc; /* <<-- Casi blanco puro (levísimo toque verde/cálido) */
     --mus-table-wrapper: rgba(255, 255, 255, 0.5); 
     --mus-th-bg: rgba(255, 255, 255, 0.6);
     --mus-td-bg: transparent;
     --mus-sticky: rgba(240, 248, 241, 0.95);
     --mus-text: #003300; 
     --mus-shadow: rgba(0,0,0,0.1);
-    --mus-text-shadow: none;
+    
+    /* Sombra fuerte para TODOS los textos en Modo Claro */
+    --mus-text-shadow: 2px 2px 4px rgba(0,0,0,0.3); 
+    
     --mus-input-bg: #ffffff;
     --mus-input-text: #003300;
     --mus-input-border: #1b5e20; 
 
-    
-    --mus-stat-stroke: 0.5px #0000005b; /* Borde negro de 1 pixel */
-    --mus-stat-shadow: 2px 2px 0px rgba(0,0,0,0.15); /* Sombra dura para dar volumen */
+    --mus-stat-stroke: 0.5px rgba(0,0,0,0.4); /* Borde negro suave */
+    --mus-stat-shadow: 2px 2px 0px rgba(0,0,0,0.25); /* Sombra dura para dar volumen */
     
     /* Variables Trivial */
     --triv-bg-1: #f0f2f5;
@@ -139,8 +140,8 @@
         /* --- FORMAS Y GROSOR DE LETRA --- */
         --font-base: 400; 
         --font-bold: 700; 
-        --btn-radius: 8px; /* <<-- Menos redondez en oscuro también */
-        --card-radius: 12px; /* <<-- Menos redondez en oscuro también */
+        --btn-radius: 8px; /* Menos redondez en oscuro también */
+        --card-radius: 12px; /* Menos redondez en oscuro también */
 
         --card-shadow-base: #1a1e24; 
         --card-shadow-3d: 0 4px 0 var(--card-shadow-base), 0 8px 10px rgba(0,0,0,0.3);
@@ -561,7 +562,12 @@ canvas { display: block; cursor: crosshair; }
     color: #b31b1b;
 }
 
-#musScreen * { font-family: 'Cinzel', serif !important; text-shadow: var(--mus-text-shadow); color: var(--mus-text); font-weight: var(--font-bold); }
+#musScreen h3, #musScreen h4, #musScreen p, #musScreen span, #musScreen div {
+    font-family: 'Cinzel', serif !important; 
+    text-shadow: var(--mus-text-shadow) !important; /* <--- SOMBREADO GENERAL APLICADO AQUI */
+    color: var(--mus-text); 
+    font-weight: var(--font-bold); 
+}
 
 /* TARJETAS CON BORDE VERDE LISO */
 #musScreen .card {
@@ -581,10 +587,10 @@ canvas { display: block; cursor: crosshair; }
     background-color: #f5f6fa !important; border: 3px solid #2d3436 !important; border-radius: var(--btn-radius) !important; padding: 12px 15px !important; font-weight: 900 !important; text-transform: uppercase; position: relative;
     box-shadow: 0 4px 0 #2d3436 !important; transition: transform 0.1s, border-radius 0.3s !important; min-width: 100px; background-image: linear-gradient(135deg, transparent 90%, #2d3436 90%);
 }
-#musScreen .kick-btn:nth-child(odd) { color: #2d3436 !important; border-color: #2d3436 !important; text-shadow: none; box-shadow: 0 4px 0 #2d3436 !important; } 
-#musScreen .kick-btn:nth-child(even) { color: #c0392b !important; border-color: #c0392b !important; background-image: linear-gradient(135deg, transparent 90%, #c0392b 90%); text-shadow: none; box-shadow: 0 4px 0 #c0392b !important;}
+#musScreen .kick-btn:nth-child(odd) { color: #2d3436 !important; border-color: #2d3436 !important; text-shadow: none !important; box-shadow: 0 4px 0 #2d3436 !important; } 
+#musScreen .kick-btn:nth-child(even) { color: #c0392b !important; border-color: #c0392b !important; background-image: linear-gradient(135deg, transparent 90%, #c0392b 90%); text-shadow: none !important; box-shadow: 0 4px 0 #c0392b !important;}
 
-#musScreen .kick-btn2 { background-color: #f5f6fa !important; color: #c0392b !important; border: 2px solid #c0392b !important; border-radius: var(--btn-radius) !important; width: 50px !important; height: 50px !important; min-width: 50px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 1.4em !important; box-shadow: 0 4px 0 #c0392b !important; background-image: none !important; text-shadow: none; }
+#musScreen .kick-btn2 { background-color: #f5f6fa !important; color: #c0392b !important; border: 2px solid #c0392b !important; border-radius: var(--btn-radius) !important; width: 50px !important; height: 50px !important; min-width: 50px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 1.4em !important; box-shadow: 0 4px 0 #c0392b !important; background-image: none !important; text-shadow: none !important; }
 #musScreen button:active { transform: translateY(3px) !important; box-shadow: 0 1px 0 rgba(0,0,0,0.3) !important; }
 
 
@@ -605,8 +611,16 @@ canvas { display: block; cursor: crosshair; }
     text-shadow: none !important;
     transition: transform 0.1s, box-shadow 0.1s, border-radius 0.3s;
     margin-bottom: 15px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.25), inset 0 2px 4px rgba(0,0,0,0.1) !important; /* <<-- Sombra potente */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.25), inset 0 2px 4px rgba(0,0,0,0.1) !important; 
 }
+/* Forzar tipografía en todos los elementos interactivos del Mus */
+#musScreen select, 
+#musScreen input, 
+#musScreen button,
+#musScreen option {
+    font-family: 'Cinzel', serif !important;
+}
+
 #musScreen select:active {
     transform: translateY(2px);
     box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
@@ -639,6 +653,7 @@ canvas { display: block; cursor: crosshair; }
 #musScreen input:focus {
     outline: none !important;
 }
+
 /* TABLA CLASIFICACIÓN CON FONDO GLASSMORPHISM (Transparente + Desenfoque) */
 .mus-table-wrapper { 
     width: 100%; margin-bottom: 25px; 
@@ -652,7 +667,7 @@ canvas { display: block; cursor: crosshair; }
 }
 .mus-table { width: 100%; table-layout: auto; border-collapse: collapse; }
 .mus-table th, .mus-table td { white-space: nowrap; padding: 10px 4px !important; border-bottom: 1px solid rgba(150,150,150,0.2); font-size: 0.95em !important; text-align: center; color: var(--mus-text); font-weight: var(--font-base); }
-.mus-table th { background-color: var(--mus-th-bg); color: var(--mus-text); border-bottom: 3px solid var(--mus-input-border); font-weight: 900; text-shadow: none; }
+.mus-table th { background-color: var(--mus-th-bg); color: var(--mus-text); border-bottom: 3px solid var(--mus-input-border); font-weight: 900; text-shadow: none !important; }
 .mus-table th:first-child, .mus-table td:first-child { position: sticky; left: 0; z-index: 2; background-color: var(--mus-sticky); border-right: 1px solid var(--mus-input-border); text-align: left; padding-left: 8px !important; width: auto; overflow: hidden; text-overflow: ellipsis; color: var(--mus-text) !important; text-shadow: var(--mus-text-shadow) !important; font-weight: var(--font-bold);}
 .mus-table th:first-child { background-color: var(--mus-th-bg); z-index: 3; }
 .player-avatar { display: none; }
@@ -662,7 +677,7 @@ canvas { display: block; cursor: crosshair; }
 
 /* Corrección Textos Blancos Forzados en Mus */
 #musScreen .card [style*="color:#fff"], #musScreen .card [style*="color: #fff"], #musScreen .card [style*="color: white"] { color: var(--mus-text) !important; text-shadow: var(--mus-text-shadow) !important; font-weight: var(--font-bold); }
-#musScreen .card [style*="color:#aaa"], #musScreen .card [style*="color: #aaa"] { color: var(--mus-text) !important; opacity: 0.8; font-weight: var(--font-base); }
+#musScreen .card [style*="color:#aaa"], #musScreen .card [style*="color: #aaa"] { color: var(--mus-text) !important; opacity: 0.8; font-weight: var(--font-base); text-shadow: none !important; }
 
 
 /* =========================================
@@ -907,4 +922,129 @@ canvas { display: block; cursor: crosshair; }
 #musScreen [style*="#74b9ff"] {
     -webkit-text-stroke: var(--mus-stat-stroke);
     text-shadow: var(--mus-stat-shadow) !important;
+}
+
+/* =========================================
+   RESALTADO DE TEXTOS SUELTOS EN SALA MUS
+   ========================================= */
+
+/* 1. Definimos el color del resaltado según el modo */
+:root {
+    --mus-badge-bg: rgba(0, 0, 0, 0.1); /* Fondo blanco transparente (Claro) */
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --mus-badge-bg: rgba(0, 0, 0, 0.5); /* Fondo negro transparente (Oscuro) */
+    }
+}
+
+/* 2. Se lo aplicamos a los títulos y etiquetas flotantes */
+#musScreen label,
+#musStatsContainer h3,
+#musStatsContainer h4 {
+    background-color: var(--mus-badge-bg) !important;
+    color: var(--text-main);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    padding: 6px 14px !important;
+    border-radius: 8px;
+    border: 1px solid rgb(255, 255, 255) !important;
+    display: inline-block;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    
+}
+
+/* 3. Excepción: Le quitamos el fondo a los textos que ya están dentro de una tarjeta sólida (para no recargarlo visualmente) */
+#musScreen .card label {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* =========================================
+   RESALTADO DE TEXTOS SUELTOS EN SALA MUS
+   ========================================= */
+
+/* 1. Definimos el color del resaltado según el modo */
+:root {
+    --mus-badge-bg: rgba(255, 255, 255, 0.85); /* Fondo blanco transparente (Claro) */
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --mus-badge-bg: rgba(0, 0, 0, 0.7); /* Fondo negro transparente (Oscuro) */
+    }
+}
+
+/* 2. Regla MÁS AMPLIA para atrapar todos los títulos generados por JS */
+#musStatsContainer h3,
+#musStatsContainer h4,
+#musStatsContainer label,
+#musScreen > label,
+#musScreen > h3,
+#musScreen > h4 {
+    background-color: var(--mus-badge-bg) !important;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    padding: 6px 14px !important;
+    border-radius: 8px;
+    border: 1px solid var(--mus-input-border) !important;
+    display: inline-block;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    margin-top: 15px !important;
+    margin-bottom: 10px !important;
+    color: var(--mus-text) !important; /* Fuerza el color de la fuente para evitar grises ilegibles */
+}
+
+/* Ajuste específico para los controles "Checkbox" (Día a Día, +3 Rondas) */
+#musStatsContainer label {
+    padding: 4px 10px !important;
+    border-radius: 6px;
+    margin-top: 0 !important;
+    margin-bottom: 5px !important;
+    cursor: pointer;
+}
+
+/* 3. Excepción vital: Le quitamos este fondo a los textos que ya están dentro de una tarjeta sólida */
+#musScreen .card label,
+#musScreen .card h3,
+#musScreen .card h4,
+#musAddMatchModal label,
+#musAddMatchModal h3,
+#musAddMatchModal h4 {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    margin-top: 0 !important;
+    color: inherit !important; /* Devuelve el color original en las tarjetas */
+}
+
+/* =========================================
+   BOTONES CRISTAL (VOLVER Y EDITAR MUS)
+   ========================================= */
+.mus-glass-btn {
+    background: var(--mus-table-wrapper) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 2px solid var(--mus-input-border) !important;
+    color: var(--mus-text) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    border-radius: var(--btn-radius);
+    padding: 8px 15px;
+    font-weight: bold;
+    transition: all 0.2s;
+    text-shadow: none !important;
+    font-family: 'Cinzel', serif;
+    cursor: pointer;
+}
+.mus-glass-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
 }

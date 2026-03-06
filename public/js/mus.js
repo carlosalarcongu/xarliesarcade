@@ -3,9 +3,11 @@ app.mus = {
     chartInstance: null,
     currentRoom: "Entre Nosotros (Las monjas)", 
     
-    // Estados nuevos para el modo Día a Día y la selección de jugador
+    // Estados de visualización
     dayByDayActive: false,
     dayByDayLimit: 0,
+    min3RoundsActive: false,
+    normalizeActive: false,
     rachasPlayerSelected: "",
     
     emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷','🕸','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦚','🦜','🦢','🦩','🕊','🐇','🦝','🦨','🦡','🦦','🦫','🐁','🐀','🐿','🦔','🐉','🐲'],
@@ -85,7 +87,7 @@ app.mus = {
     changeRoom: () => {
         const sel = document.getElementById('musRoomSelect');
         app.mus.currentRoom = sel.value;
-        app.mus.dayByDayActive = false; // Resetear el día a día al cambiar de sala
+        app.mus.dayByDayActive = false;
         app.mus.changeView(); 
     },
 
@@ -131,11 +133,10 @@ app.mus = {
         document.getElementById('musAddMatchModal').classList.remove('hidden');
         document.getElementById('matchRoomIndicator').innerText = "Sala: " + app.mus.currentRoom;
         
-        // Resetear puntuaciones a 0
         document.getElementById('musS1').innerText = "0";
         document.getElementById('musS2').innerText = "0";
 
-        app.mus.renderMatchPlayerSelects(); // Nueva función de filtrado
+        app.mus.renderMatchPlayerSelects();
     },
 
     submitMatch: () => {
@@ -143,8 +144,8 @@ app.mus = {
         const p2 = document.getElementById('musP2').value;
         const p3 = document.getElementById('musP3').value;
         const p4 = document.getElementById('musP4').value;
-        const s1 = document.getElementById('musS1').innerText; // Extrae el texto del span
-        const s2 = document.getElementById('musS2').innerText; // Extrae el texto del span
+        const s1 = document.getElementById('musS1').innerText;
+        const s2 = document.getElementById('musS2').innerText;
 
         if (!p1 || !p2 || !p3 || !p4 || s1==="" || s2==="") return alert("Datos incompletos.");
         if (new Set([p1,p2,p3,p4]).size !== 4) return alert("Jugadores duplicados.");
@@ -168,12 +169,11 @@ app.mus = {
         el.innerText = val;
     },
 
-    currentMatchPlayers: [], // Variable temporal para guardar la lista permitida
+    currentMatchPlayers: [], 
 
     renderMatchPlayerSelects: () => {
         if (!app.mus.data) return;
         
-        // 1. Obtener quién ha jugado EN ESTA SALA
         const roomMatches = app.mus.getRoomMatches();
         let roomPlayers = new Set();
         roomMatches.forEach(m => {
@@ -181,7 +181,6 @@ app.mus = {
             roomPlayers.add(m.p3); roomPlayers.add(m.p4);
         });
 
-        // 2. Obtener jugadores globales que NO han jugado nunca ninguna partida (recién creados)
         const allMatches = app.mus.data.matches;
         let playersWithMatches = new Set();
         allMatches.forEach(m => {
@@ -189,10 +188,7 @@ app.mus = {
             playersWithMatches.add(m.p3); playersWithMatches.add(m.p4);
         });
 
-        // 3. La lista será: Los que ya jugaron aquí + Los que acaban de ser registrados y están a 0 partidas
         let playersToList = app.mus.data.players.filter(p => roomPlayers.has(p) || !playersWithMatches.has(p));
-
-        // Fallback: Si la sala es totalmente nueva (0 partidas), mostramos a todo el mundo
         if (roomMatches.length === 0) playersToList = [...app.mus.data.players];
         
         playersToList.sort();
@@ -220,21 +216,12 @@ app.mus = {
             
             let html = `<option value="">-- Elige --</option>`;
             app.mus.currentMatchPlayers.forEach(p => {
-                // Solo muestra al jugador si NO está seleccionado en otra casilla, o si es el de esta misma casilla
                 if (!selectedValues.includes(p) || p === currentVal) {
                     html += `<option value="${p}" ${p === currentVal ? 'selected' : ''}>${p}</option>`;
                 }
             });
             el.innerHTML = html;
         });
-    },
-
-    deleteMatch: (id) => {
-        if(confirm("¿Borrar partida?")) socket.emit('mus_action', { type: 'deleteMatch', id, user: app.myPlayerName });
-    },
-
-    backup: () => {
-        if(confirm("¿Forzar Backup en servidor?")) socket.emit('mus_action', { type: 'backup' });
     },
 
     adminRenamePlayer: (oldName) => {
@@ -289,7 +276,6 @@ app.mus = {
     changeView: () => {
         const mode = document.getElementById('musViewMode').value;
         const container = document.getElementById('musStatsContainer');
-        
         const divExamPlayer = document.getElementById('divExamPlayer');
         const divExamPair = document.getElementById('divExamPair');
         const chart = document.getElementById('musChartSection');
@@ -302,9 +288,6 @@ app.mus = {
         if (mode === 'ranking_pair' || mode === 'ranking_player') {
             app.mus.renderRanking(container, mode);
         } 
-        else if (mode === 'top_improvement') {
-            app.mus.renderImprovement(container);
-        }
         else if (mode === 'recent_log') {
             app.mus.renderLog(container, 'ALL');
         }
@@ -329,7 +312,6 @@ app.mus = {
         }
     },
 
-    // Controles para el modo Día a Día
     toggleDayByDay: (active, max) => {
         app.mus.dayByDayActive = active;
         if (active) app.mus.dayByDayLimit = max;
@@ -344,17 +326,23 @@ app.mus = {
         app.mus.changeView();
     },
 
-    // FUNCIÓN RENDERLOG QUE FALTABA
+    toggleMin3Rounds: (active) => {
+        app.mus.min3RoundsActive = active;
+        app.mus.changeView();
+    },
+
+    toggleNormalize: (active) => {
+        app.mus.normalizeActive = active;
+        app.mus.changeView();
+    },
+
     renderLog: (container, filterAuthor = 'ALL') => {
         const allMatches = app.mus.getRoomMatches();
         if(allMatches.length === 0) { container.innerHTML = "<p>Sin partidas registradas.</p>"; return; }
 
         const authors = [...new Set(allMatches.map(m => m.addedBy).filter(Boolean))].sort();
-        
         let matches = [...allMatches].sort((a,b) => b.id - a.id);
-        if (filterAuthor !== 'ALL') {
-            matches = matches.filter(m => m.addedBy === filterAuthor);
-        }
+        if (filterAuthor !== 'ALL') matches = matches.filter(m => m.addedBy === filterAuthor);
         
         matches = matches.slice(0, 30);
 
@@ -382,12 +370,11 @@ app.mus = {
             
             const reqUser = app.myPlayerName ? app.myPlayerName.toLowerCase() : "";
             const addedByUser = m.addedBy ? m.addedBy.toLowerCase() : "";
-            
             const isAdmin = reqUser === "administrador de mus" || reqUser === "musero" || reqUser === "xarlie" || reqUser === "administrador m";
             const isOwner = reqUser !== "" && reqUser === addedByUser;
 
             if (isAdmin || isOwner) {
-                delBtn = `<button onclick="app.mus.deleteMatch(${m.id})" style="padding:4px 8px; background:#e74c3c; font-size:0.8em; cursor:pointer;">🗑️</button>`;
+                delBtn = `<button onclick="if(confirm('¿Borrar partida?')) socket.emit('mus_action', { type: 'deleteMatch', id: ${m.id}, user: app.myPlayerName })" style="padding:4px 8px; background:#e74c3c; font-size:0.8em; cursor:pointer;">🗑️</button>`;
             }
             html += `<tr>
                 <td style="font-size:0.8em; color:#aaa">${dateStr}</td>
@@ -404,7 +391,6 @@ app.mus = {
         if (app.myPlayerName.toLowerCase() !== 'administrador m') return;
         
         let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
-        
         html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
         html += `<ul style="list-style:none; padding:0; text-align:left; max-height: 250px; overflow-y: auto;">`;
         app.mus.data.players.forEach(p => {
@@ -449,7 +435,6 @@ app.mus = {
             });
             html += `</div>`;
         }
-        
         container.innerHTML = html;
     },
 
@@ -458,32 +443,119 @@ app.mus = {
         let matchesToProcess = [...matches].sort((a,b) => a.id - b.id);
         const totalMatches = matchesToProcess.length;
         
-        // Recorte de array si el modo Día a Día está activo
         if (app.mus.dayByDayActive) {
             matchesToProcess = matchesToProcess.slice(0, app.mus.dayByDayLimit);
         }
-
-        const stats = {}; 
         
-        const add = (k, myS, oppS) => {
-            if(!stats[k]) stats[k] = {rWon:0, rLost:0, pPlayed:0};
-            stats[k].pPlayed++;
-            stats[k].rWon += myS;
-            stats[k].rLost += oppS;
-        };
+        if (app.mus.min3RoundsActive) {
+            matchesToProcess = matchesToProcess.filter(m => (m.s1 + m.s2) >= 3);
+        }
 
-        if (mode === 'ranking_pair') {
-             matchesToProcess.forEach(m => {
-                add([m.p1, m.p2].sort().join(' y '), m.s1, m.s2);
-                add([m.p3, m.p4].sort().join(' y '), m.s2, m.s1);
-            });
-        } else {
-            matchesToProcess.forEach(m => {
-                [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
-                    const pTeam = (idx < 2) ? 1 : 2;
-                    add(p, pTeam === 1 ? m.s1 : m.s2, pTeam === 1 ? m.s2 : m.s1);
+        let stats = {}; 
+
+        if (app.mus.normalizeActive) {
+            // ALGORITMO NORMALIZAR MÁGICO (Estadística de Fuerza Relativa 10 Sim)
+            const uniquePlayers = Array.from(new Set(matchesToProcess.flatMap(m => [m.p1, m.p2, m.p3, m.p4])));
+            const allPairs = [];
+            for (let i = 0; i < uniquePlayers.length; i++) {
+                for (let j = i + 1; j < uniquePlayers.length; j++) {
+                    allPairs.push([uniquePlayers[i], uniquePlayers[j]].sort().join(' y '));
+                }
+            }
+            
+            const getForce = (pairStr) => {
+                let won = 0, lost = 0, recentWon = 0, recentLost = 0;
+                const limit14 = Date.now() - (14 * 24 * 3600 * 1000);
+                matchesToProcess.forEach(m => {
+                    const t1 = [m.p1, m.p2].sort().join(' y ');
+                    const t2 = [m.p3, m.p4].sort().join(' y ');
+                    const isRecent = new Date(m.date).getTime() > limit14;
+                    if (t1 === pairStr) { won += m.s1; lost += m.s2; if(isRecent) { recentWon += m.s1; recentLost += m.s2; } } 
+                    else if (t2 === pairStr) { won += m.s2; lost += m.s1; if(isRecent) { recentWon += m.s2; recentLost += m.s1; } }
                 });
-            });
+                const total = won + lost;
+                if (total === 0) return 0.5;
+                const histWR = won / total;
+                const recentTotal = recentWon + recentLost;
+                const recentWR = recentTotal > 0 ? (recentWon / recentTotal) : histWR;
+                return (histWR * 0.4) + (recentWR * 0.6); 
+            };
+
+            const pairForces = {};
+            allPairs.forEach(p => pairForces[p] = getForce(p));
+
+            const addSim = (k, w, l) => {
+                if(!stats[k]) stats[k] = {rWon:0, rLost:0, pPlayed:0};
+                stats[k].pPlayed += 1; 
+                stats[k].rWon += w;
+                stats[k].rLost += l;
+            };
+
+            for(let i=0; i<allPairs.length; i++){
+                for(let j=i+1; j<allPairs.length; j++){
+                    const pA = allPairs[i];
+                    const pB = allPairs[j];
+                    const pA_arr = pA.split(' y ');
+                    const pB_arr = pB.split(' y ');
+                    
+                    if (pA_arr.some(player => pB_arr.includes(player))) continue; 
+
+                    let f1 = pairForces[pA];
+                    let f2 = pairForces[pB];
+                    
+                    let h2hW1 = 0, h2hW2 = 0;
+                    matchesToProcess.forEach(m => {
+                        const t1 = [m.p1, m.p2].sort().join(' y ');
+                        const t2 = [m.p3, m.p4].sort().join(' y ');
+                        if (t1 === pA && t2 === pB) { h2hW1 += m.s1; h2hW2 += m.s2; }
+                        else if (t2 === pA && t1 === pB) { h2hW1 += m.s2; h2hW2 += m.s1; }
+                    });
+                    if (h2hW1 + h2hW2 > 0) {
+                        const h2hRatio1 = h2hW1 / (h2hW1 + h2hW2);
+                        f1 = (f1 * 0.7) + (h2hRatio1 * 0.3);
+                        f2 = (f2 * 0.7) + ((1 - h2hRatio1) * 0.3);
+                    }
+                    if (f1===0 && f2===0) { f1=0.5; f2=0.5; }
+                    
+                    const probA = f1 / (f1 + f2);
+                    const probB = f2 / (f1 + f2);
+
+                    const wA = probA * 10;
+                    const wB = probB * 10;
+
+                    if (mode === 'ranking_pair') {
+                        addSim(pA, wA, wB);
+                        addSim(pB, wB, wA);
+                    } else {
+                        addSim(pA_arr[0], wA, wB);
+                        addSim(pA_arr[1], wA, wB);
+                        addSim(pB_arr[0], wB, wA);
+                        addSim(pB_arr[1], wB, wA);
+                    }
+                }
+            }
+        } else {
+            // CÁLCULO TRADICIONAL
+            const add = (k, myS, oppS) => {
+                if(!stats[k]) stats[k] = {rWon:0, rLost:0, pPlayed:0};
+                stats[k].pPlayed++;
+                stats[k].rWon += myS;
+                stats[k].rLost += oppS;
+            };
+
+            if (mode === 'ranking_pair') {
+                 matchesToProcess.forEach(m => {
+                    add([m.p1, m.p2].sort().join(' y '), m.s1, m.s2);
+                    add([m.p3, m.p4].sort().join(' y '), m.s2, m.s1);
+                });
+            } else {
+                matchesToProcess.forEach(m => {
+                    [m.p1, m.p2, m.p3, m.p4].forEach((p, idx) => {
+                        const pTeam = (idx < 2) ? 1 : 2;
+                        add(p, pTeam === 1 ? m.s1 : m.s2, pTeam === 1 ? m.s2 : m.s1);
+                    });
+                });
+            }
         }
         
         let rows = Object.keys(stats).map(k => {
@@ -513,8 +585,9 @@ app.mus = {
         const maxPct = percentages.length > 0 ? Math.max(...percentages) : 100;
         const minPct = percentages.length > 0 ? Math.min(...percentages) : 0;
         const range = (maxPct - minPct) || 1; 
+        
+        const formatNumber = num => Number.isInteger(num) ? num : num.toFixed(1);
 
-        // 1. DIBUJAR TABLA PRINCIPAL
         let html = `<div class="mus-table-wrapper"><table class="mus-table">
             <tr>
                 <th>Pareja / Jugador</th>
@@ -538,35 +611,42 @@ app.mus = {
             const winRateColor = `hsl(${hue}, 85%, 60%)`;
 
             const dgpColor = r.dgp > 0 ? '#2ed573' : (r.dgp < 0 ? '#ff4757' : '#aaa');
-            const dgpStr = r.dgp > 0 ? `+${r.dgp}` : r.dgp;
+            const dgpStr = r.dgp > 0 ? `+${formatNumber(r.dgp)}` : formatNumber(r.dgp);
             
             html += `<tr>
                 <td style="font-weight:bold; color:#fff" title="${r.name}">${nameHtml}</td>
                 <td style="color:${winRateColor}; font-weight:900">${r.pct.toFixed(1)}%</td>
                 <td style="color:${dgpColor}; font-weight:bold;">${dgpStr}</td>
-                <td style="color:#2ed573">${r.rWon}</td>
-                <td style="color:#ff4757">${r.rLost}</td>
+                <td style="color:#2ed573">${formatNumber(r.rWon)}</td>
+                <td style="color:#ff4757">${formatNumber(r.rLost)}</td>
             </tr>`;
         });
         html += `</table></div>`;
 
-        // 2. BOTÓN DISCRETO DE DÍA A DÍA JUSTO DEBAJO DE LA TABLA A LA DERECHA
+        // BOTONES DE FILTRO Y DÍA A DÍA
         html += `
-        <div style="text-align: right; margin-top: 5px; margin-bottom: 20px;">
+        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; margin-top: 5px; margin-bottom: 20px;">
             <label style="color:#666; font-size: 0.75em; cursor:pointer;">
-                <input type="checkbox" ${app.mus.dayByDayActive ? 'checked' : ''} onchange="app.mus.toggleDayByDay(this.checked, ${totalMatches})" style="vertical-align: middle; margin-right: 3px; opacity: 0.5;">
+                <input type="checkbox" ${app.mus.min3RoundsActive ? 'checked' : ''} onchange="app.mus.toggleMin3Rounds(this.checked)" style="vertical-align: middle; margin-right: 3px;">
+                +3 Rondas
+            </label>
+            <label style="color:#666; font-size: 0.75em; cursor:pointer;">
+                <input type="checkbox" ${app.mus.normalizeActive ? 'checked' : ''} onchange="app.mus.toggleNormalize(this.checked)" style="vertical-align: middle; margin-right: 3px;">
+                Normalizar
+            </label>
+            <label style="color:#666; font-size: 0.75em; cursor:pointer;">
+                <input type="checkbox" ${app.mus.dayByDayActive ? 'checked' : ''} onchange="app.mus.toggleDayByDay(this.checked, ${totalMatches})" style="vertical-align: middle; margin-right: 3px;">
                 Día a Día
             </label>
             ${app.mus.dayByDayActive ? `
-            <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top: 5px;">
-                <button onclick="app.mus.changeDayByDay(-2)" style="background:transparent; border:none; color:#e74c3c; cursor:pointer; font-size:1.2em; padding:0;">⬅️</button>
-                <span style="color:#888; font-size:0.8em; font-family:monospace;">Partidas: ${app.mus.dayByDayLimit} / ${totalMatches}</span>
-                <button onclick="app.mus.changeDayByDay(2)" style="background:transparent; border:none; color:#2ed573; cursor:pointer; font-size:1.2em; padding:0;">➡️</button>
+            <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; width: 100%;">
+                <button onclick="app.mus.changeDayByDay(-2)" style="background:transparent; border:none; color:#e74c3c; cursor:pointer; font-size:1.2em; padding:0; text-shadow:none !important;">⬅️</button>
+                <span style="color:#888; font-size:0.8em; font-family:monospace; text-shadow:none !important;">Partidas: ${app.mus.dayByDayLimit} / ${totalMatches}</span>
+                <button onclick="app.mus.changeDayByDay(2)" style="background:transparent; border:none; color:#2ed573; cursor:pointer; font-size:1.2em; padding:0; text-shadow:none !important;">➡️</button>
             </div>
             ` : ''}
         </div>`;
 
-        // 3. CÁLCULO DE LAS 15 RACHAS ESPECÍFICAS
         let streaks = {}; 
         let allWinStreaks = [];
         let allLossStreaks = [];
@@ -614,7 +694,6 @@ app.mus = {
             }
         });
 
-        // Añadir las rachas que siguen activas
         Object.entries(streaks).forEach(([n, data]) => {
             if (data.type === 'win') allWinStreaks.push({ n, val: data.val, endedBy: '-' });
             if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, endedBy: '-' });
@@ -625,7 +704,6 @@ app.mus = {
 
         const titleText = mode === 'ranking_pair' ? 'Parejas' : 'Individual';
 
-        // 4. PINTAR LAS RACHAS AL FINAL DE LA VISTA
         html += `
             <h3 style="color:#e1b12c; margin-top:20px; margin-bottom:5px;">🔥 Top 15 Rachas (${titleText})</h3>
             <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
@@ -635,7 +713,7 @@ app.mus = {
                         <div style="margin-bottom:8px; font-size:0.9em; border-bottom:1px solid #333; padding-bottom:5px;">
                             <div style="display:flex; justify-content:space-between;">
                                 <span><b>${i+1}.</b> ${s.n}</span>
-                                <span style="color:#2ed573; font-weight:bold;">+${s.val}</span>
+                                <span style="color:#2ed573; font-weight:bold;">+${formatNumber(s.val)}</span>
                             </div>
                             <div style="font-size:0.8em; color:#aaa;">${s.endedBy === '-' ? '<span style="color:#2ed573">🟢 ACTIVA</span>' : `Cortada por <span style="color:#ff7675">${s.endedBy}</span>`}</div>
                         </div>
@@ -647,7 +725,7 @@ app.mus = {
                         <div style="margin-bottom:8px; font-size:0.9em; border-bottom:1px solid #333; padding-bottom:5px;">
                             <div style="display:flex; justify-content:space-between;">
                                 <span><b>${i+1}.</b> ${s.n}</span>
-                                <span style="color:#ff4757; font-weight:bold;">-${s.val}</span>
+                                <span style="color:#ff4757; font-weight:bold;">-${formatNumber(s.val)}</span>
                             </div>
                             <div style="font-size:0.8em; color:#aaa;">${s.endedBy === '-' ? '<span style="color:#ff4757">🔴 ACTIVA</span>' : `Salvados vs <span style="color:#74b9ff">${s.endedBy}</span>`}</div>
                         </div>
@@ -676,6 +754,7 @@ app.mus = {
         let pairDiffHistory = {};
 
         ascMatches.forEach(m => {
+            if (m.s1 + m.s2 <= 1) return;
             const t1 = [m.p1, m.p2].sort().join(' y ');
             const t2 = [m.p3, m.p4].sort().join(' y ');
             
@@ -769,7 +848,6 @@ app.mus = {
             if (dev > mostIrregularPair.dev) mostIrregularPair = {n: pair, dev};
         });
 
-        // Viciados (últimos 7 días)
         const limit7 = Date.now() - (7 * 24 * 3600 * 1000);
         const recentMatches7 = ascMatches.filter(m => new Date(m.date).getTime() > limit7);
         
@@ -802,7 +880,6 @@ app.mus = {
                                 .sort((a,b) => b[1] - a[1])
                                 .slice(0, 3);
 
-        // Stompeadas (Top 15)
         let stomps = [];
         ascMatches.forEach(m => {
             const diff = Math.abs(m.s1 - m.s2);
@@ -833,7 +910,6 @@ app.mus = {
         });
         stompsTableHtml += `</table></div>`;
 
-        // 10 Mejores victorias de jugador elegido
         let playersList = [...new Set(ascMatches.flatMap(m => [m.p1, m.p2, m.p3, m.p4]))].sort();
         let playerSelectHtml = `<select id="rachasPlayerSelect" onchange="app.mus.updateRachasPlayer(this.value)" style="padding:5px; background:#fff; color:#000; border-radius:5px;">
             <option value="">-- Selecciona jugador --</option>
@@ -874,7 +950,6 @@ app.mus = {
             if(pWins.length === 0) playerVictoriesHtml += `<tr><td colspan="6">No tiene victorias registradas.</td></tr>`;
             playerVictoriesHtml += `</table></div>`;
         }
-
 
         let rHTML = `
             <h3 style="color:#0984e3; margin-bottom:5px;">📅 Más Viciados (Últimos 7 Días)</h3>
@@ -1151,64 +1226,6 @@ app.mus = {
         `;
     },
 
-    renderTopMatchesTable: (matchesList) => {
-        matchesList.sort((a,b) => {
-            const totalA = a.s1 + a.s2;
-            const totalB = b.s1 + b.s2;
-            if (totalB !== totalA) return totalB - totalA;
-            return new Date(b.date) - new Date(a.date);
-        });
-
-        const top5 = matchesList.slice(0, 5);
-        if (top5.length === 0) return '';
-
-        let html = `<h4 style="margin-top:25px; color:#aaa; font-size:0.8em; text-transform:uppercase; border-top:1px solid #444; padding-top:10px;">🔥 Top 5: Partidas más largas</h4>
-        <div class="mus-table-wrapper"><table class="mus-table">
-            <tr><th style="width:25%">Fecha</th><th>Resultado</th><th style="width:15%">Total</th></tr>`;
-
-        top5.forEach(m => {
-            const d = new Date(m.date);
-            const dateStr = `${d.getDate()}/${d.getMonth()+1}`;
-            const res = `<span style="color:#74b9ff">${m.s1}</span> - <span style="color:#ff7675">${m.s2}</span>`;
-            
-            html += `<tr>
-                <td style="font-size:0.8em; color:#aaa">${dateStr}</td>
-                <td style="font-weight:bold">${res}</td>
-                <td style="color:#e1b12c; font-weight:900">${m.s1 + m.s2}</td>
-            </tr>`;
-        });
-
-        return html + '</table></div>';
-    },
-
-    runAnalysis: () => {
-        const mode = document.getElementById('musViewMode').value;
-        const container = document.getElementById('musStatsContainer');
-        const chartContainer = document.getElementById('musChartSection');
-        const period = document.getElementById('musPeriodFilter').value;
-        
-        container.innerHTML = "";
-        let entity, type;
-
-        if (mode === 'examinar_persona') {
-            entity = document.getElementById('musExamPlayer').value;
-            type = document.getElementById('musExamTypeP').value;
-        } else {
-            entity = document.getElementById('musExamPair').value;
-            type = document.getElementById('musExamTypePair').value;
-        }
-        
-        if (entity === 'all') return;
-
-        if (['best_partner', 'best_rival', 'vs_pair_performance'].includes(type)) {
-            chartContainer.classList.add('hidden');
-            app.mus.renderDetailedAnalysis(container, entity, type);
-        } else {
-            chartContainer.classList.remove('hidden');
-            app.mus.renderChart(entity, period);
-        }
-    },
-
     renderDetailedAnalysis: (container, entity, type) => {
         const matches = app.mus.getFilteredMatches();
         const stats = {}; 
@@ -1395,35 +1412,6 @@ app.mus = {
             stats[[m.p3, m.p4].sort().join(' y ')] = 1;
         });
         return Object.keys(stats).sort();
-    },
-    
-    showPairGenerator: () => {
-        document.getElementById('musPairGenModal').classList.remove('hidden');
-        const container = document.getElementById('genPlayerList');
-        container.innerHTML = "";
-        if(!app.mus.data) return;
-        app.mus.data.players.forEach(p => {
-            const div = document.createElement('div');
-            div.className = "player-check-item";
-            div.innerHTML = `<input type="checkbox" value="${p}" id="chk_${p}"> <label for="chk_${p}" style="color:#fff">${p}</label>`;
-            container.appendChild(div);
-        });
-    },
-    
-    generatePairs: () => {
-        const checkboxes = document.querySelectorAll('#genPlayerList input:checked');
-        let selected = Array.from(checkboxes).map(c => c.value);
-        if(selected.length < 2) return alert("Selecciona al menos 2 jugadores.");
-        selected = selected.sort(() => Math.random() - 0.5);
-        let html = "<ul style='list-style:none; padding:0'>";
-        while(selected.length >= 2) {
-            const p1 = selected.pop();
-            const p2 = selected.pop();
-            html += `<li style="background:#2f3542; margin:5px; padding:10px; border-radius:5px; border-left:4px solid #e1b12c">${p1} y ${p2}</li>`;
-        }
-        if(selected.length === 1) html += `<li style="color:#aaa; font-style:italic; margin-top:10px">Sobró: ${selected[0]}</li>`;
-        html += "</ul>";
-        document.getElementById('genResults').innerHTML = html;
     }
 };
 
