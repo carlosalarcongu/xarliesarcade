@@ -130,7 +130,12 @@ app.mus = {
         if(app.mus.currentRoom === 'ABSOLUTA') return alert("Selecciona una sala específica.");
         document.getElementById('musAddMatchModal').classList.remove('hidden');
         document.getElementById('matchRoomIndicator').innerText = "Sala: " + app.mus.currentRoom;
-        app.mus.renderPlayerSelects();
+        
+        // Resetear puntuaciones a 0
+        document.getElementById('musS1').innerText = "0";
+        document.getElementById('musS2').innerText = "0";
+
+        app.mus.renderMatchPlayerSelects(); // Nueva función de filtrado
     },
 
     submitMatch: () => {
@@ -138,10 +143,10 @@ app.mus = {
         const p2 = document.getElementById('musP2').value;
         const p3 = document.getElementById('musP3').value;
         const p4 = document.getElementById('musP4').value;
-        const s1 = document.getElementById('musS1').value;
-        const s2 = document.getElementById('musS2').value;
+        const s1 = document.getElementById('musS1').innerText; // Extrae el texto del span
+        const s2 = document.getElementById('musS2').innerText; // Extrae el texto del span
 
-        if (!p1 || !p2 || !p3 || !p4 || !s1 || !s2) return alert("Datos incompletos.");
+        if (!p1 || !p2 || !p3 || !p4 || s1==="" || s2==="") return alert("Datos incompletos.");
         if (new Set([p1,p2,p3,p4]).size !== 4) return alert("Jugadores duplicados.");
 
         socket.emit('mus_action', { 
@@ -154,6 +159,74 @@ app.mus = {
             } 
         });
         document.getElementById('musAddMatchModal').classList.add('hidden');
+    },
+
+    changeScore: (team, delta) => {
+        const el = document.getElementById('musS' + team);
+        let val = parseInt(el.innerText) + delta;
+        if (val < 0) val = 0;
+        el.innerText = val;
+    },
+
+    currentMatchPlayers: [], // Variable temporal para guardar la lista permitida
+
+    renderMatchPlayerSelects: () => {
+        if (!app.mus.data) return;
+        
+        // 1. Obtener quién ha jugado EN ESTA SALA
+        const roomMatches = app.mus.getRoomMatches();
+        let roomPlayers = new Set();
+        roomMatches.forEach(m => {
+            roomPlayers.add(m.p1); roomPlayers.add(m.p2);
+            roomPlayers.add(m.p3); roomPlayers.add(m.p4);
+        });
+
+        // 2. Obtener jugadores globales que NO han jugado nunca ninguna partida (recién creados)
+        const allMatches = app.mus.data.matches;
+        let playersWithMatches = new Set();
+        allMatches.forEach(m => {
+            playersWithMatches.add(m.p1); playersWithMatches.add(m.p2);
+            playersWithMatches.add(m.p3); playersWithMatches.add(m.p4);
+        });
+
+        // 3. La lista será: Los que ya jugaron aquí + Los que acaban de ser registrados y están a 0 partidas
+        let playersToList = app.mus.data.players.filter(p => roomPlayers.has(p) || !playersWithMatches.has(p));
+
+        // Fallback: Si la sala es totalmente nueva (0 partidas), mostramos a todo el mundo
+        if (roomMatches.length === 0) playersToList = [...app.mus.data.players];
+        
+        playersToList.sort();
+        app.mus.currentMatchPlayers = playersToList; 
+
+        ['musP1', 'musP2', 'musP3', 'musP4'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.innerHTML = `<option value="">-- Elige --</option>` + 
+                               playersToList.map(p => `<option value="${p}">${p}</option>`).join('');
+                el.value = "";
+                el.setAttribute("onchange", "app.mus.updateMatchSelects()");
+            }
+        });
+    },
+
+    updateMatchSelects: () => {
+        const selects = ['musP1', 'musP2', 'musP3', 'musP4'];
+        const selectedValues = selects.map(id => document.getElementById(id).value).filter(v => v !== "");
+
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const currentVal = el.value;
+            
+            let html = `<option value="">-- Elige --</option>`;
+            app.mus.currentMatchPlayers.forEach(p => {
+                // Solo muestra al jugador si NO está seleccionado en otra casilla, o si es el de esta misma casilla
+                if (!selectedValues.includes(p) || p === currentVal) {
+                    html += `<option value="${p}" ${p === currentVal ? 'selected' : ''}>${p}</option>`;
+                }
+            });
+            el.innerHTML = html;
+        });
     },
 
     deleteMatch: (id) => {
@@ -1289,14 +1362,6 @@ app.mus = {
 
     renderPlayerSelects: () => {
         if (!app.mus.data) return;
-        
-        const allPlayers = app.mus.data.players;
-        const allOpts = allPlayers.map(p => `<option value="${p}">${p}</option>`).join('');
-        
-        ['musP1', 'musP2', 'musP3', 'musP4'].forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.innerHTML = allOpts;
-        });
         
         const matches = app.mus.getRoomMatches();
         const activePlayersSet = new Set();
