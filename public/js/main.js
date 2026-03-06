@@ -316,6 +316,22 @@ window.app = {
             widgetText.innerHTML = `<span style="opacity:0.7">${roomEmoji} ${roomName}${roomId}</span><br><strong>${userEmoji} ${name}</strong>`;
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // --- NUEVO: Control de visibilidad de la Tarjeta MUS en el Hub de Stats ---
+        if (id === 'statsSelectionScreen') {
+            const musCard = document.getElementById('cardMusStats');
+            if (musCard) {
+                const lowerName = (app.myPlayerName || '').toLowerCase();
+                const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
+                
+                // Mostrar si es Admin o si su nombre está en la Whitelist
+                if (isAdm || app.musWhitelist.includes(lowerName)) {
+                    musCard.classList.remove('hidden');
+                } else {
+                    musCard.classList.add('hidden');
+                }
+            }
+        }
     },
 
     findActiveSession: () => {
@@ -614,31 +630,53 @@ socket.on('forceKickIfUnregistered', (kickedName) => {
     }
 });
 
-socket.on('authRequestsList', (requests) => {
+socket.on('authRequestsList', (data) => {
     const list = document.getElementById('authAdminList');
     if (!list) return;
-    if (requests.length === 0) {
-        list.innerHTML = "<p style='color:#aaa;'>No hay solicitudes pendientes.</p>";
-        return;
-    }
     
-    let html = "";
-    requests.forEach(r => {
-        const typeEmoji = r.type === 'register' ? '🆕 Registro' : '🔑 Cambio de Clave';
-        const color = r.type === 'register' ? '#2ed573' : '#ffa502';
-        html += `
-        <div style="background:var(--bg-card); padding:15px; border-radius:10px; border-left:4px solid ${color}; margin-bottom:10px; text-align:left; box-shadow:var(--card-shadow-3d);">
-            <div style="font-weight:bold; color:${color}; margin-bottom:5px;">${typeEmoji}</div>
-            <div><span style="color:var(--text-muted);">Usuario:</span> <b style="color:var(--text-main); font-size:1.1em">${r.username}</b></div>
-            <div><span style="color:var(--text-muted);">Clave deseada:</span> <span style="font-family:monospace; color:var(--accent-red);">${r.password}</span></div>
-            <div><span style="color:var(--text-muted);">Email:</span> ${r.email || '<i>N/A</i>'}</div>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="app.auth.resolveRequest('${r.id}', 'reject')" style="flex:1; background:var(--accent-red); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">❌ RECHAZAR</button>
-                <button onclick="app.auth.resolveRequest('${r.id}', 'approve')" style="flex:1; background:var(--accent-green); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">✅ ACEPTAR</button>
-            </div>
-        </div>`;
+    // 1. DIBUJAR PETICIONES DE REGISTRO
+    const requests = data.requests;
+    let reqHtml = "<h3 style='color:#74b9ff; margin-bottom:10px;'>Peticiones de Cuenta</h3>";
+    
+    if (requests.length === 0) {
+        reqHtml += "<p style='color:#aaa; font-size:0.9em;'>No hay solicitudes pendientes.</p>";
+    } else {
+        requests.forEach(r => {
+            const typeEmoji = r.type === 'register' ? '🆕 Registro' : '🔑 Cambio de Clave';
+            const color = r.type === 'register' ? '#2ed573' : '#ffa502';
+            reqHtml += `
+            <div style="background:var(--bg-card); padding:15px; border-radius:10px; border-left:4px solid ${color}; margin-bottom:10px; text-align:left; box-shadow:var(--card-shadow-3d);">
+                <div style="font-weight:bold; color:${color}; margin-bottom:5px;">${typeEmoji}</div>
+                <div><span style="color:var(--text-muted);">Usuario:</span> <b style="color:var(--text-main); font-size:1.1em">${r.username}</b></div>
+                <div><span style="color:var(--text-muted);">Clave deseada:</span> <span style="font-family:monospace; color:var(--accent-red);">${r.password}</span></div>
+                <div><span style="color:var(--text-muted);">Email:</span> ${r.email || '<i>N/A</i>'}</div>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button onclick="app.auth.resolveRequest('${r.id}', 'reject')" style="flex:1; background:var(--accent-red); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">❌ RECHAZAR</button>
+                    <button onclick="app.auth.resolveRequest('${r.id}', 'approve')" style="flex:1; background:var(--accent-green); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">✅ ACEPTAR</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    // 2. DIBUJAR GESTOR DE WHITELIST DE MUS
+    let musHtml = "<h3 style='color:#e1b12c; margin-top:30px; margin-bottom:10px;'>Permisos de Mus</h3>";
+    musHtml += `<div style="display:flex; gap:5px; margin-bottom:15px;">
+                    <input type="text" id="addMusInput" placeholder="Nombre exacto..." style="flex:1; margin:0; padding:8px; border-radius:5px; border:1px solid #444; background:#222; color:white;">
+                    <button onclick="const n=document.getElementById('addMusInput').value; if(n) { socket.emit('addMusWhitelist', {admin: app.myPlayerName, name: n}); }" style="background:#e1b12c; color:#222; padding:8px 15px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Añadir</button>
+                </div>`;
+    
+    musHtml += "<ul style='list-style:none; padding:0; margin:0; text-align:left; max-height:200px; overflow-y:auto; background:#2f3542; border-radius:5px; border:1px solid #444;'>";
+    data.musWhitelist.forEach(name => {
+        musHtml += `
+            <li style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #444; margin:0; box-shadow:none; border-radius:0;">
+                <span style="color:#fff; font-weight:bold;">${name}</span>
+                <button onclick="if(confirm('¿Quitar acceso a ${name}?')) socket.emit('removeMusWhitelist', {admin: app.myPlayerName, name: '${name}'})" style="background:#e74c3c; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer; font-size:0.8em; width:auto;">Eliminar</button>
+            </li>`;
     });
-    list.innerHTML = html;
+    if (data.musWhitelist.length === 0) musHtml += "<p style='padding:10px; color:#aaa; margin:0; text-align:center;'>Lista vacía.</p>";
+    musHtml += "</ul>";
+
+    list.innerHTML = reqHtml + musHtml;
 });
 
 socket.on('hubRoomsUpdate', (rooms) => {
@@ -739,6 +777,17 @@ socket.on('sessionExpired', () => {
 
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
+// Variable global para guardar la lista permitida del Mus
+app.musWhitelist = [];
+
+socket.on('updateMusWhitelist', (list) => {
+    app.musWhitelist = list;
+    // Si estamos en la pantalla de Stats, forzamos a repintarla para ocultar/mostrar la tarjeta
+    if (app.currentScreenId === 'statsSelectionScreen') {
+        app.showScreen('statsSelectionScreen', true); 
+    }
+});
+
 window.onload = function() {
     if (!localStorage.getItem('legal_accepted')) {
         const banner = document.getElementById('legalBanner');
@@ -785,6 +834,7 @@ window.onload = function() {
     }
 
     socket.emit('requestHubRooms');
+    socket.emit('requestMusWhitelist'); // Pide la lista de permitidos al entrar
     setInterval(() => {
         if (!document.getElementById('hubScreen').classList.contains('hidden') || 
             !document.getElementById('loginScreen').classList.contains('hidden')) {

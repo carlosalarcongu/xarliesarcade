@@ -572,6 +572,7 @@ app.mus = {
         let allLossStreaks = [];
 
         matchesToProcess.forEach(m => {
+            if (m.s1 + m.s2 <= 1) return;
             let t1Won = null;
             if (m.s1 > m.s2) t1Won = true;
             else if (m.s1 < m.s2) t1Won = false;

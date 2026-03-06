@@ -16,6 +16,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // --- BASE DE DATOS DE USUARIOS ---
 const db = new Database(path.join(__dirname, 'arcade.db'));
 db.prepare('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, email TEXT)').run();
+db.prepare('CREATE TABLE IF NOT EXISTS mus_whitelist (username TEXT PRIMARY KEY)').run();
+
 
 const REQ_FILE = path.join(__dirname, 'pending_requests.json');
 if (!fs.existsSync(REQ_FILE)) {
@@ -123,10 +125,14 @@ io.on('connection', (socket) => {
         if (callback) callback({ success: true });
     });
 
-    // --- PANEL DE ADMINISTRADORES (AUTH) ---
+    // --- PANEL DE ADMINISTRADORES (AUTH Y WHITELISTS) ---
     socket.on('getAuthRequests', (adminName) => {
         if (!['musero', 'administrador m', 'xarlie'].includes((adminName || '').toLowerCase())) return;
-        socket.emit('authRequestsList', getRequests());
+        
+        const requests = getRequests();
+        const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
+        
+        socket.emit('authRequestsList', { requests, musWhitelist });
     });
 
     socket.on('resolveAuthRequest', (data) => {
@@ -151,8 +157,37 @@ io.on('connection', (socket) => {
             saveRequests(reqs);
         }
         
-        socket.emit('authRequestsList', reqs);
+        const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
+        socket.emit('authRequestsList', { requests: reqs, musWhitelist });
     });
+
+    // --- NUEVO: EVENTOS WHITELIST MUS ---
+    socket.on('addMusWhitelist', (data) => {
+        if (!['musero', 'administrador m', 'xarlie'].includes((data.admin || '').toLowerCase())) return;
+        if (!data.name) return;
+        db.prepare('INSERT OR IGNORE INTO mus_whitelist (username) VALUES (?)').run(data.name.toLowerCase());
+        
+        const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
+        socket.emit('authRequestsList', { requests: getRequests(), musWhitelist });
+        io.emit('updateMusWhitelist', musWhitelist); // Avisar a todos para que oculten/muestren la tarjeta
+    });
+
+    socket.on('removeMusWhitelist', (data) => {
+        if (!['musero', 'administrador m', 'xarlie'].includes((data.admin || '').toLowerCase())) return;
+        db.prepare('DELETE FROM mus_whitelist WHERE username = ?').run(data.name.toLowerCase());
+        
+        const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
+        socket.emit('authRequestsList', { requests: getRequests(), musWhitelist });
+        io.emit('updateMusWhitelist', musWhitelist);
+    });
+
+    // Evento para que un cliente normal pida la whitelist al entrar
+    socket.on('requestMusWhitelist', () => {
+        const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
+        socket.emit('updateMusWhitelist', musWhitelist);
+    });
+
+    
 
     // ----------------------------------------------------
 
