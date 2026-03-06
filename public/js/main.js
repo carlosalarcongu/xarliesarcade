@@ -290,14 +290,29 @@ window.app = {
         const btnHubAnalytics = document.getElementById('btnHubAnalytics'); // <--- Añadido
         
         // Controlar el botón de Panel Admin y Analytics en el Hub
+        // Controlar los botones del Hub (Admins, Analytics y STATS)
         if (id === 'hubScreen') {
-            const isAdm = ['musero', 'administrador m', 'xarlie'].includes((app.myPlayerName||'').toLowerCase());
+            const lowerName = (app.myPlayerName || '').toLowerCase();
+            const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
+            
+            const btnHubStats = document.getElementById('btnHubStats');
+
+            // 1. Mostrar Admin y Analytics solo a Admins autenticados
             if (isAdm && app.isAuthenticatedUser) {
                 if (btnAdminAuth) btnAdminAuth.classList.remove('hidden');
                 if (btnHubAnalytics) btnHubAnalytics.classList.remove('hidden');
             } else {
                 if (btnAdminAuth) btnAdminAuth.classList.add('hidden');
                 if (btnHubAnalytics) btnHubAnalytics.classList.add('hidden');
+            }
+
+            // 2. Mostrar botón STATS solo a Admins o a los de la Whitelist
+            if (btnHubStats) {
+                if (isAdm || (app.musWhitelist && app.musWhitelist.includes(lowerName))) {
+                    btnHubStats.classList.remove('hidden');
+                } else {
+                    btnHubStats.classList.add('hidden');
+                }
             }
         }
 
@@ -777,14 +792,14 @@ socket.on('sessionExpired', () => {
 
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
-// Variable global para guardar la lista permitida del Mus
+// Variable global para guardar la lista permitida
 app.musWhitelist = [];
 
 socket.on('updateMusWhitelist', (list) => {
     app.musWhitelist = list;
-    // Si estamos en la pantalla de Stats, forzamos a repintarla para ocultar/mostrar la tarjeta
-    if (app.currentScreenId === 'statsSelectionScreen') {
-        app.showScreen('statsSelectionScreen', true); 
+    // Si estamos en el Hub o en Stats, refrescamos la vista para aplicar los permisos al instante
+    if (app.currentScreenId === 'hubScreen' || app.currentScreenId === 'statsSelectionScreen') {
+        app.showScreen(app.currentScreenId, true); 
     }
 });
 
