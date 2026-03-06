@@ -290,14 +290,29 @@ window.app = {
         const btnHubAnalytics = document.getElementById('btnHubAnalytics'); // <--- Añadido
         
         // Controlar el botón de Panel Admin y Analytics en el Hub
+        // Controlar los botones del Hub (Admins, Analytics y STATS)
         if (id === 'hubScreen') {
-            const isAdm = ['musero', 'administrador m', 'xarlie'].includes((app.myPlayerName||'').toLowerCase());
+            const lowerName = (app.myPlayerName || '').toLowerCase();
+            const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
+            
+            const btnHubStats = document.getElementById('btnHubStats');
+
+            // 1. Mostrar Admin y Analytics solo a Admins autenticados
             if (isAdm && app.isAuthenticatedUser) {
                 if (btnAdminAuth) btnAdminAuth.classList.remove('hidden');
                 if (btnHubAnalytics) btnHubAnalytics.classList.remove('hidden');
             } else {
                 if (btnAdminAuth) btnAdminAuth.classList.add('hidden');
                 if (btnHubAnalytics) btnHubAnalytics.classList.add('hidden');
+            }
+
+            // 2. Mostrar botón STATS solo a Admins o a los de la Whitelist
+            if (btnHubStats) {
+                if (isAdm || (app.musWhitelist && app.musWhitelist.includes(lowerName))) {
+                    btnHubStats.classList.remove('hidden');
+                } else {
+                    btnHubStats.classList.add('hidden');
+                }
             }
         }
 
@@ -310,12 +325,46 @@ window.app = {
             const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
             
             const lowerName = name.toLowerCase();
-            const userEmoji = (['administrador m', 'xarlie', 'musero'].includes(lowerName)) ? "👑" : (app.isAuthenticatedUser ? "🛡️" : "👤");
+            let userEmoji = "👤"; // Por defecto, anónimo
+            
+            // Si es un admin oficial
+            if (['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
+                userEmoji = "👑";
+            } else {
+                // Para el resto: comprobamos si el nombre existe en la lista del servidor
+                // Como no tenemos una lista local estricta, lo deducimos: 
+                // Si el usuario intentó logearse y pasó por la contraseña exitosamente, es true.
+                if (app.isAuthenticatedUser) {
+                    userEmoji = "🛡️"; // Autenticado con clave
+                } else {
+                    // Aquí la magia: Si no está autenticado, pero TIENE un nombre asignado,
+                    // le ponemos el escudo tachado indicando "Nombre sin asegurar/Validar".
+                    if (name !== "Sin Nombre") {
+                        userEmoji = "🛡️❌"; 
+                    }
+                }
+            }
 
             const roomEmoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
             widgetText.innerHTML = `<span style="opacity:0.7">${roomEmoji} ${roomName}${roomId}</span><br><strong>${userEmoji} ${name}</strong>`;
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // --- NUEVO: Control de visibilidad de la Tarjeta MUS en el Hub de Stats ---
+        if (id === 'statsSelectionScreen') {
+            const musCard = document.getElementById('cardMusStats');
+            if (musCard) {
+                const lowerName = (app.myPlayerName || '').toLowerCase();
+                const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
+                
+                // Mostrar si es Admin o si su nombre está en la Whitelist
+                if (isAdm || app.musWhitelist.includes(lowerName)) {
+                    musCard.classList.remove('hidden');
+                } else {
+                    musCard.classList.add('hidden');
+                }
+            }
+        }
     },
 
     findActiveSession: () => {
@@ -614,31 +663,61 @@ socket.on('forceKickIfUnregistered', (kickedName) => {
     }
 });
 
-socket.on('authRequestsList', (requests) => {
+socket.on('authRequestsList', (data) => {
     const list = document.getElementById('authAdminList');
     if (!list) return;
-    if (requests.length === 0) {
-        list.innerHTML = "<p style='color:#aaa;'>No hay solicitudes pendientes.</p>";
-        return;
-    }
     
-    let html = "";
-    requests.forEach(r => {
-        const typeEmoji = r.type === 'register' ? '🆕 Registro' : '🔑 Cambio de Clave';
-        const color = r.type === 'register' ? '#2ed573' : '#ffa502';
-        html += `
-        <div style="background:var(--bg-card); padding:15px; border-radius:10px; border-left:4px solid ${color}; margin-bottom:10px; text-align:left; box-shadow:var(--card-shadow-3d);">
-            <div style="font-weight:bold; color:${color}; margin-bottom:5px;">${typeEmoji}</div>
-            <div><span style="color:var(--text-muted);">Usuario:</span> <b style="color:var(--text-main); font-size:1.1em">${r.username}</b></div>
-            <div><span style="color:var(--text-muted);">Clave deseada:</span> <span style="font-family:monospace; color:var(--accent-red);">${r.password}</span></div>
-            <div><span style="color:var(--text-muted);">Email:</span> ${r.email || '<i>N/A</i>'}</div>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="app.auth.resolveRequest('${r.id}', 'reject')" style="flex:1; background:var(--accent-red); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">❌ RECHAZAR</button>
-                <button onclick="app.auth.resolveRequest('${r.id}', 'approve')" style="flex:1; background:var(--accent-green); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">✅ ACEPTAR</button>
-            </div>
-        </div>`;
+    // Si data.requests no existe (por si aún no has actualizado el servidor), usamos arrays vacíos por seguridad
+    const requests = data.requests || [];
+    const musWhitelist = data.musWhitelist || [];
+    
+    // --- CAJA 1: PETICIONES DE CUENTA ---
+    let reqHtml = `<div class="admin-glass-box">
+        <h3 class="admin-gold-title">🆕 Peticiones de Cuenta</h3>`;
+    
+    if (requests.length === 0) {
+        reqHtml += "<p style='color:var(--text-muted); font-size:0.9em; text-align:center;'>No hay solicitudes pendientes.</p>";
+    } else {
+        requests.forEach(r => {
+            const typeEmoji = r.type === 'register' ? '🆕 Registro' : '🔑 Cambio de Clave';
+            const color = r.type === 'register' ? '#2ed573' : '#ffa502';
+            reqHtml += `
+            <div class="admin-glass-item" style="border-left: 4px solid ${color};">
+                <div style="font-weight:bold; color:${color}; margin-bottom:5px; -webkit-text-stroke:0;">${typeEmoji}</div>
+                <div><span style="color:var(--text-muted); -webkit-text-stroke:0;">Usuario:</span> <b style="font-size:1.1em">${r.username}</b></div>
+                <div><span style="color:var(--text-muted); -webkit-text-stroke:0;">Clave:</span> <span style="font-family:monospace; color:var(--accent-red); -webkit-text-stroke:0;">${r.password}</span></div>
+                <div><span style="color:var(--text-muted); -webkit-text-stroke:0;">Email:</span> <span style="-webkit-text-stroke:0;">${r.email || '<i>N/A</i>'}</span></div>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button onclick="app.auth.resolveRequest('${r.id}', 'reject')" class="main-btn" style="background:var(--accent-red); padding:8px; margin:0;">❌ RECHAZAR</button>
+                    <button onclick="app.auth.resolveRequest('${r.id}', 'approve')" class="main-btn" style="background:var(--accent-green); padding:8px; margin:0;">✅ ACEPTAR</button>
+                </div>
+            </div>`;
+        });
+    }
+    reqHtml += `</div>`;
+
+    // --- CAJA 2: PERMISOS DE MUS ---
+    let musHtml = `<div class="admin-glass-box">
+        <h3 class="admin-gold-title">🐄 Permisos de Mus</h3>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="addMusInput" placeholder="Nombre exacto..." style="flex:1; margin:0; padding:10px; border-radius:var(--btn-radius); background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-input); box-shadow:inset 0 2px 5px rgba(0,0,0,0.1);">
+            <button class="main-btn" onclick="const n=document.getElementById('addMusInput').value; if(n) { socket.emit('addMusWhitelist', {admin: app.myPlayerName, name: n}); }" style="width:auto; margin:0; padding:0 20px; background:#e1b12c; color:#222; text-shadow:none;">Añadir</button>
+        </div>
+        <ul style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">`;
+    
+    musWhitelist.forEach(name => {
+        musHtml += `
+            <li class="admin-glass-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; margin-bottom:8px;">
+                <b style="font-size:1.1em;">${name}</b>
+                <button class="kick-btn" onclick="if(confirm('¿Quitar acceso a ${name}?')) socket.emit('removeMusWhitelist', {admin: app.myPlayerName, name: '${name}'})" style="background:var(--accent-red); padding:6px 12px; width:auto; margin:0; font-size:0.8em; box-shadow:none;">Eliminar</button>
+            </li>`;
     });
-    list.innerHTML = html;
+    
+    if (musWhitelist.length === 0) musHtml += "<p style='color:var(--text-muted); text-align:center;'>Lista vacía.</p>";
+    
+    musHtml += `</ul></div>`;
+
+    list.innerHTML = reqHtml + musHtml;
 });
 
 socket.on('hubRoomsUpdate', (rooms) => {
@@ -739,6 +818,17 @@ socket.on('sessionExpired', () => {
 
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
+// Variable global para guardar la lista permitida
+app.musWhitelist = [];
+
+socket.on('updateMusWhitelist', (list) => {
+    app.musWhitelist = list;
+    // Si estamos en el Hub o en Stats, refrescamos la vista para aplicar los permisos al instante
+    if (app.currentScreenId === 'hubScreen' || app.currentScreenId === 'statsSelectionScreen') {
+        app.showScreen(app.currentScreenId, true); 
+    }
+});
+
 window.onload = function() {
     if (!localStorage.getItem('legal_accepted')) {
         const banner = document.getElementById('legalBanner');
@@ -761,16 +851,27 @@ window.onload = function() {
         if (correctedName.length > 0) {
             localStorage.setItem('global_username', correctedName);
             app.myPlayerName = correctedName; 
-            app.isAuthenticatedUser = true; // Confía en la sesión guardada al recargar
+            
+            // NUEVO: Verificamos silenciosamente si este nombre guardado TIENE contraseña en la BBDD.
+            // Si tiene, y hemos entrado recargando la página, asumimos temporalmente que es válido (🛡️).
+            // Si el admin lo echó o no tiene, se quedará como falso (🛡️❌ o 👤).
+            socket.emit('checkAuthRequirement', correctedName, (res) => {
+                if (res.needsPassword) {
+                    app.isAuthenticatedUser = true; // Tiene clave y recargó la página
+                } else {
+                    app.isAuthenticatedUser = false; // Su nombre no está registrado con clave
+                }
+                // Refrescar la pantalla para que pinte el emoji correcto tras la respuesta
+                if(app.currentScreenId) app.showScreen(app.currentScreenId, true);
+            });
+            
             socket.emit('registerVisit', correctedName);
         } else {
             localStorage.removeItem('global_username');
             app.myPlayerName = null;
-            // NUEVO: Registrar visita aunque el nombre guardado fuera inválido/vacío
             socket.emit('registerVisit', 'Anónimo'); 
         }
     } else {
-        // NUEVO: Registrar visita si es la primera vez que entra a la web y no tiene nombre
         socket.emit('registerVisit', 'Anónimo');
     }
 
@@ -785,6 +886,7 @@ window.onload = function() {
     }
 
     socket.emit('requestHubRooms');
+    socket.emit('requestMusWhitelist'); // Pide la lista de permitidos al entrar
     setInterval(() => {
         if (!document.getElementById('hubScreen').classList.contains('hidden') || 
             !document.getElementById('loginScreen').classList.contains('hidden')) {
