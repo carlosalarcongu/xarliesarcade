@@ -853,81 +853,42 @@
 
         <div id="musLogContainer" class="hidden"></div>
         
-        <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:center; padding-top:20px; overflow-y:auto;">
-            <div style="background:var(--bg-card); padding:15px; border-radius:10px; width:95%; max-width:400px; border:2px solid #e1b12c; box-shadow:var(--card-shadow-3d);">
-                <h3 style="margin-top:0; color:#e1b12c; font-size:1.3em;">Anotar Partida</h3>
-                <p id="matchRoomIndicator" style="color:var(--text-muted); font-size:0.75em; margin-bottom:10px;">Sala: ...</p>
+        <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:center; padding-top:50px; overflow-y:auto;">
+            <div style="background:var(--bg-card); padding:15px; border-radius:var(--card-radius); width:95%; max-width:400px; border:2px solid #e1b12c; box-shadow:var(--card-shadow-3d);">
+                <h3 style="margin-top:0; color:#e1b12c; font-size:1.2em;">Anotar Partida</h3>
+                <p id="matchRoomIndicator" style="color:var(--text-muted); font-size:0.75em; margin-bottom:15px;">Sala: ...</p>
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:5px;">
-                    
-                    <div style="flex:1; min-width:0; text-align:center; background:var(--bg-blue-tint); padding:8px 4px; border-radius:5px; border: 1px solid var(--accent-blue);">
-                        <h4 style="margin:0 0 5px 0; color:var(--accent-blue); font-size:0.85em">Pareja 1</h4>
-                        <select id="musP1" style="width:100%; margin:2px 0; padding:4px; border-radius:4px; font-size:0.8em;"></select>
-                        <select id="musP2" style="width:100%; margin:2px 0; padding:4px; border-radius:4px; font-size:0.8em;"></select>
+                <div style="display:flex; justify-content:space-between; align-items:stretch; gap:5px; margin-bottom:15px;">
+                    <div style="width:45%; text-align:center; background:var(--bg-blue-tint); padding:10px 5px; border-radius:var(--btn-radius); border: 1px solid var(--accent-blue); display:flex; flex-direction:column;">
+                        <h4 style="margin:0 0 10px 0; color:var(--accent-blue); font-size:0.85em;">Pareja 1</h4>
+                        <select id="musP1" style="width:100%; margin:2px 0; padding:6px 2px; font-size:0.8em; border-radius:var(--btn-radius);"></select>
+                        <select id="musP2" style="width:100%; margin:2px 0; padding:6px 2px; font-size:0.8em; border-radius:var(--btn-radius);"></select>
                         
-                        <div style="display:flex; align-items:center; justify-content:center; gap:5px; margin-top:10px;">
-                            <button style="width:28px; height:28px; min-width:28px; padding:0; border-radius:50%; font-size:1.2em; font-weight:bold; background:var(--accent-red); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(1, -1)">-</button>
-                            <span id="musS1" style="font-weight:900; font-size:1.5em; color:var(--text-main); width:25px; display:inline-block; text-align:center;">0</span>
-                            <button style="width:28px; height:28px; min-width:28px; padding:0; border-radius:50%; font-size:1.2em; font-weight:bold; background:var(--accent-green); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(1, 1)">+</button>
+                        <div style="display:flex; align-items:center; justify-content:space-evenly; margin-top:auto; padding-top:10px;">
+                            <button style="width:25px; height:25px; padding:0; border-radius:var(--btn-radius); font-size:1.2em; font-weight:bold; background:var(--accent-red); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(1, -1)">-</button>
+                            <span id="musS1" style="font-weight:900; font-size:1.4em; color:var(--text-main); width:30px; text-align:center;">0</span>
+                            <button style="width:25px; height:25px; padding:0; border-radius:var(--btn-radius); font-size:1.2em; font-weight:bold; background:var(--accent-green); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(1, 1)">+</button>
                         </div>
                     </div>
                     
-                    <div style="font-weight:bold; color:var(--text-muted); font-size:0.8em; padding: 0 2px;">VS</div>
+                    <div style="font-weight:bold; color:var(--text-muted); font-size:0.8em; align-self:center;">VS</div>
                     
-                    <div style="flex:1; min-width:0; text-align:center; background:var(--bg-red-tint); padding:8px 4px; border-radius:5px; border: 1px solid var(--accent-red);">
-                        <h4 style="margin:0 0 5px 0; color:var(--accent-red); font-size:0.85em">Pareja 2</h4>
-                        <select id="musP3" style="width:100%; margin:2px 0; padding:4px; border-radius:4px; font-size:0.8em;"></select>
-                        <select id="musP4" style="width:100%; margin:2px 0; padding:4px; border-radius:4px; font-size:0.8em;"></select>
+                    <div style="width:45%; text-align:center; background:var(--bg-red-tint); padding:10px 5px; border-radius:var(--btn-radius); border: 1px solid var(--accent-red); display:flex; flex-direction:column;">
+                        <h4 style="margin:0 0 10px 0; color:var(--accent-red); font-size:0.85em;">Pareja 2</h4>
+                        <select id="musP3" style="width:100%; margin:2px 0; padding:6px 2px; font-size:0.8em; border-radius:var(--btn-radius);"></select>
+                        <select id="musP4" style="width:100%; margin:2px 0; padding:6px 2px; font-size:0.8em; border-radius:var(--btn-radius);"></select>
                         
-                        <div style="display:flex; align-items:center; justify-content:center; gap:5px; margin-top:10px;">
-                            <button style="width:28px; height:28px; min-width:28px; padding:0; border-radius:50%; font-size:1.2em; font-weight:bold; background:var(--accent-red); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(2, -1)">-</button>
-                            <span id="musS2" style="font-weight:900; font-size:1.5em; color:var(--text-main); width:25px; display:inline-block; text-align:center;">0</span>
-                            <button style="width:28px; height:28px; min-width:28px; padding:0; border-radius:50%; font-size:1.2em; font-weight:bold; background:var(--accent-green); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(2, 1)">+</button>
+                        <div style="display:flex; align-items:center; justify-content:space-evenly; margin-top:auto; padding-top:10px;">
+                            <button style="width:25px; height:25px; padding:0; border-radius:var(--btn-radius); font-size:1.2em; font-weight:bold; background:var(--accent-red); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(2, -1)">-</button>
+                            <span id="musS2" style="font-weight:900; font-size:1.4em; color:var(--text-main); width:30px; text-align:center;">0</span>
+                            <button style="width:25px; height:25px; padding:0; border-radius:var(--btn-radius); font-size:1.2em; font-weight:bold; background:var(--accent-green); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;" onclick="app.mus.changeScore(2, 1)">+</button>
                         </div>
                     </div>
                 </div>
                 
                 <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" class="main-btn" style="flex:1; background:var(--border-input); box-shadow:0 4px 0 rgba(0,0,0,0.2); padding:12px;">Cancelar</button>
-                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1; background:#e1b12c; color:#222; box-shadow:0 4px 0 rgba(0,0,0,0.2); padding:12px;">Guardar</button>
-                </div>
-            </div>
-        </div><div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:center; padding-top:50px; overflow-y:auto;">
-            <div style="background:var(--bg-card); padding:20px; border-radius:10px; width:90%; max-width:400px; border:2px solid #e1b12c; box-shadow:var(--card-shadow-3d);">
-                <h3 style="margin-top:0; color:#e1b12c">Anotar Partida</h3>
-                <p id="matchRoomIndicator" style="color:var(--text-muted); font-size:0.8em; margin-bottom:10px;">Sala: ...</p>
-                
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="flex:1; text-align:center; background:var(--bg-blue-tint); padding:10px; border-radius:5px; border: 1px solid var(--accent-blue);">
-                        <h4 style="margin:0 0 10px 0; color:var(--accent-blue); font-size:0.9em">Pareja 1</h4>
-                        <select id="musP1" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
-                        <select id="musP2" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
-                        
-                        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:15px;">
-                            <button style="width:35px; height:35px; min-width:35px; padding:0; border-radius:50%; font-size:1.5em; font-weight:bold; background:var(--accent-red); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="app.mus.changeScore(1, -1)">-</button>
-                            <span id="musS1" style="font-weight:900; font-size:1.8em; color:var(--text-main); width:30px; display:inline-block; text-align:center;">0</span>
-                            <button style="width:35px; height:35px; min-width:35px; padding:0; border-radius:50%; font-size:1.5em; font-weight:bold; background:var(--accent-green); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="app.mus.changeScore(1, 1)">+</button>
-                        </div>
-                    </div>
-                    
-                    <div style="font-weight:bold; padding:0 10px; color:var(--text-muted)">VS</div>
-                    
-                    <div style="flex:1; text-align:center; background:var(--bg-red-tint); padding:10px; border-radius:5px; border: 1px solid var(--accent-red);">
-                        <h4 style="margin:0 0 10px 0; color:var(--accent-red); font-size:0.9em">Pareja 2</h4>
-                        <select id="musP3" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
-                        <select id="musP4" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
-                        
-                        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:15px;">
-                            <button style="width:35px; height:35px; min-width:35px; padding:0; border-radius:50%; font-size:1.5em; font-weight:bold; background:var(--accent-red); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="app.mus.changeScore(2, -1)">-</button>
-                            <span id="musS2" style="font-weight:900; font-size:1.8em; color:var(--text-main); width:30px; display:inline-block; text-align:center;">0</span>
-                            <button style="width:35px; height:35px; min-width:35px; padding:0; border-radius:50%; font-size:1.5em; font-weight:bold; background:var(--accent-green); color:white; border:none; box-shadow:0 3px 0 rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="app.mus.changeScore(2, 1)">+</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" class="main-btn" style="flex:1; background:var(--border-input); box-shadow:0 4px 0 rgba(0,0,0,0.2);">Cancelar</button>
-                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1; background:#e1b12c; color:#222; box-shadow:0 4px 0 rgba(0,0,0,0.2);">Guardar</button>
+                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" class="main-btn" style="flex:1; background:var(--border-input); box-shadow:0 3px 0 rgba(0,0,0,0.2); padding:10px;">Cancelar</button>
+                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1; background:#e1b12c; color:#222; box-shadow:0 3px 0 rgba(0,0,0,0.2); padding:10px;">Guardar</button>
                 </div>
             </div>
         </div>

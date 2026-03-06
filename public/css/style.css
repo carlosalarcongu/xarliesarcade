@@ -7,6 +7,7 @@
    ========================================= */
 
 /* TEMA LUMINOSO (Gris claro + AliExpress + Instagram + Formas rectas + Letra gruesa) */
+
 :root {
     /* Fondos gris claro para no deslumbrar */
     --bg-main: #e2e5e9; 
@@ -50,8 +51,8 @@
     /* --- FORMAS Y GROSOR DE LETRA (MODO CLARO) --- */
     --font-base: 500; 
     --font-bold: 800; 
-    --btn-radius: 4px; 
-    --card-radius: 8px; 
+    --btn-radius: 4px; /* Botones muy rectos */
+    --card-radius: 6px; /* Tarjetas muy poco redondeadas */
 
     /* --- VARIABLES EFECTO "BOTÓN 3D" PARA TARJETAS --- */
     --card-border-width: 2px; 
@@ -61,17 +62,21 @@
     --card-shadow-active: 0 1px 0 var(--card-shadow-base), 0 2px 4px rgba(0,0,0,0.05);
     
     /* Variables Mus (Tapete Claro) */
-    --mus-bg: #dcece0;
-    --mus-table-wrapper: rgba(255, 255, 255, 0.45); /* Transparente Claro */
+    --mus-bg: #f1f5f2; /* <<-- Verde ultra ligero casi blanco */
+    --mus-table-wrapper: rgba(255, 255, 255, 0.5); 
     --mus-th-bg: rgba(255, 255, 255, 0.6);
     --mus-td-bg: transparent;
     --mus-sticky: rgba(240, 248, 241, 0.95);
-    --mus-text: #003300; /* Texto oscuro contrastado */
+    --mus-text: #003300; 
     --mus-shadow: rgba(0,0,0,0.1);
     --mus-text-shadow: none;
     --mus-input-bg: #ffffff;
     --mus-input-text: #003300;
-    --mus-input-border: #1b5e20; /* Verde oscuro liso */
+    --mus-input-border: #1b5e20; 
+
+    
+    --mus-stat-stroke: 0.5px #0000005b; /* Borde negro de 1 pixel */
+    --mus-stat-shadow: 2px 2px 0px rgba(0,0,0,0.15); /* Sombra dura para dar volumen */
     
     /* Variables Trivial */
     --triv-bg-1: #f0f2f5;
@@ -134,8 +139,8 @@
         /* --- FORMAS Y GROSOR DE LETRA --- */
         --font-base: 400; 
         --font-bold: 700; 
-        --btn-radius: 12px; 
-        --card-radius: 16px; 
+        --btn-radius: 8px; /* <<-- Menos redondez en oscuro también */
+        --card-radius: 12px; /* <<-- Menos redondez en oscuro también */
 
         --card-shadow-base: #1a1e24; 
         --card-shadow-3d: 0 4px 0 var(--card-shadow-base), 0 8px 10px rgba(0,0,0,0.3);
@@ -144,16 +149,19 @@
         
         /* Variables Mus (Tapete Oscuro) */
         --mus-bg: #1b4332;
-        --mus-table-wrapper: rgba(0, 0, 0, 0.3); /* Transparente Oscuro */
+        --mus-table-wrapper: rgba(0, 0, 0, 0.3); 
         --mus-th-bg: rgba(0, 0, 0, 0.5);
         --mus-td-bg: transparent;
         --mus-sticky: rgba(27, 67, 50, 0.95);
-        --mus-text: #e8f5e9; /* Texto claro contrastado */
+        --mus-text: #e8f5e9; 
         --mus-shadow: rgba(0,0,0,0.4);
-        --mus-text-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Sombra para legibilidad */
+        --mus-text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
         --mus-input-bg: #163828;
         --mus-input-text: #ffffff;
-        --mus-input-border: #0b2416; /* Verde súper oscuro liso */
+        --mus-input-border: #0b2416; 
+
+        --mus-stat-stroke: 0px transparent; /* Sin borde en modo oscuro */
+        --mus-stat-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Sombra suave original */
         
         /* Variables Trivial */
         --triv-bg-1: #2f3640;
@@ -510,7 +518,7 @@ canvas { display: block; cursor: crosshair; }
 
 #musScreen::before {
     content: " "; position: fixed; width: 200%; height: 200%; top: -50%; left: -50%; z-index: -1;
-    opacity: 0.15; pointer-events: none; background-image: url('image.png'); background-repeat: repeat; background-size: 120px auto; 
+    opacity: 0.45; pointer-events: none; background-image: url('image.png'); background-repeat: repeat; background-size: 120px auto; 
     animation: floatingCards 60s linear infinite alternate;
 }
 @keyframes floatingCards { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-50px, -50px) rotate(5deg); } }
@@ -584,8 +592,8 @@ canvas { display: block; cursor: crosshair; }
 #musScreen select {
     background-color: var(--mus-input-bg) !important;
     color: var(--mus-input-text) !important;
-    /* BORDE DEGRADADO TÉCNICA BACKGROUND-CLIP */
-    border: 3px solid transparent !important;
+    /* Borde más fino (1px) y más sombreado */
+    border: 1px solid transparent !important;
     background-image: linear-gradient(var(--mus-input-bg), var(--mus-input-bg)), linear-gradient(135deg, #d4af37, #e74c3c) !important;
     background-origin: border-box !important;
     background-clip: padding-box, border-box !important;
@@ -597,26 +605,26 @@ canvas { display: block; cursor: crosshair; }
     text-shadow: none !important;
     transition: transform 0.1s, box-shadow 0.1s, border-radius 0.3s;
     margin-bottom: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.25), inset 0 2px 4px rgba(0,0,0,0.1) !important; /* <<-- Sombra potente */
 }
 #musScreen select:active {
     transform: translateY(2px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
 }
 #musScreen select:focus {
     outline: none !important;
     transform: translateY(-1px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
 }
 
 #musScreen input {
     background-color: var(--mus-input-bg) !important;
     color: var(--mus-input-text) !important;
-    border: 2px solid var(--mus-input-border) !important; /* Verde oscuro liso */
+    border: 1px solid var(--mus-input-border) !important; /* Borde más fino */
     border-radius: var(--btn-radius) !important; 
     padding: 12px !important; 
     font-weight: var(--font-bold) !important;
-    box-shadow: 0 3px 0 var(--mus-input-border) !important; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; /* Sombreado más fuerte */
     cursor: pointer; 
     text-align: center;
     background-image: none !important; 
@@ -626,12 +634,11 @@ canvas { display: block; cursor: crosshair; }
 }
 #musScreen input:active {
     transform: translateY(2px);
-    box-shadow: 0 1px 0 var(--mus-input-border) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
 }
 #musScreen input:focus {
     outline: none !important;
 }
-
 /* TABLA CLASIFICACIÓN CON FONDO GLASSMORPHISM (Transparente + Desenfoque) */
 .mus-table-wrapper { 
     width: 100%; margin-bottom: 25px; 
@@ -884,4 +891,20 @@ canvas { display: block; cursor: crosshair; }
     .vote-grid, .mini-grid {
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
     }
+}
+/* =========================================
+   BORDES NEGROS PARA NÚMEROS DE COLORES (MODO CLARO)
+   ========================================= */
+.mus-table td:nth-child(2),
+.mus-table td:nth-child(3),
+.mus-table td:nth-child(4),
+.mus-table td:nth-child(5),
+#musScreen [style*="hsl("],
+#musScreen [style*="#2ed573"],
+#musScreen [style*="#ff4757"],
+#musScreen [style*="#e1b12c"],
+#musScreen [style*="#f1c40f"],
+#musScreen [style*="#74b9ff"] {
+    -webkit-text-stroke: var(--mus-stat-stroke);
+    text-shadow: var(--mus-stat-shadow) !important;
 }
