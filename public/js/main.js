@@ -325,7 +325,25 @@ window.app = {
             const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
             
             const lowerName = name.toLowerCase();
-            const userEmoji = (['administrador m', 'xarlie', 'musero'].includes(lowerName)) ? "👑" : (app.isAuthenticatedUser ? "🛡️" : "👤");
+            let userEmoji = "👤"; // Por defecto, anónimo
+            
+            // Si es un admin oficial
+            if (['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
+                userEmoji = "👑";
+            } else {
+                // Para el resto: comprobamos si el nombre existe en la lista del servidor
+                // Como no tenemos una lista local estricta, lo deducimos: 
+                // Si el usuario intentó logearse y pasó por la contraseña exitosamente, es true.
+                if (app.isAuthenticatedUser) {
+                    userEmoji = "🛡️"; // Autenticado con clave
+                } else {
+                    // Aquí la magia: Si no está autenticado, pero TIENE un nombre asignado,
+                    // le ponemos el escudo tachado indicando "Nombre sin asegurar/Validar".
+                    if (name !== "Sin Nombre") {
+                        userEmoji = "🛡️❌"; 
+                    }
+                }
+            }
 
             const roomEmoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
             widgetText.innerHTML = `<span style="opacity:0.7">${roomEmoji} ${roomName}${roomId}</span><br><strong>${userEmoji} ${name}</strong>`;
@@ -649,47 +667,55 @@ socket.on('authRequestsList', (data) => {
     const list = document.getElementById('authAdminList');
     if (!list) return;
     
-    // 1. DIBUJAR PETICIONES DE REGISTRO
-    const requests = data.requests;
-    let reqHtml = "<h3 style='color:#74b9ff; margin-bottom:10px;'>Peticiones de Cuenta</h3>";
+    // Si data.requests no existe (por si aún no has actualizado el servidor), usamos arrays vacíos por seguridad
+    const requests = data.requests || [];
+    const musWhitelist = data.musWhitelist || [];
+    
+    // --- CAJA 1: PETICIONES DE CUENTA ---
+    let reqHtml = `<div class="admin-glass-box">
+        <h3 class="admin-gold-title">🆕 Peticiones de Cuenta</h3>`;
     
     if (requests.length === 0) {
-        reqHtml += "<p style='color:#aaa; font-size:0.9em;'>No hay solicitudes pendientes.</p>";
+        reqHtml += "<p style='color:var(--text-muted); font-size:0.9em; text-align:center;'>No hay solicitudes pendientes.</p>";
     } else {
         requests.forEach(r => {
             const typeEmoji = r.type === 'register' ? '🆕 Registro' : '🔑 Cambio de Clave';
             const color = r.type === 'register' ? '#2ed573' : '#ffa502';
             reqHtml += `
-            <div style="background:var(--bg-card); padding:15px; border-radius:10px; border-left:4px solid ${color}; margin-bottom:10px; text-align:left; box-shadow:var(--card-shadow-3d);">
-                <div style="font-weight:bold; color:${color}; margin-bottom:5px;">${typeEmoji}</div>
-                <div><span style="color:var(--text-muted);">Usuario:</span> <b style="color:var(--text-main); font-size:1.1em">${r.username}</b></div>
-                <div><span style="color:var(--text-muted);">Clave deseada:</span> <span style="font-family:monospace; color:var(--accent-red);">${r.password}</span></div>
-                <div><span style="color:var(--text-muted);">Email:</span> ${r.email || '<i>N/A</i>'}</div>
+            <div class="admin-glass-item" style="border-left: 4px solid ${color};">
+                <div style="font-weight:bold; color:${color}; margin-bottom:5px; -webkit-text-stroke:0;">${typeEmoji}</div>
+                <div><span style="color:var(--text-muted); -webkit-text-stroke:0;">Usuario:</span> <b style="font-size:1.1em">${r.username}</b></div>
+                <div><span style="color:var(--text-muted); -webkit-text-stroke:0;">Clave:</span> <span style="font-family:monospace; color:var(--accent-red); -webkit-text-stroke:0;">${r.password}</span></div>
+                <div><span style="color:var(--text-muted); -webkit-text-stroke:0;">Email:</span> <span style="-webkit-text-stroke:0;">${r.email || '<i>N/A</i>'}</span></div>
                 <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button onclick="app.auth.resolveRequest('${r.id}', 'reject')" style="flex:1; background:var(--accent-red); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">❌ RECHAZAR</button>
-                    <button onclick="app.auth.resolveRequest('${r.id}', 'approve')" style="flex:1; background:var(--accent-green); padding:10px; border-radius:5px; color:white; border:none; font-weight:bold; cursor:pointer;">✅ ACEPTAR</button>
+                    <button onclick="app.auth.resolveRequest('${r.id}', 'reject')" class="main-btn" style="background:var(--accent-red); padding:8px; margin:0;">❌ RECHAZAR</button>
+                    <button onclick="app.auth.resolveRequest('${r.id}', 'approve')" class="main-btn" style="background:var(--accent-green); padding:8px; margin:0;">✅ ACEPTAR</button>
                 </div>
             </div>`;
         });
     }
+    reqHtml += `</div>`;
 
-    // 2. DIBUJAR GESTOR DE WHITELIST DE MUS
-    let musHtml = "<h3 style='color:#e1b12c; margin-top:30px; margin-bottom:10px;'>Permisos de Mus</h3>";
-    musHtml += `<div style="display:flex; gap:5px; margin-bottom:15px;">
-                    <input type="text" id="addMusInput" placeholder="Nombre exacto..." style="flex:1; margin:0; padding:8px; border-radius:5px; border:1px solid #444; background:#222; color:white;">
-                    <button onclick="const n=document.getElementById('addMusInput').value; if(n) { socket.emit('addMusWhitelist', {admin: app.myPlayerName, name: n}); }" style="background:#e1b12c; color:#222; padding:8px 15px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Añadir</button>
-                </div>`;
+    // --- CAJA 2: PERMISOS DE MUS ---
+    let musHtml = `<div class="admin-glass-box">
+        <h3 class="admin-gold-title">🐄 Permisos de Mus</h3>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="addMusInput" placeholder="Nombre exacto..." style="flex:1; margin:0; padding:10px; border-radius:var(--btn-radius); background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-input); box-shadow:inset 0 2px 5px rgba(0,0,0,0.1);">
+            <button class="main-btn" onclick="const n=document.getElementById('addMusInput').value; if(n) { socket.emit('addMusWhitelist', {admin: app.myPlayerName, name: n}); }" style="width:auto; margin:0; padding:0 20px; background:#e1b12c; color:#222; text-shadow:none;">Añadir</button>
+        </div>
+        <ul style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">`;
     
-    musHtml += "<ul style='list-style:none; padding:0; margin:0; text-align:left; max-height:200px; overflow-y:auto; background:#2f3542; border-radius:5px; border:1px solid #444;'>";
-    data.musWhitelist.forEach(name => {
+    musWhitelist.forEach(name => {
         musHtml += `
-            <li style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #444; margin:0; box-shadow:none; border-radius:0;">
-                <span style="color:#fff; font-weight:bold;">${name}</span>
-                <button onclick="if(confirm('¿Quitar acceso a ${name}?')) socket.emit('removeMusWhitelist', {admin: app.myPlayerName, name: '${name}'})" style="background:#e74c3c; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer; font-size:0.8em; width:auto;">Eliminar</button>
+            <li class="admin-glass-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; margin-bottom:8px;">
+                <b style="font-size:1.1em;">${name}</b>
+                <button class="kick-btn" onclick="if(confirm('¿Quitar acceso a ${name}?')) socket.emit('removeMusWhitelist', {admin: app.myPlayerName, name: '${name}'})" style="background:var(--accent-red); padding:6px 12px; width:auto; margin:0; font-size:0.8em; box-shadow:none;">Eliminar</button>
             </li>`;
     });
-    if (data.musWhitelist.length === 0) musHtml += "<p style='padding:10px; color:#aaa; margin:0; text-align:center;'>Lista vacía.</p>";
-    musHtml += "</ul>";
+    
+    if (musWhitelist.length === 0) musHtml += "<p style='color:var(--text-muted); text-align:center;'>Lista vacía.</p>";
+    
+    musHtml += `</ul></div>`;
 
     list.innerHTML = reqHtml + musHtml;
 });
@@ -825,16 +851,27 @@ window.onload = function() {
         if (correctedName.length > 0) {
             localStorage.setItem('global_username', correctedName);
             app.myPlayerName = correctedName; 
-            app.isAuthenticatedUser = true; // Confía en la sesión guardada al recargar
+            
+            // NUEVO: Verificamos silenciosamente si este nombre guardado TIENE contraseña en la BBDD.
+            // Si tiene, y hemos entrado recargando la página, asumimos temporalmente que es válido (🛡️).
+            // Si el admin lo echó o no tiene, se quedará como falso (🛡️❌ o 👤).
+            socket.emit('checkAuthRequirement', correctedName, (res) => {
+                if (res.needsPassword) {
+                    app.isAuthenticatedUser = true; // Tiene clave y recargó la página
+                } else {
+                    app.isAuthenticatedUser = false; // Su nombre no está registrado con clave
+                }
+                // Refrescar la pantalla para que pinte el emoji correcto tras la respuesta
+                if(app.currentScreenId) app.showScreen(app.currentScreenId, true);
+            });
+            
             socket.emit('registerVisit', correctedName);
         } else {
             localStorage.removeItem('global_username');
             app.myPlayerName = null;
-            // NUEVO: Registrar visita aunque el nombre guardado fuera inválido/vacío
             socket.emit('registerVisit', 'Anónimo'); 
         }
     } else {
-        // NUEVO: Registrar visita si es la primera vez que entra a la web y no tiene nombre
         socket.emit('registerVisit', 'Anónimo');
     }
 
