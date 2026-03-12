@@ -58,7 +58,7 @@ Object.keys(gamesModules).forEach(key => {
 
 io.on('connection', (socket) => {
 
-    // --- NUEVO: GESTIÓN DE AUTENTICACIÓN Y REGISTRO ---
+    socket.setMaxListeners(30); 
 
     socket.on('checkAuthRequirement', (name, callback) => {
         const username = name.toLowerCase();
