@@ -387,6 +387,40 @@ app.mus = {
         container.innerHTML = html;
     },
 
+    runAnalysis: () => {
+        const mode = document.getElementById('musViewMode').value;
+        const container = document.getElementById('musStatsContainer');
+        const chartSection = document.getElementById('musChartSection');
+        
+        container.innerHTML = "";
+        chartSection.classList.add('hidden');
+
+        if (mode === 'examinar_persona') {
+            const player = document.getElementById('musExamPlayer').value;
+            const examType = document.getElementById('musExamTypeP').value;
+            if (!player || player === 'all') return;
+
+            if (examType === 'vs_win') {
+                chartSection.classList.remove('hidden');
+                app.mus.renderChart(player);
+            } else {
+                app.mus.renderDetailedAnalysis(container, player, examType);
+            }
+        } 
+        else if (mode === 'examinar_pareja') {
+            const pair = document.getElementById('musExamPair').value;
+            const examType = document.getElementById('musExamTypePair').value;
+            if (!pair || pair === 'all') return;
+
+            if (examType === 'vs_pair_win') {
+                chartSection.classList.remove('hidden');
+                app.mus.renderChart(pair);
+            } else {
+                app.mus.renderDetailedAnalysis(container, pair, examType);
+            }
+        }
+    },
+
     renderAdminPanel: (container) => {
         if (app.myPlayerName.toLowerCase() !== 'administrador m') return;
         
