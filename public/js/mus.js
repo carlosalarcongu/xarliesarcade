@@ -387,6 +387,46 @@ app.mus = {
         container.innerHTML = html;
     },
 
+    runAnalysis: () => {
+        const mode = document.getElementById('musViewMode').value;
+        const container = document.getElementById('musStatsContainer');
+        const chartSection = document.getElementById('musChartSection');
+        
+        container.innerHTML = "";
+        chartSection.classList.add('hidden');
+
+        if (mode === 'examinar_persona') {
+            const player = document.getElementById('musExamPlayer').value;
+            const examType = document.getElementById('musExamTypeP').value;
+            if (!player || player === 'all') return;
+
+            if (examType === 'vs_win') {
+                chartSection.classList.remove('hidden');
+                app.mus.renderChart(player);
+            } else {
+                app.mus.renderDetailedAnalysis(container, player, examType);
+            }
+        } 
+        else if (mode === 'examinar_pareja') {
+            // Leemos los dos nuevos desplegables
+            const p1 = document.getElementById('musExamPair1').value;
+            const p2 = document.getElementById('musExamPair2').value;
+            const examType = document.getElementById('musExamTypePair').value;
+            
+            if (!p1 || p1 === 'all' || !p2 || p2 === 'all') return;
+
+            // Formamos el string de pareja ordenado alfabéticamente (como lo lee el resto del código)
+            const pair = [p1, p2].sort().join(' y ');
+
+            if (examType === 'vs_pair_win') {
+                chartSection.classList.remove('hidden');
+                app.mus.renderChart(pair);
+            } else {
+                app.mus.renderDetailedAnalysis(container, pair, examType);
+            }
+        }
+    },
+
     renderAdminPanel: (container) => {
         if (app.myPlayerName.toLowerCase() !== 'administrador m') return;
         
@@ -1392,15 +1432,47 @@ app.mus = {
         const activePlayers = Array.from(activePlayersSet).sort();
         
         const activeOpts = activePlayers.map(p => `<option value="${p}">${p}</option>`).join('');
-        const filterP = `<option value="all">-- Selecciona --</option>` + activeOpts;
-        const examP = document.getElementById('musExamPlayer');
-        if(examP) examP.innerHTML = filterP;
-
-        const pairs = app.mus.getUniquePairs();
-        const pairOpts = `<option value="all">-- Selecciona --</option>` + pairs.map(p => `<option value="${p}">${p}</option>`).join('');
         
-        const examPair = document.getElementById('musExamPair');
-        if(examPair) examPair.innerHTML = pairOpts;
+        // Llenar el de "Examinar Persona"
+        const examP = document.getElementById('musExamPlayer');
+        if(examP) examP.innerHTML = `<option value="all">-- Selecciona --</option>` + activeOpts;
+
+        // Llenar el Jugador 1 de "Examinar Pareja"
+        const examPair1 = document.getElementById('musExamPair1');
+        const examPair2 = document.getElementById('musExamPair2');
+        if(examPair1 && examPair2) {
+            examPair1.innerHTML = `<option value="all">-- Jugador 1 --</option>` + activeOpts;
+            examPair2.innerHTML = `<option value="all">-- Jugador 2 --</option>`;
+        }
+    },
+
+    updateExamPairSelects: () => {
+        const p1 = document.getElementById('musExamPair1').value;
+        const p2Select = document.getElementById('musExamPair2');
+        
+        if (!p2Select) return;
+
+        if (p1 === 'all' || !p1) {
+            p2Select.innerHTML = `<option value="all">-- Jugador 2 --</option>`;
+            app.mus.runAnalysis(); // Limpia la pantalla
+            return;
+        }
+
+        const matches = app.mus.getRoomMatches();
+        const partnersSet = new Set();
+
+        // Buscamos quién ha sido pareja del jugador 1
+        matches.forEach(m => {
+            if (m.p1 === p1) partnersSet.add(m.p2);
+            if (m.p2 === p1) partnersSet.add(m.p1);
+            if (m.p3 === p1) partnersSet.add(m.p4);
+            if (m.p4 === p1) partnersSet.add(m.p3);
+        });
+
+        const partnerOpts = Array.from(partnersSet).sort().map(p => `<option value="${p}">${p}</option>`).join('');
+        p2Select.innerHTML = `<option value="all">-- Jugador 2 --</option>` + partnerOpts;
+        
+        app.mus.runAnalysis(); // Intentar analizar por si ya había algo
     },
 
     getUniquePairs: () => {

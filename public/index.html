@@ -458,7 +458,7 @@
         <div id="elmasAdminPanel" class="admin-panel hidden">
             <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
                 <span>Rondas:</span>
-                <input type="number" id="elmasRoundsInput" value="5" min="3" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center; color:#000;">
+                <input type="number" id="elmasRoundsInput" value="5" min="3" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center; color:#000; background:#fff;">
             </div>
             <button id="btnStartElMas" class="start-btn" onclick="app.elmas.start()">▶️ EMPEZAR</button>
         </div>
@@ -788,8 +788,11 @@
                 </select>
             </div>
             <div id="divExamPair" class="hidden" style="margin-top: 10px; text-align: left; width: 100%;">
-                <label style="color: white;">Pareja:</label>
-                <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width: 100%; margin-bottom: 5px;"></select>
+                <label style="color: white;">Selecciona la Pareja:</label>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <select id="musExamPair1" onchange="app.mus.updateExamPairSelects()" style="flex: 1; padding: 5px; border-radius: 5px; color: #000;"></select>
+                    <select id="musExamPair2" onchange="app.mus.runAnalysis()" style="flex: 1; padding: 5px; border-radius: 5px; color: #000;"></select>
+                </div>
                 <label style="color: white;">Analizar:</label>
                 <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width: 100%;">
                     <option value="vs_pair_win">Evolución % Victorias</option>
@@ -983,11 +986,11 @@
         <div id="cylAdminPanel" class="admin-panel hidden">
             <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
                 <span>Rondas:</span>
-                <input type="number" id="cylRounds" value="6" min="2" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center;">
+                <input type="number" id="cylRounds" value="6" min="2" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center; color:#000; background:#fff;">
             </div>
             <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
                 <span>Tiempo (s):</span>
-                <input type="number" id="cylDuration" value="60" min="10" max="300" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center;">
+                <input type="number" id="cylDuration" value="60" min="10" max="300" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center; color:#000; background:#fff;">
             </div>
             <button id="btnStartCyL" class="start-btn" onclick="app.cyl.start()">▶️ EMPEZAR</button>
         </div>
@@ -1091,13 +1094,16 @@
 
         <div id="contextoWinner" class="hidden" style="width:100%; text-align:center; padding:15px; background:#2ed573; color:#fff; border-radius:10px; margin-bottom:15px; font-weight:bold; animation:pulse 1s infinite;"></div>
 
-        <div class="contexto-input-area">
-            <input type="text" id="contextoInput" placeholder="Escribe una palabra..." style="margin:0;">
-            <button onclick="app.contexto.submit()" class="main-btn" style="width:auto; margin:0; padding:0 20px; background:#a55eea;">➜</button>
+        <div class="card" style="background:#222; border: 2px solid #a55eea; padding: 15px; border-radius: 10px; margin-bottom: 20px; width: 100%;">
+            <div style="display:flex; gap:10px; margin-bottom: 10px;">
+                <input type="text" id="contextoInput" placeholder="Escribe una palabra..." style="margin:0; flex:1; padding: 10px; border-radius: 5px; border: none; outline:none;" autocomplete="off">
+                <button onclick="app.contexto.submit()" class="main-btn" style="width:auto; margin:0; padding:0 20px; background:#a55eea;">➜</button>
+            </div>
+            <div id="contextoLatestGuess"></div>
         </div>
 
-        <p style="color:#aaa; font-size:0.8em; margin-bottom:5px; width:100%; text-align:left;">Tus intentos (Cercanía #1 es la meta):</p>
-        <div id="contextoList"></div>
+        <h3 style="color:#aaa; text-align:left; width:100%; border-bottom:1px solid #444; padding-bottom:5px; margin-bottom: 15px;">Historial Ordenado</h3>
+        <div id="contextoList" style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 50px;"></div>
     </div>
 
     <div id="contextoRankingModal" class="hidden modal-overlay" style="align-items: center; justify-content: flex-start; padding-top: 50px;">
