@@ -1094,13 +1094,16 @@
 
         <div id="contextoWinner" class="hidden" style="width:100%; text-align:center; padding:15px; background:#2ed573; color:#fff; border-radius:10px; margin-bottom:15px; font-weight:bold; animation:pulse 1s infinite;"></div>
 
-        <div class="contexto-input-area">
-            <input type="text" id="contextoInput" placeholder="Escribe una palabra..." style="margin:0;">
-            <button onclick="app.contexto.submit()" class="main-btn" style="width:auto; margin:0; padding:0 20px; background:#a55eea;">➜</button>
+        <div class="card" style="background:#222; border: 2px solid #a55eea; padding: 15px; border-radius: 10px; margin-bottom: 20px; width: 100%;">
+            <div style="display:flex; gap:10px; margin-bottom: 10px;">
+                <input type="text" id="contextoInput" placeholder="Escribe una palabra..." style="margin:0; flex:1; padding: 10px; border-radius: 5px; border: none; outline:none;" autocomplete="off">
+                <button onclick="app.contexto.submit()" class="main-btn" style="width:auto; margin:0; padding:0 20px; background:#a55eea;">➜</button>
+            </div>
+            <div id="contextoLatestGuess"></div>
         </div>
 
-        <p style="color:#aaa; font-size:0.8em; margin-bottom:5px; width:100%; text-align:left;">Tus intentos (Cercanía #1 es la meta):</p>
-        <div id="contextoList"></div>
+        <h3 style="color:#aaa; text-align:left; width:100%; border-bottom:1px solid #444; padding-bottom:5px; margin-bottom: 15px;">Historial Ordenado</h3>
+        <div id="contextoList" style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 50px;"></div>
     </div>
 
     <div id="contextoRankingModal" class="hidden modal-overlay" style="align-items: center; justify-content: flex-start; padding-top: 50px;">
