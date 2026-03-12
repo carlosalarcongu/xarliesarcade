@@ -187,9 +187,18 @@ socket.on('updateCyL', (data) => {
 });
 
 socket.on('timerTick', (val) => {
-    if (app.currentRoom === 'cifrasyletras' && document.getElementById('cylContent')) {
-        const timerDiv = document.querySelector('#cylContent div[style*="monospace"]');
-        if(timerDiv) timerDiv.innerText = `⏱️ ${val}`;
+    if (app.currentRoom !== 'cifrasyletras') return;
+    
+    const contentDiv = document.getElementById('cylContent');
+    if (!contentDiv) return;
+    const giantTimer = contentDiv.querySelector('h1');
+    if (giantTimer) {
+        giantTimer.innerText = val;
+        return;
+    }
+    const timerDiv = contentDiv.querySelector('div[style*="monospace"]');
+    if (timerDiv) {
+        timerDiv.innerText = `⏱️ ${val}`;
     }
 });
 
