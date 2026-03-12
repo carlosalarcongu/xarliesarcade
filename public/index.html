@@ -788,8 +788,11 @@
                 </select>
             </div>
             <div id="divExamPair" class="hidden" style="margin-top: 10px; text-align: left; width: 100%;">
-                <label style="color: white;">Pareja:</label>
-                <select id="musExamPair" onchange="app.mus.runAnalysis()" style="width: 100%; margin-bottom: 5px;"></select>
+                <label style="color: white;">Selecciona la Pareja:</label>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <select id="musExamPair1" onchange="app.mus.updateExamPairSelects()" style="flex: 1; padding: 5px; border-radius: 5px; color: #000;"></select>
+                    <select id="musExamPair2" onchange="app.mus.runAnalysis()" style="flex: 1; padding: 5px; border-radius: 5px; color: #000;"></select>
+                </div>
                 <label style="color: white;">Analizar:</label>
                 <select id="musExamTypePair" onchange="app.mus.runAnalysis()" style="width: 100%;">
                     <option value="vs_pair_win">Evolución % Victorias</option>
