@@ -818,6 +818,13 @@ socket.on('sessionExpired', () => {
 
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
+
+socket.on('torneos_forceRefresh', () => {
+    if (app.currentRoom === 'torneos' || !document.getElementById('torneosLobby').classList.contains('hidden') || !document.getElementById('torneosViewScreen').classList.contains('hidden')) {
+        socket.emit('torneos_requestData', app.myPlayerName);
+    }
+});
+
 // Variable global para guardar la lista permitida
 app.musWhitelist = [];
 
