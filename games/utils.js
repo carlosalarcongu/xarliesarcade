@@ -46,7 +46,7 @@ module.exports = {
                     // Si al borrar el jugador la sala se queda vacía, ejecutamos el callback
                     if (players.length === 0 && onEmptyCallback) onEmptyCallback();
                 }
-            }, 60 * 1000); 
+            }, 600 * 1000); 
             return true; // Hubo cambios (alguien se desconectó)
         }
         return false;
