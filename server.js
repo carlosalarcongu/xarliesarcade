@@ -47,7 +47,8 @@ const gamesModules = {
     darkstories: require('./games/darkstories'),
     beber: require('./games/beber'),
     analytics: require('./games/analytics'),
-    feedback: require('./games/feedback')
+    feedback: require('./games/feedback'),
+    torneos: require('./games/torneos')
 };
 
 Object.keys(gamesModules).forEach(key => {

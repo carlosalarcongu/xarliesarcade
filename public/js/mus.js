@@ -29,7 +29,7 @@ app.mus = {
             vm.appendChild(optP);
         }
 
-        if (app.myPlayerName && app.myPlayerName.toLowerCase() === 'administrador m') {
+        if (app.myPlayerName && ['administrador m', 'xarlie', 'musero'].includes(app.myPlayerName.toLowerCase())) {
             if (vm && !vm.querySelector('option[value="administracion"]')) {
                 const optAdmin = document.createElement('option');
                 optAdmin.value = 'administracion';
@@ -241,6 +241,38 @@ app.mus = {
         }
     },
     
+    adminEditMatchPlayers: (id) => {
+        const m = app.mus.data.matches.find(x => x.id === id);
+        if(!m) return;
+        const p1 = prompt("Jugador 1 (Equipo 1):", m.p1) || m.p1;
+        const p2 = prompt("Jugador 2 (Equipo 1):", m.p2) || m.p2;
+        const p3 = prompt("Jugador 3 (Equipo 2):", m.p3) || m.p3;
+        const p4 = prompt("Jugador 4 (Equipo 2):", m.p4) || m.p4;
+        
+        if(confirm(`Nuevos equipos:\nAzul: ${p1} y ${p2}\nRojo: ${p3} y ${p4}\n\n¿Guardar cambios?`)) {
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { id, p1, p2, p3, p4, s1: m.s1, s2: m.s2 } 
+            });
+        }
+    },
+    
+    adminEditMatchScore: (id) => {
+        const m = app.mus.data.matches.find(x => x.id === id);
+        if(!m) return;
+        const s1 = prompt(`Puntuación Equipo Azul (${m.p1} y ${m.p2}):`, m.s1);
+        const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
+        
+        if(s1 !== null && s2 !== null) {
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { id, p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, s1: parseInt(s1), s2: parseInt(s2) } 
+            });
+        }
+    },
+
     adminEditMatchPlayers: (id) => {
         const m = app.mus.data.matches.find(x => x.id === id);
         if(!m) return;

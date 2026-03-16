@@ -146,8 +146,8 @@
                 <span class="mini-icon">📈</span>
                 <span class="mini-title">Analytics</span>
             </div>
-            <div class="mini-card disabled" onclick="app.showDevMessage()" style="border-left: 3px solid #f1c40f;">
-                <span class="mini-icon">X</span>
+            <div class="mini-card" onclick="app.selectRoom('torneos')" style="border-left: 3px solid #f1c40f;">
+                <span class="mini-icon">🏆</span>
                 <span class="mini-title">Torneos</span>
             </div>
         </div>
@@ -1754,6 +1754,179 @@
         </div>
     </div>
 
+    <div id="torneosLobby" class="screen hidden">
+        <div class="back-nav">
+            <button onclick="document.getElementById('torneosLobby').classList.add('hidden'); app.goBackToHub(true)">⬅ Salir</button>
+        </div>
+        <h2 style="color:#f1c40f;">🏆 Torneos del Arcade</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <p style="color:#aaa; font-size:0.9em; margin:0;">Organiza y compite.</p>
+            <button class="start-btn" style="width:auto; padding:10px 20px; margin:0;" onclick="app.torneos.openCreateModal()">➕ CREAR TORNEO</button>
+        </div>
+        <div id="torneosListArea" style="display:flex; flex-direction:column; gap:15px;"></div>
+    </div>
+
+    <div id="torneosViewScreen" class="screen hidden" style="width:100%;">
+        <div class="back-nav" style="display:flex; justify-content:space-between;">
+            <button onclick="app.torneos.backToLobby()">⬅ Volver a Torneos</button>
+            <button id="btnTorneoAdmin" class="kick-btn hidden" style="width:auto; background:#e74c3c; padding:5px 15px;" onclick="app.torneos.deleteCurrent()">🗑️ Eliminar</button>
+        </div>
+        
+        <div class="card" style="background:#222; border:2px solid #f1c40f; margin-bottom:20px; text-align:left; display:flex; gap:15px; align-items:center;">
+            <div id="tvIcon" style="font-size:3.5em; background:rgba(241,196,15,0.2); padding:10px; border-radius:10px;">🏆</div>
+            <div>
+                <h1 id="tvName" style="color:#f1c40f; margin-top:0; margin-bottom:5px;">...</h1>
+                <p id="tvDesc" style="color:#ccc; font-size:0.9em; margin-bottom:5px; margin-top:0;">...</p>
+                <div style="font-size:0.8em; color:#aaa;">
+                    👑 <span id="tvCreator" style="color:#fff;"></span> | 
+                    ⚙️ <span id="tvFormat" style="color:#fff;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="tvEditControls" class="hidden" style="margin-bottom:15px; text-align:right; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+            <button id="btnRandBracket" class="kick-btn hidden" style="width:auto; background:#9b59b6; padding:8px 15px;" onclick="app.torneos.randomizeBracket()">🎲 Randomizar</button>
+            <button id="btnManualBye" class="kick-btn hidden" style="width:auto; background:#34495e; padding:8px 15px;" onclick="app.torneos.openManualByeModal()">👉 Elegir Repesca</button>
+            <button class="main-btn" style="width:auto; background:#2ed573; padding:8px 15px;" onclick="app.torneos.openAddResultModal()">🖊️ Anotar/Editar Resultado</button>
+        </div>
+
+        <div id="tvContentArea" style="width:100%; overflow-x:auto; padding-bottom:20px;"></div>
+    </div>
+
+    <div id="torneosCreateModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:30px; overflow-y:auto;">
+        <div class="card" style="width:95%; max-width:500px; background:#2f3542; border:2px solid #f1c40f; text-align:left;">
+            <h2 style="color:#f1c40f; margin-top:0;">⚙️ Configurar Torneo</h2>
+            <p style="color:#aaa; font-size:0.8em; margin-bottom:15px;">Solo 1 activo por usuario Premium.</p>
+
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <select id="tcIcon" style="font-size:1.5em; padding:5px; border-radius:5px; background:#fff; color:#000;">
+                    <option value="🏆">🏆</option><option value="⚽">⚽</option><option value="⚔️">⚔️</option>
+                    <option value="🎮">🎮</option><option value="🏎️">🏎️</option><option value="🃏">🃏</option>
+                    <option value="🍺">🍺</option><option value="🥊">🥊</option><option value="🎯">🎯</option>
+                </select>
+                <input type="text" id="tcName" placeholder="Nombre (Ej: Copa Pistón)" style="flex:1; padding:10px; border-radius:5px;">
+            </div>
+
+            <textarea id="tcDesc" rows="2" placeholder="Descripción, premio, info..." style="width:100%; margin-bottom:15px; padding:10px; border-radius:5px;"></textarea>
+
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <div style="flex:1;">
+                    <label style="color:#eccc68; font-weight:bold; font-size:0.8em;">Visibilidad:</label>
+                    <select id="tcVis" onchange="app.torneos.toggleWhitelists()" style="width:100%; padding:8px; border-radius:5px;">
+                        <option value="public">Público</option>
+                        <option value="private">Privado (Whitelist)</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label style="color:#ff7675; font-weight:bold; font-size:0.8em;">Edición:</label>
+                    <select id="tcEdit" onchange="app.torneos.toggleWhitelists()" style="width:100%; padding:8px; border-radius:5px;">
+                        <option value="public">Todos</option>
+                        <option value="restricted">Restringido</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="tcWhitelistsArea" class="hidden" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px;">
+                <input type="text" id="tcVisList" placeholder="Pueden VER (pepe, juan...)" style="width:100%; margin-bottom:5px; padding:5px;">
+                <input type="text" id="tcEditList" placeholder="Pueden EDITAR (pepe, juan...)" style="width:100%; padding:5px;">
+            </div>
+
+            <label style="color:#2ed573; font-weight:bold; font-size:0.9em;">Formato:</label>
+            <select id="tcFormat" onchange="app.torneos.toggleFormatOptions()" style="width:100%; margin-bottom:15px; padding:10px; border-radius:5px;">
+                <option value="BRACKET">Eliminatorias (Cuadro)</option>
+                <option value="LEAGUE">Liguilla (Puntos)</option>
+            </select>
+
+            <div id="tcLeagueConfig" class="hidden" style="background:#1e272e; padding:10px; border-radius:5px; margin-bottom:15px;">
+                <label style="color:#aaa; font-size:0.8em;">Puntos por:</label>
+                <div style="display:flex; justify-content:space-between; text-align:center; gap:5px; margin-top:5px;">
+                    <div style="background:#222; padding:5px; border-radius:5px; flex:1;">
+                        <div style="color:#2ed573; font-size:0.7em;">Victoria</div>
+                        <button onclick="app.torneos.adjPt('W', -1)" style="padding:2px 8px;">-</button>
+                        <span id="ptW" style="color:white; font-weight:bold; margin:0 5px;">3</span>
+                        <button onclick="app.torneos.adjPt('W', 1)" style="padding:2px 8px;">+</button>
+                    </div>
+                    <div style="background:#222; padding:5px; border-radius:5px; flex:1;">
+                        <div style="color:#f1c40f; font-size:0.7em;">Empate</div>
+                        <button onclick="app.torneos.adjPt('D', -1)" style="padding:2px 8px;">-</button>
+                        <span id="ptD" style="color:white; font-weight:bold; margin:0 5px;">1</span>
+                        <button onclick="app.torneos.adjPt('D', 1)" style="padding:2px 8px;">+</button>
+                    </div>
+                    <div style="background:#222; padding:5px; border-radius:5px; flex:1;">
+                        <div style="color:#ff4757; font-size:0.7em;">Derrota</div>
+                        <button onclick="app.torneos.adjPt('L', -1)" style="padding:2px 8px;">-</button>
+                        <span id="ptL" style="color:white; font-weight:bold; margin:0 5px;">0</span>
+                        <button onclick="app.torneos.adjPt('L', 1)" style="padding:2px 8px;">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tcBracketConfig" style="background:#1e272e; padding:10px; border-radius:5px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="color:#aaa; font-size:0.8em;">Vista del Cuadro:</span>
+                    <select id="tcBracketLayout" style="padding:2px; border-radius:3px;">
+                        <option value="SINGLE">Una dirección ➡</option>
+                        <option value="DOUBLE">Doble (Final en medio) ➡🏆⬅</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#aaa; font-size:0.8em;">Partido 3er y 4to puesto:</span>
+                    <input type="checkbox" id="tcThirdPlace" style="width:20px; height:20px;">
+                </div>
+            </div>
+
+            <label style="color:#fff; font-weight:bold; font-size:0.9em;">Participantes (Equipos / Jugadores):</label>
+            <p style="font-size:0.7em; color:#aaa; margin-top:0;">Separados por comas. (Mínimo 3)</p>
+            <textarea id="tcParticipants" rows="3" placeholder="Hugo, Paco, Luis..." style="width:100%; margin-bottom:20px; padding:10px; border-radius:5px;"></textarea>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('torneosCreateModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
+                <button onclick="app.torneos.submitCreate()" class="start-btn" style="flex:1;">🏆 CREAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="torneosResultModal" class="hidden modal-overlay" style="align-items:center;">
+        <div class="card" style="width:90%; max-width:400px; background:#2f3542; border:2px solid #2ed573;">
+            <h3 style="color:#2ed573; margin-top:0;">Anotar Resultado</h3>
+            
+            <div id="trLeagueInputs" class="hidden">
+                <select id="trP1" style="width:100%; padding:10px; margin-bottom:10px;"></select>
+                <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:10px;">
+                    <input type="number" id="trS1" placeholder="Pts" style="width:80px; text-align:center; padding:10px;">
+                    <span style="font-weight:bold; color:#aaa;">VS</span>
+                    <input type="number" id="trS2" placeholder="Pts" style="width:80px; text-align:center; padding:10px;">
+                </div>
+                <select id="trP2" style="width:100%; padding:10px; margin-bottom:20px;"></select>
+            </div>
+            
+            <div id="trBracketInputs" class="hidden" style="text-align:left;">
+                <p style="color:#aaa; font-size:0.9em;">Selecciona el partido:</p>
+                <select id="trMatchSelect" style="width:100%; padding:10px; margin-bottom:15px;"></select>
+                <p style="color:#aaa; font-size:0.9em;">¿Quién ha ganado?</p>
+                <select id="trWinnerSelect" style="width:100%; padding:10px; margin-bottom:20px;"></select>
+                <p style="font-size:0.7em; color:#ff4757;">⚠️ Si modificas un partido pasado, se reescribirá el cuadro en adelante.</p>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('torneosResultModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
+                <button onclick="app.torneos.submitResult()" class="main-btn" style="flex:1; background:#2ed573;">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="torneosByeModal" class="hidden modal-overlay" style="align-items:center;">
+        <div class="card" style="width:90%; max-width:400px; background:#2f3542; border:2px solid #34495e;">
+            <h3 style="color:#fff; margin-top:0;">Seleccionar Repesca (Byes)</h3>
+            <p style="font-size:0.8em; color:#aaa;">Al ser impares, <b id="byeCountNum" style="color:#f1c40f">0</b> jugadores deben pasar directamente a la 2ª ronda. Selecciónalos:</p>
+            <div id="byeCheckboxes" style="text-align:left; max-height:200px; overflow-y:auto; background:#222; padding:10px; border-radius:5px; margin-bottom:15px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('torneosByeModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
+                <button onclick="app.torneos.submitManualByes()" class="main-btn" style="flex:1; background:#3498db;">Aplicar</button>
+            </div>
+        </div>
+    </div>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -1778,10 +1951,7 @@
     <script src="js/darkstories.js"></script>
     <script src="js/beber.js"></script>
     <script src="js/analytics.js"></script>
-    
-
-
-
+    <script src="js/torneos.js"></script>
     
 </body>
 </html>

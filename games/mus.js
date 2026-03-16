@@ -58,7 +58,7 @@ module.exports = {
             }
 
             if (action.type === 'adminEditPlayer') {
-                if ((action.user || "").toLowerCase() !== 'administrador m') return;
+                if (!['administrador m', 'xarlie', 'musero'].includes((action.user || "").toLowerCase())) return;
                 const { oldName, newName } = action.value;
                 
                 db.prepare('UPDATE OR IGNORE mus_players SET name = ? WHERE name = ?').run(newName, oldName);
@@ -71,13 +71,13 @@ module.exports = {
             }
 
             if (action.type === 'adminDeletePlayer') {
-                if ((action.user || "").toLowerCase() !== 'administrador m') return;
+                if (!['administrador m', 'xarlie', 'musero'].includes((action.user || "").toLowerCase())) return;
                 db.prepare('DELETE FROM mus_players WHERE name = ?').run(action.value);
                 io.emit('mus_data', getFullMusData());
             }
 
             if (action.type === 'adminEditMatch') {
-                if ((action.user || "").toLowerCase() !== 'administrador m') return;
+                if (!['administrador m', 'xarlie', 'musero'].includes((action.user || "").toLowerCase())) return;
                 const v = action.value;
                 db.prepare('UPDATE mus_matches SET p1=?, p2=?, p3=?, p4=?, s1=?, s2=? WHERE id=?')
                   .run(v.p1, v.p2, v.p3, v.p4, parseInt(v.s1), parseInt(v.s2), String(v.id));
