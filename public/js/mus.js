@@ -60,6 +60,15 @@ app.mus = {
         return colors[index];
     },
 
+    randomizeArrayIndices: (length) => {
+        const indices = Array.from({ length }, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        return indices;
+    },
+
     renderRoomSelector: () => {
         const sel = document.getElementById('musRoomSelect');
         if(!sel || !app.mus.data) return;
@@ -205,11 +214,20 @@ app.mus = {
             btnStart.classList.add('hidden'); btnAdvance.classList.add('hidden');
 
             const currentPairs = state.pairs || [];
-            if (!app.mus.tempPairs || app.mus.tempPairs.length !== currentPairs.length) {
-                app.mus.tempPairs = currentPairs.map(p => {
-                    const parts = (p || '').split(' y ');
-                    return [parts[0] || '', parts[1] || ''];
-                });
+            const allPlayers = state.players || [];
+            if (!app.mus.tempPairs) {
+                if (state.config && state.config.randomizePairs) {
+                    app.mus.tempPairs = currentPairs.map(p => {
+                        const parts = (p || '').split(' y ');
+                        return [parts[0] || '', parts[1] || ''];
+                    });
+                } else {
+                    const shuffledPlayers = app.mus.shuffleArray(allPlayers);
+                    app.mus.tempPairs = [];
+                    for (let i = 0; i < shuffledPlayers.length; i += 2) {
+                        app.mus.tempPairs.push([shuffledPlayers[i] || '', shuffledPlayers[i+1] || '']);
+                    }
+                }
             }
 
             if (state.config && state.config.randomizePairs) {
@@ -217,8 +235,12 @@ app.mus = {
                 let html = `<div style="background:#1e272e; padding:15px; border-radius:10px;">`;
                 html += `<h3 style="color:#74b9ff; margin-top:0;">Parejas aleatorias (bloqueadas)</h3>`;
                 html += `<ul style="list-style:none; padding:0; margin:0;">`;
-                currentPairs.forEach(p => {
-                    html += `<li style="background:#222; color:#fff; padding:8px; border-radius:5px; margin-bottom:6px;">${p}</li>`;
+                const randomizedIndices = app.mus.randomizeArrayIndices(currentPairs.length);
+                randomizedIndices.forEach(idx => {
+                    const pairText = currentPairs[idx] || '';
+                    const parts = pairText.split(' y ').map(x => x.trim()).filter(Boolean);
+                    const shuffled = app.mus.shuffleArray(parts);
+                    html += `<li style="background:#222; color:#fff; padding:8px; border-radius:5px; margin-bottom:6px;">${shuffled.join(' y ')}</li>`;
                 });
                 html += `</ul>`;
                 html += `<button class="main-btn" style="width:100%; margin-top:12px;" onclick="app.mus.proceedToGroupAssignment()">▶️ Continuar</button>`;
@@ -238,37 +260,30 @@ app.mus = {
             if (app.mus.tempPairs.length === 0) {
                 html += `<p style="color:#aaa;">No hay parejas. Añade una o vuelve a iniciar con mínimo 4 jugadores.</p>`;
             } else {
-                app.mus.tempPairs.forEach((pair, idx) => {
-                    const slot0 = pair[0] || '';
-                    const slot1 = pair[1] || '';
+                const randomizedIndices = app.mus.randomizeArrayIndices(app.mus.tempPairs.length);
+                randomizedIndices.forEach(idx => {
+                    const pair = app.mus.tempPairs[idx];
+                    const pairOrder = app.mus.shuffleArray([0, 1]);
 
                     html += `<div style="background:#222; border:1px solid #444; border-radius:8px; padding:8px; margin-bottom:8px;">`;
 
-                    // Jugador 1
-                    if (slot0) {
-                        html += `<div style="background:#333; color:#fff; border-radius:6px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:bold;">${slot0}</span>
-                            <button class="kick-btn" style="background:#e74c3c; width:24px; height:24px; border:none; border-radius:50%; font-size:0.8em; line-height:1;" onclick="app.mus.removePlayerFromPair(${idx}, 0)">✖</button>
-                        </div>`;
-                    } else {
-                        html += `<div style="background:#2f3640; color:#ddd; border-radius:6px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:0.85em;">Jugador 1 vacío</span>
-                            <select style="background:#333; color:#fff; border:1px solid #555; border-radius:4px; padding:4px;" onchange="app.mus.assignToEmptySlot(${idx}, this.value, 0)"><option value="">-- seleccionar --</option>${unassigned.map(x => `<option value="${x}">${x}</option>`).join('')}</select>
-                        </div>`;
-                    }
+                    pairOrder.forEach((slotPosition, displayPosition) => {
+                        const playerName = pair[slotPosition] || '';
+                        const isEmpty = !playerName;
+                        const label = `Jugador ${displayPosition + 1}`;
 
-                    // Jugador 2
-                    if (slot1) {
-                        html += `<div style="background:#333; color:#fff; border-radius:6px; padding:8px; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:bold;">${slot1}</span>
-                            <button class="kick-btn" style="background:#e74c3c; width:24px; height:24px; border:none; border-radius:50%; font-size:0.8em; line-height:1;" onclick="app.mus.removePlayerFromPair(${idx}, 1)">✖</button>
-                        </div>`;
-                    } else {
-                        html += `<div style="background:#2f3640; color:#ddd; border-radius:6px; padding:8px; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:0.85em;">Jugador 2 vacío</span>
-                            <select style="background:#333; color:#fff; border:1px solid #555; border-radius:4px; padding:4px;" onchange="app.mus.assignToEmptySlot(${idx}, this.value, 1)"><option value="">-- seleccionar --</option>${unassigned.map(x => `<option value="${x}">${x}</option>`).join('')}</select>
-                        </div>`;
-                    }
+                        if (isEmpty) {
+                            html += `<div style="background:#2f3640; color:#ddd; border-radius:6px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.85em;">${label} vacío</span>
+                                <select style="background:#333; color:#fff; border:1px solid #555; border-radius:4px; padding:4px;" onchange="app.mus.assignToEmptySlot(${idx}, this.value, ${slotPosition})"><option value="">-- seleccionar --</option>${unassigned.map(x => `<option value="${x}">${x}</option>`).join('')}</select>
+                            </div>`;
+                        } else {
+                            html += `<div style="background:#333; color:#fff; border-radius:6px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:bold;">${playerName}</span>
+                                <button class="kick-btn" style="background:#e74c3c; width:24px; height:24px; border:none; border-radius:50%; font-size:0.8em; line-height:1;" onclick="app.mus.removePlayerFromPair(${idx}, ${slotPosition})">✖</button>
+                            </div>`;
+                        }
+                    });
 
                     html += `</div>`;
                 });
@@ -423,6 +438,24 @@ app.mus = {
         if (!Array.isArray(app.mus.tempPairs)) app.mus.tempPairs = [];
         app.mus.tempPairs.push(['', '']);
         app.mus.changeView();
+    },
+
+    shuffleArray: (arr) => {
+        const list = arr.slice();
+        for (let i = list.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [list[i], list[j]] = [list[j], list[i]];
+        }
+        return list;
+    },
+
+    randomizeArrayIndices: (length) => {
+        const indices = Array.from({ length }, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        return indices;
     },
 
     finalizeGroupAssignmentUI: () => {
