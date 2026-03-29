@@ -23,16 +23,27 @@ const ROOM_EMOJIS = {
 };
 
 window.app = {
+    sessionToken: null, // EL NUEVO TOKEN DE INMORTALIDAD
     currentRoom: null,
     currentRoomId: null, 
     pendingRoomId: null,
     myPlayerId: null,
     myPlayerName: null,
-    isAuthenticatedUser: false, // Nueva variable para saber si ingresó contraseña válida
+    isAuthenticatedUser: false, 
     categoriesCache: {},
     currentScreenId: 'hubScreen', 
 
-    // --- NUEVAS FUNCIONES DE REGISTRO Y AUTENTICACIÓN ---
+    // --- ACTUALIZA LA SESIÓN EN EL BACKEND ---
+    syncSession: () => {
+        if (app.sessionToken) {
+            socket.emit('updateSession', {
+                token: app.sessionToken,
+                username: app.myPlayerName,
+                isAuthenticated: app.isAuthenticatedUser
+            });
+        }
+    },
+
     auth: {
         pendingCallback: null,
         pendingName: null,
@@ -44,9 +55,7 @@ window.app = {
             app.auth.checkAvailability();
         },
 
-        closeRegister: () => {
-            document.getElementById('registerModal').classList.add('hidden');
-        },
+        closeRegister: () => { document.getElementById('registerModal').classList.add('hidden'); },
 
         checkAvailability: () => {
             clearTimeout(app.auth.checkTimeout);
@@ -91,9 +100,7 @@ window.app = {
             const email = document.getElementById('regEmail').value.trim();
 
             if (name.length < 3) return alert("Nombre demasiado corto.");
-            if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) {
-                return alert("El nombre solo puede contener letras minúsculas y números (sin espacios).");
-            }
+            if (name !== 'administrador m' && !/^[a-z0-9]+$/.test(name)) return alert("El nombre solo puede contener letras minúsculas y números (sin espacios).");
             if (pass.length < 4) return alert("Contraseña mínima de 4 caracteres.");
             
             socket.emit('submitAuthRequest', { type: 'register', username: name, password: pass, email: email }, () => {
@@ -105,16 +112,12 @@ window.app = {
         openForgotPassword: () => {
             app.cancelPassword();
             const pass = prompt(`¿Has olvidado la contraseña de "${app.auth.pendingName}"?\nEscribe aquí una NUEVA contraseña. Se enviará a los administradores para que la aprueben:`);
-            if (!pass || pass.length < 4) {
-                alert("Operación cancelada o contraseña muy corta.");
-                return;
-            }
+            if (!pass || pass.length < 4) return alert("Operación cancelada o contraseña muy corta.");
             socket.emit('submitAuthRequest', { type: 'forgot', username: app.auth.pendingName, password: pass, email: '' }, () => {
                 alert("Petición de cambio de contraseña enviada a los administradores.");
             });
         },
 
-        // Panel Admin Auth
         openAdminPanel: () => {
             app.showScreen('authAdminScreen');
             socket.emit('getAuthRequests', app.myPlayerName);
@@ -156,13 +159,12 @@ window.app = {
                 document.getElementById('adminPasswordInput').value = '';
                 return;
             }
-            app.isAuthenticatedUser = true; // Confirmar identidad real
+            app.isAuthenticatedUser = true; 
+            app.syncSession(); // Guardamos en el backend que nos hemos autenticado
             document.getElementById('passwordModal').classList.add('hidden');
             if (callback) callback();
         });
     },
-
-    // ----------------------------------------------------
 
     forceFiestaStyles: () => {
         const menu = document.getElementById('fiestaMenu');
@@ -177,7 +179,7 @@ window.app = {
         let isDragging = false;
         let hasMoved = false; 
         let offsetX, offsetY;
-        let startX, startY; // Variables nuevas para medir toques temblorosos
+        let startX, startY; 
 
         const startDrag = (x, y) => {
             isDragging = true;
@@ -193,11 +195,7 @@ window.app = {
 
         const moveDrag = (x, y) => {
             if (!isDragging) return;
-            
-            // Tolerancia de 5px: Si el dedo se mueve menos de eso, sigue contando como clic
-            if (Math.abs(x - startX) > 5 || Math.abs(y - startY) > 5) {
-                hasMoved = true;
-            }
+            if (Math.abs(x - startX) > 5 || Math.abs(y - startY) > 5) hasMoved = true;
             
             let newX = x - offsetX;
             let newY = y - offsetY;
@@ -213,7 +211,6 @@ window.app = {
             isDragging = false;
             widget.style.cursor = 'grab';
             if (!hasMoved) {
-                // El timeout de 50ms evita que iOS/Android bloqueen el alert/confirm táctil
                 setTimeout(() => app.changeName(), 50); 
             }
         };
@@ -266,7 +263,7 @@ window.app = {
             'fiestaScreen', 'statsSelectionScreen',
             'fifaScreen', 'torresLobby', 'torresGame',
             'darkstoriesScreen', 'beberScreen', 'beberStatsScreen',
-            'analyticsScreen', 'authAdminScreen'
+            'analyticsScreen', 'authAdminScreen', 'musVueApp'
         ];
         
         screens.forEach(s => {
@@ -287,17 +284,14 @@ window.app = {
         const widget = document.getElementById('floatingUserWidget');
         const widgetText = document.getElementById('floatingUserText');
         const btnAdminAuth = document.getElementById('btnAdminAuth');
-        const btnHubAnalytics = document.getElementById('btnHubAnalytics'); // <--- Añadido
+        const btnHubAnalytics = document.getElementById('btnHubAnalytics'); 
         
-        // Controlar el botón de Panel Admin y Analytics en el Hub
-        // Controlar los botones del Hub (Admins, Analytics y STATS)
         if (id === 'hubScreen') {
             const lowerName = (app.myPlayerName || '').toLowerCase();
             const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
             
             const btnHubStats = document.getElementById('btnHubStats');
 
-            // 1. Mostrar Admin y Analytics solo a Admins autenticados
             if (isAdm && app.isAuthenticatedUser) {
                 if (btnAdminAuth) btnAdminAuth.classList.remove('hidden');
                 if (btnHubAnalytics) btnHubAnalytics.classList.remove('hidden');
@@ -306,13 +300,8 @@ window.app = {
                 if (btnHubAnalytics) btnHubAnalytics.classList.add('hidden');
             }
 
-            // 2. Mostrar botón STATS solo a Admins o a los de la Whitelist
-            if (btnHubStats) {
-                if (isAdm || (app.musWhitelist && app.musWhitelist.includes(lowerName))) {
-                    btnHubStats.classList.remove('hidden');
-                } else {
-                    //btnHubStats.classList.add('hidden');
-                }
+            if (btnHubStats && (isAdm || (app.musWhitelist && app.musWhitelist.includes(lowerName)))) {
+                btnHubStats.classList.remove('hidden');
             }
         }
 
@@ -325,24 +314,13 @@ window.app = {
             const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
             
             const lowerName = name.toLowerCase();
-            let userEmoji = "👤"; // Por defecto, anónimo
+            let userEmoji = "👤"; 
             
-            // Si es un admin oficial
             if (['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
                 userEmoji = "👑";
             } else {
-                // Para el resto: comprobamos si el nombre existe en la lista del servidor
-                // Como no tenemos una lista local estricta, lo deducimos: 
-                // Si el usuario intentó logearse y pasó por la contraseña exitosamente, es true.
-                if (app.isAuthenticatedUser) {
-                    userEmoji = "🛡️"; // Autenticado con clave
-                } else {
-                    // Aquí la magia: Si no está autenticado, pero TIENE un nombre asignado,
-                    // le ponemos el escudo tachado indicando "Nombre sin asegurar/Validar".
-                    if (name !== "Sin Nombre") {
-                        userEmoji = "🛡️❌"; 
-                    }
-                }
+                if (app.isAuthenticatedUser) userEmoji = "🛡️"; 
+                else if (name !== "Sin Nombre") userEmoji = "🛡️❌"; 
             }
 
             const roomEmoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
@@ -350,18 +328,13 @@ window.app = {
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // --- NUEVO: Control de visibilidad de la Tarjeta MUS en el Hub de Stats ---
         if (id === 'statsSelectionScreen') {
             const musCard = document.getElementById('cardMusStats');
             if (musCard) {
                 const lowerName = (app.myPlayerName || '').toLowerCase();
                 const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
-                
-                // Mostrar si es Admin o si su nombre está en la Whitelist
                 if (isAdm || app.musWhitelist.includes(lowerName)) {
                     musCard.classList.remove('hidden');
-                } else {
-                    //musCard.classList.add('hidden');
                 }
             }
         }
@@ -381,7 +354,14 @@ window.app = {
         }
 
         if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber', 'analytics'].includes(room)) {
-            if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
+            if(room === 'mus') { 
+                app.showScreen('musVueApp'); 
+                // Lanzamos un grito al aire para que Vue lo escuche y sepa que hemos entrado
+                window.dispatchEvent(new CustomEvent('iniciar-mus', { 
+                    detail: { jugador: app.myPlayerName } 
+                }));
+                return; 
+            }            
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
             if(room === 'trivial') { if(app.trivial.init) app.trivial.init(); return; }
@@ -459,9 +439,10 @@ window.app = {
     },
 
     editName: () => {
-        localStorage.removeItem('global_username');
         app.myPlayerName = null;
         app.isAuthenticatedUser = false;
+        app.syncSession(); // Reseteamos la sesión en el backend
+
         const input = document.getElementById('username');
         if(input) input.value = "";
         app.renderLoginScreen(app.currentRoom);
@@ -478,8 +459,8 @@ window.app = {
 
         socket.emit('checkAuthRequirement', name, (res) => {
             const finalizeLogin = () => {
-                localStorage.setItem('global_username', name);
                 app.myPlayerName = name; 
+                app.syncSession(); // Guarda nombre y auth local en el backend
                 socket.emit('registerVisit', name);
                 app.currentRoom = null;
                 app.pendingRoomId = null;
@@ -514,8 +495,8 @@ window.app = {
         }
 
         const finalizeJoin = () => {
-            localStorage.setItem('global_username', name);
             app.myPlayerName = name; 
+            app.syncSession();
             socket.emit('registerVisit', name);
             if (app.currentRoom) {
                 socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId });
@@ -525,7 +506,6 @@ window.app = {
         };
 
         if (app.myPlayerName === name && app.isAuthenticatedUser) {
-            // Ya estaba validado
             finalizeJoin();
         } else {
             socket.emit('checkAuthRequirement', name, (res) => {
@@ -545,11 +525,7 @@ window.app = {
             : `🚨 ATENCIÓN: ¿Seguro que quieres borrar TODOS los registros históricos de "${name}"? Esto no se puede deshacer.`;
         
         if (confirm(msg)) {
-            socket.emit('analytics_deleteRecord', {
-                admin: app.myPlayerName,
-                name: name,
-                type: type
-            });
+            socket.emit('analytics_deleteRecord', { admin: app.myPlayerName, name: name, type: type });
         }
     },
 
@@ -564,18 +540,16 @@ window.app = {
         }
         if (app.mus && app.mus.resetUI) app.mus.resetUI();
         
-        localStorage.removeItem('global_username');
         app.myPlayerName = null;
         app.isAuthenticatedUser = false;
         app.currentRoom = null;
         app.currentRoomId = null;
+        app.syncSession(); // Borramos el estado en el backend
         
         app.renderLoginScreen(null);
     },
 
-    showStatsMenu: () => {
-        app.showScreen('statsSelectionScreen');
-    },
+    showStatsMenu: () => { app.showScreen('statsSelectionScreen'); },
 
     goBackToHub: (forceLogout = false, skipHistory = false) => {
         if (app.mus && app.mus.resetUI) app.mus.resetUI();
@@ -611,18 +585,9 @@ window.app = {
         }
     },
 
-    showDevMessage: () => {
-        alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
-    },
-
-    showLegalModal: () => {
-        document.getElementById('legalModal').classList.remove('hidden');
-    },
-
-    closeLegalModal: () => {
-        document.getElementById('legalModal').classList.add('hidden');
-    },
-
+    showDevMessage: () => { alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!"); },
+    showLegalModal: () => { document.getElementById('legalModal').classList.remove('hidden'); },
+    closeLegalModal: () => { document.getElementById('legalModal').classList.add('hidden'); },
     acceptLegal: () => {
         localStorage.setItem('legal_accepted', 'true');
         document.getElementById('legalBanner').classList.add('hidden');
@@ -656,7 +621,6 @@ window.addEventListener('popstate', (event) => {
 // --- RECEPTORES DE SOCKET.IO ---
 
 socket.on('forceKickIfUnregistered', (kickedName) => {
-    // Si alguien usa el nombre sin autenticarse (porque justo lo registraron)
     if (app.myPlayerName === kickedName && !app.isAuthenticatedUser) {
         alert("⚠️ ATENCIÓN: Alguien acaba de registrar tu nickname oficialmente. Has sido desconectado.");
         app.changeName(); 
@@ -666,15 +630,10 @@ socket.on('forceKickIfUnregistered', (kickedName) => {
 socket.on('authRequestsList', (data) => {
     const list = document.getElementById('authAdminList');
     if (!list) return;
-    
-    // Si data.requests no existe (por si aún no has actualizado el servidor), usamos arrays vacíos por seguridad
     const requests = data.requests || [];
     const musWhitelist = data.musWhitelist || [];
     
-    // --- CAJA 1: PETICIONES DE CUENTA ---
-    let reqHtml = `<div class="admin-glass-box">
-        <h3 class="admin-gold-title">🆕 Peticiones de Cuenta</h3>`;
-    
+    let reqHtml = `<div class="admin-glass-box"><h3 class="admin-gold-title">🆕 Peticiones de Cuenta</h3>`;
     if (requests.length === 0) {
         reqHtml += "<p style='color:var(--text-muted); font-size:0.9em; text-align:center;'>No hay solicitudes pendientes.</p>";
     } else {
@@ -696,7 +655,6 @@ socket.on('authRequestsList', (data) => {
     }
     reqHtml += `</div>`;
 
-    // --- CAJA 2: PERMISOS DE MUS ---
     let musHtml = `<div class="admin-glass-box">
         <h3 class="admin-gold-title">🐄 Permisos de Mus</h3>
         <div style="display:flex; gap:10px; margin-bottom:15px;">
@@ -712,11 +670,8 @@ socket.on('authRequestsList', (data) => {
                 <button class="kick-btn" onclick="if(confirm('¿Quitar acceso a ${name}?')) socket.emit('removeMusWhitelist', {admin: app.myPlayerName, name: '${name}'})" style="background:var(--accent-red); padding:6px 12px; width:auto; margin:0; font-size:0.8em; box-shadow:none;">Eliminar</button>
             </li>`;
     });
-    
     if (musWhitelist.length === 0) musHtml += "<p style='color:var(--text-muted); text-align:center;'>Lista vacía.</p>";
-    
     musHtml += `</ul></div>`;
-
     list.innerHTML = reqHtml + musHtml;
 });
 
@@ -742,7 +697,6 @@ socket.on('hubRoomsUpdate', (rooms) => {
     const gameContainer = document.getElementById('gameActiveRooms');
     if (gameContainer && app.currentRoom) {
         const myGameRooms = rooms.filter(r => r.game === app.currentRoom);
-        
         if (myGameRooms.length === 0) {
             gameContainer.innerHTML = "<p style='color:var(--text-muted); font-style:italic;'>No hay salas creadas. ¡Crea una!</p>";
         } else {
@@ -779,7 +733,6 @@ socket.on('joinedSuccess', (data) => {
     app.myPlayerId = data.playerId;
     app.currentRoom = data.room;
     app.currentRoomId = data.roomId;
-    
     if(data.name) app.myPlayerName = data.name;
     
     if (data.room === 'impostor') app.showScreen('impostorLobby');
@@ -792,7 +745,6 @@ socket.on('joinedSuccess', (data) => {
     else if (data.room === 'orden') app.showScreen('ordenLobby');
     else if (data.room === 'consejo') app.showScreen('consejoScreen');
     else if (data.room === 'torres') app.showScreen('torresLobby');
-    
     else if (data.room === 'fiesta') {
         app.showScreen('fiestaScreen');
         app.forceFiestaStyles();
@@ -818,69 +770,69 @@ socket.on('sessionExpired', () => {
 
 socket.on('initSetup', (data) => { if(data.categories) app.categoriesCache = data.categories; });
 
-
 socket.on('torneos_forceRefresh', () => {
     if (app.currentRoom === 'torneos' || !document.getElementById('torneosLobby').classList.contains('hidden') || !document.getElementById('torneosViewScreen').classList.contains('hidden')) {
         socket.emit('torneos_requestData', app.myPlayerName);
     }
 });
 
-// Variable global para guardar la lista permitida
 app.musWhitelist = [];
 
 socket.on('updateMusWhitelist', (list) => {
     app.musWhitelist = list;
-    // Si estamos en el Hub o en Stats, refrescamos la vista para aplicar los permisos al instante
     if (app.currentScreenId === 'hubScreen' || app.currentScreenId === 'statsSelectionScreen') {
         app.showScreen(app.currentScreenId, true); 
     }
 });
 
+
+// =========================================================
+// INICIO CENTRALIZADO (EL TOKEN DE INMORTALIDAD)
+// =========================================================
 window.onload = function() {
     if (!localStorage.getItem('legal_accepted')) {
         const banner = document.getElementById('legalBanner');
         if (banner) banner.classList.remove('hidden');
     }
-
     history.replaceState({ screen: 'hubScreen' }, '', window.location.href);
 
     app.initFloatingWidget();
     if(app.feedback && app.feedback.init) app.feedback.init();
     
-    const savedGlobalName = localStorage.getItem('global_username');
-    if (savedGlobalName) {
-        let correctedName = savedGlobalName.toLowerCase();
-        
-        if (correctedName !== 'administrador m') {
-            correctedName = correctedName.replace(/[^a-z0-9]/g, '');
+    // --- MAGIA: GESTIÓN DEL TOKEN (DNI DEL NAVEGADOR) ---
+    let token = localStorage.getItem('arcade_session_token');
+    if (!token) {
+        // Creamos un UUID rudimentario si es la primera vez que entra
+        token = 'tk_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        localStorage.setItem('arcade_session_token', token);
+    }
+    app.sessionToken = token;
+
+    // Contactamos al servidor con el Token
+    socket.emit('initSession', token, (res) => {
+        if (res.success && res.session.username) {
+            // El servidor nos conoce
+            app.myPlayerName = res.session.username;
+            app.isAuthenticatedUser = (res.session.is_authenticated === 1);
+            socket.emit('registerVisit', app.myPlayerName);
+        } else {
+            // Somos nuevos o nos hemos borrado el nombre
+            app.myPlayerName = null;
+            socket.emit('registerVisit', 'Anónimo');
         }
 
-        if (correctedName.length > 0) {
-            localStorage.setItem('global_username', correctedName);
-            app.myPlayerName = correctedName; 
-            
-            // NUEVO: Verificamos silenciosamente si este nombre guardado TIENE contraseña en la BBDD.
-            // Si tiene, y hemos entrado recargando la página, asumimos temporalmente que es válido (🛡️).
-            // Si el admin lo echó o no tiene, se quedará como falso (🛡️❌ o 👤).
-            socket.emit('checkAuthRequirement', correctedName, (res) => {
-                if (res.needsPassword) {
-                    app.isAuthenticatedUser = true; // Tiene clave y recargó la página
-                } else {
-                    app.isAuthenticatedUser = false; // Su nombre no está registrado con clave
-                }
-                // Refrescar la pantalla para que pinte el emoji correcto tras la respuesta
-                if(app.currentScreenId) app.showScreen(app.currentScreenId, true);
-            });
-            
-            socket.emit('registerVisit', correctedName);
+        // Una vez recuperada la identidad, intentamos recuperar la sala
+        const activeSession = app.findActiveSession();
+        if (activeSession) {
+            app.selectRoom(activeSession);
         } else {
-            localStorage.removeItem('global_username');
-            app.myPlayerName = null;
-            socket.emit('registerVisit', 'Anónimo'); 
+            app.showScreen('hubScreen');
         }
-    } else {
-        socket.emit('registerVisit', 'Anónimo');
-    }
+        
+        // Eliminamos el localStorage antiguo de nombre para usar solo la sesión validada
+        localStorage.removeItem('global_username');
+    });
+    // ----------------------------------------------------
 
     const nameInput = document.getElementById('username');
     if (nameInput) {
@@ -893,18 +845,11 @@ window.onload = function() {
     }
 
     socket.emit('requestHubRooms');
-    socket.emit('requestMusWhitelist'); // Pide la lista de permitidos al entrar
+    socket.emit('requestMusWhitelist'); 
     setInterval(() => {
         if (!document.getElementById('hubScreen').classList.contains('hidden') || 
             !document.getElementById('loginScreen').classList.contains('hidden')) {
             socket.emit('requestHubRooms');
         }
     }, 5000);
-
-    const activeSession = app.findActiveSession();
-    if (activeSession) {
-        app.selectRoom(activeSession);
-    } else {
-        app.showScreen('hubScreen');
-    }
 };

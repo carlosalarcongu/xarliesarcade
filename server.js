@@ -13,11 +13,12 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- BASE DE DATOS DE USUARIOS ---
+// --- BASE DE DATOS DE USUARIOS Y SESIONES ---
 const db = new Database(path.join(__dirname, 'arcade.db'));
 db.prepare('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, email TEXT)').run();
 db.prepare('CREATE TABLE IF NOT EXISTS mus_whitelist (username TEXT PRIMARY KEY)').run();
-
+// NUEVA TABLA: Para recordar los navegadores de los jugadores (Token de Inmortalidad)
+db.prepare('CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, username TEXT, is_authenticated INTEGER, last_seen DATETIME)').run();
 
 const REQ_FILE = path.join(__dirname, 'pending_requests.json');
 if (!fs.existsSync(REQ_FILE)) {
@@ -58,16 +59,33 @@ Object.keys(gamesModules).forEach(key => {
 });
 
 io.on('connection', (socket) => {
-
     socket.setMaxListeners(30); 
+
+    // --- NUEVO: SISTEMA DE SESIONES INMORTALES ---
+    socket.on('initSession', (token, callback) => {
+        // Buscamos si este navegador ya ha estado aquí antes
+        const session = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
+        if (session) {
+            // Actualizamos la hora de su última visita
+            db.prepare('UPDATE sessions SET last_seen = CURRENT_TIMESTAMP WHERE token = ?').run(token);
+            callback({ success: true, session });
+        } else {
+            callback({ success: false });
+        }
+    });
+
+    socket.on('updateSession', (data) => {
+        // Guardamos o actualizamos el estado del jugador en su navegador actual
+        db.prepare('INSERT OR REPLACE INTO sessions (token, username, is_authenticated, last_seen) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
+          .run(data.token, data.username, data.isAuthenticated ? 1 : 0);
+    });
+    // ----------------------------------------------
 
     socket.on('checkAuthRequirement', (name, callback) => {
         const username = name.toLowerCase();
-        // Comprobar variables de entorno (admins legacy)
         if (['musero', 'administrador m', 'xarlie'].includes(username)) {
             return callback({ needsPassword: true });
         }
-        // Comprobar base de datos
         const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
         if (user) {
             return callback({ needsPassword: true });
@@ -80,15 +98,11 @@ io.on('connection', (socket) => {
         const lowerName = username.toLowerCase();
         let isValid = false;
         
-        // Admins Legacy
         if (lowerName === 'musero' && password === process.env.MUSERO_PASSWORD) isValid = true;
         else if (['administrador m', 'xarlie'].includes(lowerName) && password === process.env.ADMIN_PASSWORD) isValid = true;
         else {
-            // Usuarios registrados
             const user = db.prepare('SELECT * FROM users WHERE username = ?').get(lowerName);
-            if (user && user.password === password) {
-                isValid = true;
-            }
+            if (user && user.password === password) isValid = true;
         }
         callback({ success: isValid });
     });
@@ -112,13 +126,12 @@ io.on('connection', (socket) => {
         const newReq = {
             id: String(Date.now()),
             date: new Date().toISOString(),
-            type: data.type, // 'register' o 'forgot'
+            type: data.type, 
             username: data.username.toLowerCase(),
             password: data.password,
             email: data.email || ''
         };
         
-        // Quitar solicitudes previas del mismo usuario y tipo para evitar spam
         const filteredReqs = reqs.filter(r => !(r.username === newReq.username && r.type === newReq.type));
         filteredReqs.push(newReq);
         saveRequests(filteredReqs);
@@ -126,13 +139,11 @@ io.on('connection', (socket) => {
         if (callback) callback({ success: true });
     });
 
-    // --- PANEL DE ADMINISTRADORES (AUTH Y WHITELISTS) ---
+    // --- PANEL DE ADMINISTRADORES ---
     socket.on('getAuthRequests', (adminName) => {
         if (!['musero', 'administrador m', 'xarlie'].includes((adminName || '').toLowerCase())) return;
-        
         const requests = getRequests();
         const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
-        
         socket.emit('authRequestsList', { requests, musWhitelist });
     });
 
@@ -147,13 +158,8 @@ io.on('connection', (socket) => {
             if (action === 'approve') {
                 db.prepare('INSERT OR REPLACE INTO users (username, password, email) VALUES (?, ?, ?)')
                   .run(request.username, request.password, request.email);
-                
-                // Si es un nuevo registro, expulsar retroactivamente a quien lo esté usando sin auth
-                if (request.type === 'register') {
-                    io.emit('forceKickIfUnregistered', request.username);
-                }
+                if (request.type === 'register') io.emit('forceKickIfUnregistered', request.username);
             }
-            // Eliminar de pendientes
             reqs = reqs.filter(r => r.id !== reqId);
             saveRequests(reqs);
         }
@@ -162,7 +168,6 @@ io.on('connection', (socket) => {
         socket.emit('authRequestsList', { requests: reqs, musWhitelist });
     });
 
-    // --- NUEVO: EVENTOS WHITELIST MUS ---
     socket.on('addMusWhitelist', (data) => {
         if (!['musero', 'administrador m', 'xarlie'].includes((data.admin || '').toLowerCase())) return;
         if (!data.name) return;
@@ -170,7 +175,7 @@ io.on('connection', (socket) => {
         
         const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
         socket.emit('authRequestsList', { requests: getRequests(), musWhitelist });
-        io.emit('updateMusWhitelist', musWhitelist); // Avisar a todos para que oculten/muestren la tarjeta
+        io.emit('updateMusWhitelist', musWhitelist); 
     });
 
     socket.on('removeMusWhitelist', (data) => {
@@ -182,16 +187,12 @@ io.on('connection', (socket) => {
         io.emit('updateMusWhitelist', musWhitelist);
     });
 
-    // Evento para que un cliente normal pida la whitelist al entrar
     socket.on('requestMusWhitelist', () => {
         const musWhitelist = db.prepare('SELECT username FROM mus_whitelist ORDER BY username').all().map(r => r.username);
         socket.emit('updateMusWhitelist', musWhitelist);
     });
 
-    
-
-    // ----------------------------------------------------
-
+    // --- MANEJO DE JUEGOS ---
     Object.keys(gamesModules).forEach(key => {
         const module = gamesModules[key];
         if (module && typeof module.handleSocket === 'function') {
@@ -208,12 +209,7 @@ io.on('connection', (socket) => {
             if (module && typeof module.getRooms === 'function') {
                 const rooms = module.getRooms();
                 rooms.forEach(r => {
-                    allRooms.push({
-                        game: gameKey,
-                        id: r.id,
-                        players: r.players,
-                        status: r.state
-                    });
+                    allRooms.push({ game: gameKey, id: r.id, players: r.players, status: r.state });
                 });
             }
         });
