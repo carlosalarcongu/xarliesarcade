@@ -1882,7 +1882,7 @@ socket.on('mus_data', (d) => {
     // Si el torneo actual fue eliminado, cambiar a ABSOLUTA
     if (app.mus.currentRoom !== 'ABSOLUTA' && !d.rooms.find(r => r.name === app.mus.currentRoom)) {
         app.mus.currentRoom = 'ABSOLUTA';
-        alert('El torneo ha sido eliminado correctamente.');
+        // alert('El torneo ha sido eliminado correctamente.');
     }
     
     app.mus.renderRoomSelector();

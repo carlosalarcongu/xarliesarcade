@@ -11,7 +11,7 @@
 <body>
 
     <audio id="countSound" src="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3"></audio>
-    <audio id="revealSound" src="https://www.myinstants.com/media/sounds/tada-fanfare-a.mp3"></audio>
+    <audio id="revealSound" src="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3"></audio>
     <audio id="dieSound" src="https://www.myinstants.com/media/sounds/sad-trombone.mp3"></audio>
     <audio id="youDiedSound" src="https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3"></audio>
 
@@ -866,8 +866,9 @@
 
             <div id="musTContent" style="width:100%; overflow-x:auto;">
                 </div>
-        <div id="musVueApp" class="hidden" style="width: 100%; min-height: 100vh;"></div>
-    </div>
+        </div>
+
+
 
     <div id="musCreateRoomModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:30px; overflow-y:auto;">
         <div class="card" style="width:95%; max-width:400px; background:#2f3542; border:2px solid #27ae60; text-align:left;">
@@ -920,6 +921,7 @@
         
     </div>
 
+    <div id="musVueApp" class="hidden" style="width: 100%; min-height: 100vh;"></div>    
     
 
     <div id="fifaScreen" class="hidden">
@@ -1186,22 +1188,6 @@
                 🟢 Verde: +20 pts | 🎉 Victoria: +500 pts
             </div>
             <div id="contextoRankingList" style="text-align:left;">Cargando...</div>
-            
-            <button id="btnWipeRanking" onclick="app.contexto.resetRanking()" class="kick-btn hidden" style="margin-top:20px; font-size:0.8em;">🗑️ Borrar Todo (Admin)</button>
-            <button onclick="app.contexto.closeRanking()" class="main-btn" style="margin-top:10px;">Cerrar</button>
-        </div>
-    </div>
-
-    <div id="contextoRankingModal" class="hidden modal-overlay" style="align-items: center; justify-content: flex-start; padding-top: 50px;">
-        <div class="card" style="width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; background:#2f3542; border: 2px solid #a55eea;">
-            <h2 style="color:#a55eea;">🏆 RANKING SEMANAL</h2>
-            <div style="text-align:left; font-size:0.8em; color:#aaa; margin-bottom:15px;">
-                🔴 Roja: +1 pts<br>
-                🟠 Naranja: +5 pts<br>
-                🟢 Verde: +20 pts<br>
-                🎉 Victoria: +500 pts
-            </div>
-            <div id="contextoRankingList" style="text-align:left;">Loading...</div>
             
             <button id="btnWipeRanking" onclick="app.contexto.resetRanking()" class="kick-btn hidden" style="margin-top:20px; font-size:0.8em;">🗑️ Borrar Todo (Admin)</button>
             <button onclick="app.contexto.closeRanking()" class="main-btn" style="margin-top:10px;">Cerrar</button>
@@ -2025,8 +2011,8 @@
     <script src="js/analytics.js"></script>
     <script src="js/torneos.js"></script>
 
-    <link rel="stylesheet" href="vue-mus/css/mus-app.css">
-    <script type="module" src="vue-mus/js/mus-app.js"></script>
+    <link rel="stylesheet" href="/vue-mus/css/mus-app.css">
+    <script type="module" src="/vue-mus/js/mus-app.js"></script>
     
 </body>
 </html>

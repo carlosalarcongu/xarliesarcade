@@ -1,5 +1,6 @@
 // public/js/main.js
-const socket = io();
+window.socket = io();
+const socket = window.socket;
 
 const GAME_RULES = {
     impostor: `🕵️ EL IMPOSTOR\n--------------------------------\n🎯 OBJETIVO\n- Civiles: Descubrir quién es el impostor.\n- Impostor: Descubrir la palabra secreta o sobrevivir sin ser detectado.\n\n🕹️ DINÁMICA\n1. Configuración: El admin elige número de impostores, categoría (ej. Comida) y si hay Pistas o no.\n\n2. Roles:\n   - Toca tu tarjeta para ver tu rol.\n   - Civiles ven la "Palabra Secreta" (ej. "Pizza").\n   - El Impostor ve "IMPOSTOR" (y una pista vaga si están activas).\n\n3. Descripción:\n   - Por turnos, cada jugador dice UNA sola palabra relacionada con la secreta.\n   - Civiles: Sed vagos para que el impostor no sepa la palabra, pero claros para que sepan que sois ciudadanos.\n   - Impostor: Escucha, deduce y miente para encajar.\n   \n4. Votación:\n   - Pulsad los nombres en la pantalla para votar al sospechoso.\n\n5. Resolución:\n   - Si se expulsa a todos los impostores: Ganan Civiles.\n   - Si el número de impostores es el mismo al de ciudadanos: Gana los Impostores.\n   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
