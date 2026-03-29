@@ -9,35 +9,30 @@ app.mus = {
     min3RoundsActive: false,
     normalizeActive: false,
     rachasPlayerSelected: "",
+
+    adminUsers: ['administrador m', 'administrador g', 'administrador de mus', 'xarlie', 'musero', 'japa'],
+
+    isAdmin: function() {
+        const safeUser = (app.myPlayerName || "").toLowerCase();
+        return this.adminUsers.includes(safeUser);
+    },
     
     emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷','🕸','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦚','🦜','🦢','🦩','🕊','🐇','🦝','🦨','🦡','🦦','🦫','🐁','🐀','🐿','🦔','🐉','🐲'],
 
     init: () => {
         const vm = document.getElementById('musViewMode');
-        
         if (vm && !vm.querySelector('option[value="rachas"]')) {
-            const opt = document.createElement('option');
-            opt.value = 'rachas';
-            opt.innerHTML = '🔥 Rachas y Curiosidades';
-            vm.appendChild(opt);
+            const opt = document.createElement('option'); opt.value = 'rachas'; opt.innerHTML = '🔥 Rachas y Curiosidades'; vm.appendChild(opt);
         }
-
         if (vm && !vm.querySelector('option[value="predictor"]')) {
-            const optP = document.createElement('option');
-            optP.value = 'predictor';
-            optP.innerHTML = '🔮 Predictor de Partidas';
-            vm.appendChild(optP);
+            const optP = document.createElement('option'); optP.value = 'predictor'; optP.innerHTML = '🔮 Predictor de Partidas'; vm.appendChild(optP);
         }
-
-        if (app.myPlayerName && ['administrador m', 'xarlie', 'musero'].includes(app.myPlayerName.toLowerCase())) {
+        // Permisos actualizados
+        if (app.mus.isAdmin()) {
             if (vm && !vm.querySelector('option[value="administracion"]')) {
-                const optAdmin = document.createElement('option');
-                optAdmin.value = 'administracion';
-                optAdmin.innerHTML = '⚙️ Administración';
-                vm.appendChild(optAdmin);
+                const optAdmin = document.createElement('option'); optAdmin.value = 'administracion'; optAdmin.innerHTML = '⚙️ Administración'; vm.appendChild(optAdmin);
             }
         }
-
         app.mus.refresh();
     },
 
@@ -65,6 +60,15 @@ app.mus = {
         return colors[index];
     },
 
+    randomizeArrayIndices: (length) => {
+        const indices = Array.from({ length }, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        return indices;
+    },
+
     renderRoomSelector: () => {
         const sel = document.getElementById('musRoomSelect');
         if(!sel || !app.mus.data) return;
@@ -72,15 +76,16 @@ app.mus = {
         
         let html = `<option value="ABSOLUTA">⭐ ABSOLUTA (Todas)</option>`;
         app.mus.data.rooms.forEach(r => {
-            html += `<option value="${r}">${r}</option>`;
+            const icon = r.isTournament ? '🏆 ' : '';
+            html += `<option value="${r.name}">${icon}${r.name}</option>`;
         });
         sel.innerHTML = html;
         
-        if (app.mus.data.rooms.includes(current) || current === 'ABSOLUTA') {
+        if (app.mus.data.rooms.map(x=>x.name).includes(current) || current === 'ABSOLUTA') {
             sel.value = current;
         } else {
-            sel.value = app.mus.data.rooms[0];
-            app.mus.currentRoom = app.mus.data.rooms[0];
+            sel.value = app.mus.data.rooms[0] ? app.mus.data.rooms[0].name : 'ABSOLUTA';
+            app.mus.currentRoom = sel.value;
         }
     },
 
@@ -96,12 +101,428 @@ app.mus = {
         if (area) area.classList.toggle('hidden');
     },
 
+    // --- CREACIÓN DE SALAS / TORNEOS ---
     createRoom: () => {
-        if (app.myPlayerName !== "musero") return alert("Solo el usuario 'musero' puede crear salas nuevas.");
-        const name = prompt("Nombre de la nueva sala:");
-        if(name) socket.emit('mus_action', { type: 'addRoom', value: name, user: app.myPlayerName });
+        if (!app.mus.isAdmin()) {
+            return alert('🔒 Solo los administradores pueden crear salas o torneos.');
+        }
+        document.getElementById('musCreateRoomModal').classList.remove('hidden');
     },
 
+    submitCreateRoom: () => {
+        const name = document.getElementById('mcRoomName').value.trim();
+        if(!name) return alert("Ponle nombre a la sala.");
+        
+        const isTournament = document.getElementById('mcIsTournament').checked;
+        const description = isTournament ? (document.getElementById('mcDescription').value.trim() || '') : '';
+        const config = {
+            format: document.getElementById('mcFormat').value,
+            numGroups: parseInt(document.getElementById('mcNumGroups').value),
+            matchesPerRival: parseInt(document.getElementById('mcMatchesRival').value),
+            randomizePairs: document.getElementById('mcRandPairs').checked,
+            randomizeBracket: document.getElementById('mcRandBracket').checked
+        };
+
+        socket.emit('mus_action', { type: 'addRoom', value: name, user: app.myPlayerName, isTournament, config, description });
+        document.getElementById('musCreateRoomModal').classList.add('hidden');
+    },
+
+    // --- GESTIÓN DE VISTAS (TORNEO VS NORMAL) ---
+    changeView: () => {
+        const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
+        
+        const normalControls = document.getElementById('musControlsArea');
+        const viewFilters = document.querySelector('.card[style*="padding: 15px"]'); 
+        const tArea = document.getElementById('musTournamentArea');
+        const container = document.getElementById('musStatsContainer');
+        const chart = document.getElementById('musChartSection');
+        const divExamPlayer = document.getElementById('divExamPlayer');
+        const divExamPair = document.getElementById('divExamPair');
+
+        if (chart) chart.classList.add('hidden');
+        if (divExamPlayer) divExamPlayer.classList.add('hidden');
+        if (divExamPair) divExamPair.classList.add('hidden');
+
+        if (roomData && roomData.isTournament) {
+            // ES UN TORNEO
+            if(normalControls) normalControls.classList.add('hidden');
+            if(viewFilters) viewFilters.classList.add('hidden');
+            container.innerHTML = "";
+            tArea.classList.remove('hidden');
+            app.mus.renderTournamentDashboard(roomData);
+        } else {
+            // ES UNA SALA NORMAL
+            tArea.classList.add('hidden');
+            if(viewFilters) viewFilters.classList.remove('hidden');
+            if(normalControls) normalControls.classList.remove('hidden');
+            
+            const mode = document.getElementById('musViewMode').value;
+            container.innerHTML = "";
+
+            if (mode === 'ranking_pair' || mode === 'ranking_player') app.mus.renderRanking(container, mode);
+            else if (mode === 'recent_log') app.mus.renderLog(container, 'ALL');
+            else if (mode === 'examinar_persona') { if(divExamPlayer) divExamPlayer.classList.remove('hidden'); app.mus.renderPlayerSelects(); app.mus.runAnalysis(); }
+            else if (mode === 'examinar_pareja') { if(divExamPair) divExamPair.classList.remove('hidden'); app.mus.renderPlayerSelects(); app.mus.runAnalysis(); }
+            else if (mode === 'rachas') app.mus.renderRachas(container);
+            else if (mode === 'predictor') app.mus.renderPredictor(container);
+            else if (mode === 'administracion') app.mus.renderAdminPanel(container);
+        }
+    },
+
+    // --- DASHBOARD DE TORNEO ---
+    renderTournamentDashboard: (room) => {
+        const state = JSON.parse(room.tournamentState || "{}");
+        document.getElementById('musTName').innerText = room.name;
+        
+        const safeUser = (app.myPlayerName || "").toLowerCase();
+        const isAdmin = ['administrador m', 'xarlie', 'musero', 'japa', 'administrador g'].includes(safeUser);
+        
+        const cAdmin = document.getElementById('musTAdminControls');
+        cAdmin.classList.toggle('hidden', !isAdmin);
+        const btnStart = cAdmin.querySelector('.start-btn');
+        const btnAdvance = document.getElementById('musTAdvanceBtn');
+        const cArea = document.getElementById('musTContent');
+
+        if (state.phase === 'REGISTRATION') {
+            document.getElementById('musTInfo').innerText = "Fase: Inscripción Abierta";
+            btnStart.classList.remove('hidden'); btnAdvance.classList.add('hidden');
+            
+            cArea.innerHTML = `
+                <div style="background:#1e272e; padding:15px; border-radius:10px;">
+                    <h3 style="color:#74b9ff; margin-top:0;">Jugadores Inscritos (${state.players.length})</h3>
+                    
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <input type="text" id="tAddPlayerName" placeholder="Nombre..." style="flex:1; padding:10px; border-radius:5px; border:none;" autocomplete="off">
+                        <button class="main-btn" style="width:auto; margin:0;" onclick="app.mus.tourneyAction('addPlayer')">Añadir</button>
+                    </div>
+                    
+                    ${isAdmin ? `<button class="kick-btn" style="background:#f39c12; color:#000; border:none; padding:8px; margin-bottom:15px; width:100%; font-weight:bold; border-radius:5px;" onclick="app.mus.loadPredefinedPlayers()">⚡ Cargar Plantilla (12 Jugadores)</button>` : ''}
+                    
+                    <ul style="list-style:none; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+                        ${state.players.map(p => `
+                            <li style="background:#222; padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color:white; font-weight:bold; font-size:0.9em;">${app.mus.getAvatar(p)} ${p}</span>
+                                ${isAdmin ? `<button style="background:transparent; border:none; color:#ff4757; font-size:1.2em; padding:0; cursor:pointer;" onclick="app.mus.tourneyAction('removePlayer', '${p}')">✖</button>` : ''}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        else if (state.phase === 'PAIR_ASSIGNMENT') {
+            document.getElementById('musTInfo').innerText = "Fase: Asignación de Parejas";
+            btnStart.classList.add('hidden'); btnAdvance.classList.add('hidden');
+
+            const currentPairs = state.pairs || [];
+            const allPlayers = state.players || [];
+            if (!app.mus.tempPairs) {
+                if (state.config && state.config.randomizePairs) {
+                    app.mus.tempPairs = currentPairs.map(p => {
+                        const parts = (p || '').split(' y ');
+                        return [parts[0] || '', parts[1] || ''];
+                    });
+                } else {
+                    const shuffledPlayers = app.mus.shuffleArray(allPlayers);
+                    app.mus.tempPairs = [];
+                    for (let i = 0; i < shuffledPlayers.length; i += 2) {
+                        app.mus.tempPairs.push([shuffledPlayers[i] || '', shuffledPlayers[i+1] || '']);
+                    }
+                }
+            }
+
+            if (state.config && state.config.randomizePairs) {
+                // Pares aleatorios: no edición
+                let html = `<div style="background:#1e272e; padding:15px; border-radius:10px;">`;
+                html += `<h3 style="color:#74b9ff; margin-top:0;">Parejas aleatorias (bloqueadas)</h3>`;
+                html += `<ul style="list-style:none; padding:0; margin:0;">`;
+                const randomizedIndices = app.mus.randomizeArrayIndices(currentPairs.length);
+                randomizedIndices.forEach(idx => {
+                    const pairText = currentPairs[idx] || '';
+                    const parts = pairText.split(' y ').map(x => x.trim()).filter(Boolean);
+                    const shuffled = app.mus.shuffleArray(parts);
+                    html += `<li style="background:#222; color:#fff; padding:8px; border-radius:5px; margin-bottom:6px;">${shuffled.join(' y ')}</li>`;
+                });
+                html += `</ul>`;
+                html += `<button class="main-btn" style="width:100%; margin-top:12px;" onclick="app.mus.proceedToGroupAssignment()">▶️ Continuar</button>`;
+                html += `</div>`;
+                cArea.innerHTML = html;
+                return;
+            }
+
+            // Pares manuales: edición individual
+            const assigned = app.mus.tempPairs.flat().filter(Boolean);
+            const unassigned = (state.players || []).filter(p => !assigned.includes(p));
+
+            let html = `<div style="background:#1e272e; padding:15px; border-radius:10px;">`;
+            html += `<h3 style="color:#74b9ff; margin-top:0;">Editar Parejas</h3>`;
+            html += `<div style="display:flex; gap:8px; margin-bottom:12px;"><button class="main-btn" style="flex:1;" onclick="app.mus.addEmptyPair()">➕ Añadir pareja</button><button class="kick-btn" style="flex:1;" onclick="app.mus.savePairsAndContinue()">✅ Guardar y continuar</button></div>`;
+
+            if (app.mus.tempPairs.length === 0) {
+                html += `<p style="color:#aaa;">No hay parejas. Añade una o vuelve a iniciar con mínimo 4 jugadores.</p>`;
+            } else {
+                const randomizedIndices = app.mus.randomizeArrayIndices(app.mus.tempPairs.length);
+                randomizedIndices.forEach(idx => {
+                    const pair = app.mus.tempPairs[idx];
+                    const pairOrder = app.mus.shuffleArray([0, 1]);
+
+                    html += `<div style="background:#222; border:1px solid #444; border-radius:8px; padding:8px; margin-bottom:8px;">`;
+
+                    pairOrder.forEach((slotPosition, displayPosition) => {
+                        const playerName = pair[slotPosition] || '';
+                        const isEmpty = !playerName;
+                        const label = `Jugador ${displayPosition + 1}`;
+
+                        if (isEmpty) {
+                            html += `<div style="background:#2f3640; color:#ddd; border-radius:6px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.85em;">${label} vacío</span>
+                                <select style="background:#333; color:#fff; border:1px solid #555; border-radius:4px; padding:4px;" onchange="app.mus.assignToEmptySlot(${idx}, this.value, ${slotPosition})"><option value="">-- seleccionar --</option>${unassigned.map(x => `<option value="${x}">${x}</option>`).join('')}</select>
+                            </div>`;
+                        } else {
+                            html += `<div style="background:#333; color:#fff; border-radius:6px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:bold;">${playerName}</span>
+                                <button class="kick-btn" style="background:#e74c3c; width:24px; height:24px; border:none; border-radius:50%; font-size:0.8em; line-height:1;" onclick="app.mus.removePlayerFromPair(${idx}, ${slotPosition})">✖</button>
+                            </div>`;
+                        }
+                    });
+
+                    html += `</div>`;
+                });
+            }
+
+            if (unassigned.length > 0) {
+                html += `<div style="margin-top:10px; color:#f1c40f;">Jugadores sin pareja: ${unassigned.join(', ')}</div>`;
+            }
+
+            html += `</div>`;
+            cArea.innerHTML = html;
+        }
+        else if (state.phase === 'GROUP_ASSIGNMENT') {
+            document.getElementById('musTInfo').innerText = "Fase: Asignación de Grupos";
+            btnStart.classList.add('hidden'); btnAdvance.classList.add('hidden');
+
+            const assignments = state.groupAssignments || {};
+            const pairList = Object.keys(assignments);
+            const groupCount = (state.config && state.config.numGroups) ? state.config.numGroups : 2;
+
+            let html = `<div style="background:#1e272e; padding:15px; border-radius:10px;">`;
+            html += `<h3 style="color:#74b9ff; margin-top:0;">Asignar parejas a grupos</h3>`;
+
+            if (pairList.length === 0) {
+                html += `<p style="color:#aaa;">No hay parejas para asignar. Vuelve a paso anterior.</p>`;
+            } else if (state.config && state.config.format === 'GROUPS') {
+                pairList.forEach(pair => {
+                    const selected = assignments[pair] || '';
+                    html += `<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;"><span style="flex:1; color:#fff;">${pair}</span><select style="background:#333; color:#fff; border:1px solid #555; border-radius:4px; padding:4px;" onchange="app.mus.tourneyAction('assignPairToGroup', { pair: '${pair}', group: this.value })">`;
+                    html += `<option value="">Sin grupo</option>`;
+                    for (let i = 1; i <= groupCount; i++) {
+                        html += `<option value="${i}" ${selected == i ? 'selected' : ''}>Grupo ${i}</option>`;
+                    }
+                    html += `</select></div>`;
+                });
+            } else {
+                html += `<p style="color:#aaa;">Formato eliminatorias: ya se ha generado el cuadro.</p>`;
+            }
+
+            html += `<div style="display:flex; gap:8px; margin-top:12px;"><button class="main-btn" style="flex:1;" onclick="app.mus.finalizeGroupAssignmentUI()">▶️ Finalizar Asignación</button><button class="kick-btn" style="flex:1;" onclick="app.mus.tourneyAction('start', null)">⟲ Reiniciar</button></div>`;
+            html += `</div>`;
+            cArea.innerHTML = html;
+        }
+        else if (state.phase === 'GROUPS') {
+            document.getElementById('musTInfo').innerText = "Fase: Liguilla de Grupos";
+            btnStart.classList.add('hidden'); btnAdvance.classList.remove('hidden');
+
+            let html = `<div style="display:flex; flex-direction:column; gap:20px;">`;
+            Object.keys(state.groups).forEach(gName => {
+                const g = state.groups[gName];
+                html += `<div class="card" style="background:#222; border-left:4px solid #3498db; padding:15px;">
+                    <h3 style="color:#3498db; margin-top:0;">Grupo ${gName}</h3>
+                    <table class="mus-table" style="width:100%; margin-bottom:15px;">
+                        <tr><th>Pareja</th><th>PTS</th><th>G</th><th>P</th><th>Dif</th></tr>
+                        ${g.standings.map(s => `<tr>
+                            <td style="text-align:left; font-weight:bold;">${s.pair}</td>
+                            <td style="color:#f1c40f; font-weight:900;">${s.pts}</td>
+                            <td style="color:#2ed573;">${s.w}</td><td style="color:#ff4757;">${s.l}</td>
+                            <td>${s.diff > 0 ? '+'+s.diff : s.diff}</td>
+                        </tr>`).join('')}
+                    </table>
+                    <h4 style="color:#aaa;">Partidos del Grupo:</h4>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        ${g.matches.map(m => `
+                            <div style="background:#1e272e; padding:10px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; ${m.winner?'opacity:0.6;':''}">
+                                <div style="flex:1; text-align:right; font-size:0.9em; ${m.winner===m.p1?'color:#2ed573; font-weight:bold;':''}">${m.p1}</div>
+                                <div style="padding:0 10px; font-weight:bold; color:#f1c40f;">${m.winner ? `${m.s1} - ${m.s2}` : 'vs'}</div>
+                                <div style="flex:1; text-align:left; font-size:0.9em; ${m.winner===m.p2?'color:#2ed573; font-weight:bold;':''}">${m.p2}</div>
+                                ${!m.winner && !m.p1.includes('BYE') && !m.p2.includes('BYE') ? `<button class="main-btn" style="width:auto; padding:5px 10px; margin:0; font-size:0.8em; background:#2ed573;" onclick="app.mus.showAddMatchModal('${m.id}')">JUGAR</button>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+            cArea.innerHTML = html;
+        }
+        else if (state.phase === 'BRACKET') {
+            document.getElementById('musTInfo').innerText = "Fase: Eliminatorias";
+            btnStart.classList.add('hidden'); btnAdvance.classList.add('hidden');
+
+            let html = `<div style="display:flex; overflow-x:auto; gap:30px; padding:20px; min-height:300px; align-items:center;">`;
+            state.bracket.rounds.forEach((round, rIndex) => {
+                html += `<div style="display:flex; flex-direction:column; justify-content:space-around; min-width:180px; gap:20px;">`;
+                html += `<h4 style="text-align:center; color:#aaa; margin:0;">${round.matches[0].isFinal ? 'GRAN FINAL' : (round.matches[0].isSemi ? 'SEMIFINAL' : 'RONDA '+(rIndex+1))}</h4>`;
+                
+                round.matches.forEach(m => {
+                    const border = m.winner ? 'border-color:#555;' : 'border-color:#e1b12c; box-shadow:0 0 10px rgba(225,177,44,0.3);';
+                    html += `<div class="card" style="padding:10px; background:#222; border:2px solid; ${border} margin:0;">
+                        <div style="font-size:0.9em; ${m.winner===m.p1?'color:#2ed573; font-weight:bold;':(m.winner?'color:#555; text-decoration:line-through;':'color:#fff;')} border-bottom:1px solid #444; padding-bottom:5px; margin-bottom:5px;">${m.p1 || '???'}</div>
+                        <div style="font-size:0.9em; ${m.winner===m.p2?'color:#2ed573; font-weight:bold;':(m.winner?'color:#555; text-decoration:line-through;':'color:#fff;')}">${m.p2 || '???'}</div>
+                        ${!m.winner && m.p1 && m.p2 && m.p1!=='???' && m.p2!=='???' && !m.p1.includes('BYE') && !m.p2.includes('BYE') ? `<button class="main-btn" style="width:100%; padding:5px; margin-top:10px; font-size:0.8em; background:#2ed573;" onclick="app.mus.showAddMatchModal('${m.id}')">JUGAR</button>` : ''}
+                    </div>`;
+                });
+                html += `</div>`;
+            });
+
+            if (state.bracket.champion) {
+                html += `<div style="display:flex; flex-direction:column; justify-content:center; padding-left:20px;">
+                    <h2 style="color:#f1c40f; margin:0; text-align:center;">🏆 CAMPEÓN</h2>
+                    <div class="card" style="background:#f1c40f; color:#000; font-weight:900; font-size:1.5em; text-align:center;">${state.bracket.champion}</div>
+                </div>`;
+            }
+            html += `</div>`;
+            cArea.innerHTML = html;
+        }
+    },
+
+    // --- NUEVA FUNCIÓN: CARGAR PLANTILLA ---
+    loadPredefinedPlayers: () => {
+        const players = ['xarlie', 'japa', 'luis', 'marcos', 'acebo', 'nacho', 'lucas', 'mario', 'javimali', 'dani', 'clau', 'maria'];
+        if (confirm("¿Añadir a los 12 jugadores predefinidos de golpe?")) {
+            app.mus.tourneyAction('addPlayers', players);
+        }
+    },
+
+    // --- MANEJO LOCAL DE PAREJAS ---
+    removePlayerFromPair: (pairIdx, slotIdx) => {
+        if (!app.mus.tempPairs || !app.mus.tempPairs[pairIdx]) return;
+        app.mus.tempPairs[pairIdx][slotIdx] = '';
+        app.mus.changeView();
+    },
+
+    assignToEmptySlot: (pairIdx, playerName, slotIdx) => {
+        if (!app.mus.tempPairs || !app.mus.tempPairs[pairIdx] || !playerName) return;
+        if (slotIdx !== 0 && slotIdx !== 1) return;
+        app.mus.tempPairs[pairIdx][slotIdx] = playerName;
+        app.mus.changeView();
+    },
+
+    addPlayerToPair: (pairIdx, slotIdx, playerName) => {
+        if(!playerName) return;
+        app.mus.tempPairs[pairIdx][slotIdx] = playerName;
+        app.mus.changeView();
+    },
+
+    savePairsAndContinue: () => {
+        const finalPairs = [];
+        for (let p of app.mus.tempPairs) {
+            if (p[0] && p[1]) finalPairs.push([p[0], p[1]].sort().join(' y '));
+            else if (p[0] || p[1]) return alert("⚠️ Hay parejas incompletas. Por favor, asigna los huecos vacíos o elimina al jugador para que sea impar.");
+        }
+        app.mus.tempPairs = null; 
+        app.mus.tourneyAction('updatePairs', { pairs: finalPairs });
+        
+        setTimeout(() => {
+            app.mus.tourneyAction('proceedToGroupAssignment', null);
+        }, 500);
+    },
+
+    addEmptyPair: () => {
+        if (!Array.isArray(app.mus.tempPairs)) app.mus.tempPairs = [];
+        app.mus.tempPairs.push(['', '']);
+        app.mus.changeView();
+    },
+
+    shuffleArray: (arr) => {
+        const list = arr.slice();
+        for (let i = list.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [list[i], list[j]] = [list[j], list[i]];
+        }
+        return list;
+    },
+
+    randomizeArrayIndices: (length) => {
+        const indices = Array.from({ length }, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        return indices;
+    },
+
+    finalizeGroupAssignmentUI: () => {
+        app.mus.tourneyAction('finalizeGroupAssignment', null);
+    },
+
+    proceedToGroupAssignment: () => {
+        app.mus.tourneyAction('proceedToGroupAssignment', null);
+    },
+
+    tourneyAction: (action, payload) => {
+        // Solo sobrescribimos payload con el input si NO se está mandando por código (como en la plantilla)
+        if (action === 'addPlayer' && typeof payload !== 'string') {
+            const inputEl = document.getElementById('tAddPlayerName');
+            if (inputEl) payload = inputEl.value.trim();
+        }
+
+        if (!payload && !['start','advanceToBracket','proceedToGroupAssignment','finalizeGroupAssignment','deleteTournament'].includes(action)) return;
+        
+        socket.emit('mus_action', { 
+            type: 'tourneyAction', 
+            user: app.myPlayerName, 
+            room: app.mus.currentRoom, 
+            actionType: action, 
+            value: payload,
+            pair: payload?.pair,
+            group: payload?.group,
+            pairs: payload?.pairs
+        });
+        
+        // Limpiar el input solo si existe
+        if (action === 'addPlayer' && document.getElementById('tAddPlayerName')) {
+            document.getElementById('tAddPlayerName').value = "";
+        }
+    },
+
+    startTournament: () => { if(confirm("¿Cerrar inscripciones e iniciar el torneo?")) app.mus.tourneyAction('start', null); },
+    advanceToBracket: () => { if(confirm("¿Finalizar fase de grupos y crear eliminatorias?")) app.mus.tourneyAction('advanceToBracket', null); },
+    deleteTournament: () => {
+        if(!confirm("⚠️ ¿Seguro que quieres ELIMINAR este torneo?\n\nSe generará un PDF con el resumen que se descargará automáticamente.")) return;
+        
+        // Mostrar estado
+        alert("⏳ Generando PDF del torneo... Por favor espera.");
+        
+        socket.emit('mus_deleteTournamentPDF', { room: app.mus.currentRoom, user: app.myPlayerName }, (result) => {
+            if (result.success) {
+                setTimeout(() => {
+                    // Descargar el PDF
+                    const a = document.createElement('a');
+                    a.href = `/downloads/${result.fileName}`;
+                    a.download = result.fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }, 300);
+                
+                // Eliminar el torneo después de un tiempo
+                setTimeout(() => {
+                    socket.emit('mus_action', { type: 'deleteTournament', room: app.mus.currentRoom, user: app.myPlayerName });
+                }, 2000);
+            } else {
+                alert('❌ Error al generar PDF: ' + (result.error || 'Desconocido'));
+            }
+        });
+    },
+
+    // --- FUNCIONES COMUNES DE PARTIDAS ---
     getRoomMatches: () => {
         if (!app.mus.data) return [];
         if (app.mus.currentRoom === 'ABSOLUTA') return app.mus.data.matches;
@@ -122,42 +543,64 @@ app.mus = {
         return roomMatches.filter(m => new Date(m.date) >= limitDate);
     },
 
-    addPlayer: () => {
-        const name = prompt("Nombre:");
-        if (name) socket.emit('mus_action', { type: 'addPlayer', value: name });
-    },
-
-    showAddMatchModal: () => {
+    showAddMatchModal: (tourneyMatchId = null) => {
         if(!app.myPlayerName) return alert("Identifícate primero.");
         if(app.mus.currentRoom === 'ABSOLUTA') return alert("Selecciona una sala específica.");
+        
         document.getElementById('musAddMatchModal').classList.remove('hidden');
         document.getElementById('matchRoomIndicator').innerText = "Sala: " + app.mus.currentRoom;
-        
-        document.getElementById('musS1').innerText = "0";
+        document.getElementById('musS1').innerText = "0"; 
         document.getElementById('musS2').innerText = "0";
 
         app.mus.renderMatchPlayerSelects();
+
+        const modal = document.getElementById('musAddMatchModal');
+        delete modal.dataset.tourneyMatchId;
+
+        // Auto rellenar si venimos de un cuadro de torneo
+        if (tourneyMatchId && typeof tourneyMatchId === 'string') {
+            modal.dataset.tourneyMatchId = tourneyMatchId;
+            const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
+            if(roomData) {
+                const state = JSON.parse(roomData.tournamentState);
+                let match = null;
+                if (state.phase === 'GROUPS') Object.values(state.groups).forEach(g => { const m = g.matches.find(x=>x.id===tourneyMatchId); if(m) match=m; });
+                else if (state.phase === 'BRACKET') state.bracket.rounds.forEach(r => { const m = r.matches.find(x=>x.id===tourneyMatchId); if(m) match=m; });
+
+                if (match) {
+                    const [p1A, p1B] = match.p1.split(' y ');
+                    const [p2A, p2B] = match.p2.split(' y ');
+                    setTimeout(() => {
+                        app.mus.forceSelectValue('musP1', p1A); app.mus.forceSelectValue('musP2', p1B);
+                        app.mus.forceSelectValue('musP3', p2A); app.mus.forceSelectValue('musP4', p2B);
+                    }, 50);
+                }
+            }
+        }
+    },
+
+    forceSelectValue: (id, val) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!Array.from(el.options).some(o => o.value === val)) {
+            el.innerHTML += `<option value="${val}">${val}</option>`;
+        }
+        el.value = val;
     },
 
     submitMatch: () => {
-        const p1 = document.getElementById('musP1').value;
-        const p2 = document.getElementById('musP2').value;
-        const p3 = document.getElementById('musP3').value;
-        const p4 = document.getElementById('musP4').value;
-        const s1 = document.getElementById('musS1').innerText;
-        const s2 = document.getElementById('musS2').innerText;
+        const p1 = document.getElementById('musP1').value; const p2 = document.getElementById('musP2').value;
+        const p3 = document.getElementById('musP3').value; const p4 = document.getElementById('musP4').value;
+        const s1 = document.getElementById('musS1').innerText; const s2 = document.getElementById('musS2').innerText;
 
         if (!p1 || !p2 || !p3 || !p4 || s1==="" || s2==="") return alert("Datos incompletos.");
         if (new Set([p1,p2,p3,p4]).size !== 4) return alert("Jugadores duplicados.");
 
+        const tourneyMatchId = document.getElementById('musAddMatchModal').dataset.tourneyMatchId || null;
+
         socket.emit('mus_action', { 
             type: 'addMatch', 
-            value: { 
-                roomId: app.mus.currentRoom,
-                p1, p2, p3, p4, 
-                s1: parseInt(s1), s2: parseInt(s2), 
-                addedBy: app.myPlayerName 
-            } 
+            value: { roomId: app.mus.currentRoom, p1, p2, p3, p4, s1: parseInt(s1), s2: parseInt(s2), addedBy: app.myPlayerName, tourneyMatchId } 
         });
         document.getElementById('musAddMatchModal').classList.add('hidden');
     },
@@ -191,14 +634,20 @@ app.mus = {
         let playersToList = app.mus.data.players.filter(p => roomPlayers.has(p) || !playersWithMatches.has(p));
         if (roomMatches.length === 0) playersToList = [...app.mus.data.players];
         
+        // Si estamos en un torneo, añadimos a la lista a los inscritos
+        const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
+        if (roomData && roomData.isTournament) {
+            const state = JSON.parse(roomData.tournamentState || "{}");
+            if(state.players) state.players.forEach(p => { if(!playersToList.includes(p)) playersToList.push(p); });
+        }
+        
         playersToList.sort();
         app.mus.currentMatchPlayers = playersToList; 
 
         ['musP1', 'musP2', 'musP3', 'musP4'].forEach(id => {
             const el = document.getElementById(id);
             if(el) {
-                el.innerHTML = `<option value="">-- Elige --</option>` + 
-                               playersToList.map(p => `<option value="${p}">${p}</option>`).join('');
+                el.innerHTML = `<option value="">-- Elige --</option>` + playersToList.map(p => `<option value="${p}">${p}</option>`).join('');
                 el.value = "";
                 el.setAttribute("onchange", "app.mus.updateMatchSelects()");
             }
@@ -224,126 +673,7 @@ app.mus = {
         });
     },
 
-    adminRenamePlayer: (oldName) => {
-        const newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
-        if(newName && newName.trim() !== "" && newName !== oldName) {
-            socket.emit('mus_action', { 
-                type: 'adminEditPlayer', 
-                user: app.myPlayerName, 
-                value: { oldName, newName: newName.trim() } 
-            });
-        }
-    },
-    
-    adminDeletePlayer: (name) => {
-        if(confirm(`¿Seguro que quieres eliminar al jugador "${name}" de la lista?\n(Las partidas que haya jugado se mantendrán intactas en el historial)`)) {
-            socket.emit('mus_action', { type: 'adminDeletePlayer', user: app.myPlayerName, value: name });
-        }
-    },
-    
-    adminEditMatchPlayers: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
-        const p1 = prompt("Jugador 1 (Equipo 1):", m.p1) || m.p1;
-        const p2 = prompt("Jugador 2 (Equipo 1):", m.p2) || m.p2;
-        const p3 = prompt("Jugador 3 (Equipo 2):", m.p3) || m.p3;
-        const p4 = prompt("Jugador 4 (Equipo 2):", m.p4) || m.p4;
-        
-        if(confirm(`Nuevos equipos:\nAzul: ${p1} y ${p2}\nRojo: ${p3} y ${p4}\n\n¿Guardar cambios?`)) {
-            socket.emit('mus_action', { 
-                type: 'adminEditMatch', 
-                user: app.myPlayerName, 
-                value: { id, p1, p2, p3, p4, s1: m.s1, s2: m.s2 } 
-            });
-        }
-    },
-    
-    adminEditMatchScore: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
-        const s1 = prompt(`Puntuación Equipo Azul (${m.p1} y ${m.p2}):`, m.s1);
-        const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
-        
-        if(s1 !== null && s2 !== null) {
-            socket.emit('mus_action', { 
-                type: 'adminEditMatch', 
-                user: app.myPlayerName, 
-                value: { id, p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, s1: parseInt(s1), s2: parseInt(s2) } 
-            });
-        }
-    },
-
-    adminEditMatchPlayers: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
-        const p1 = prompt("Jugador 1 (Equipo 1):", m.p1) || m.p1;
-        const p2 = prompt("Jugador 2 (Equipo 1):", m.p2) || m.p2;
-        const p3 = prompt("Jugador 3 (Equipo 2):", m.p3) || m.p3;
-        const p4 = prompt("Jugador 4 (Equipo 2):", m.p4) || m.p4;
-        
-        if(confirm(`Nuevos equipos:\nAzul: ${p1} y ${p2}\nRojo: ${p3} y ${p4}\n\n¿Guardar cambios?`)) {
-            socket.emit('mus_action', { 
-                type: 'adminEditMatch', 
-                user: app.myPlayerName, 
-                value: { id, p1, p2, p3, p4, s1: m.s1, s2: m.s2 } 
-            });
-        }
-    },
-    
-    adminEditMatchScore: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
-        const s1 = prompt(`Puntuación Equipo Azul (${m.p1} y ${m.p2}):`, m.s1);
-        const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
-        
-        if(s1 !== null && s2 !== null) {
-            socket.emit('mus_action', { 
-                type: 'adminEditMatch', 
-                user: app.myPlayerName, 
-                value: { id, p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, s1: parseInt(s1), s2: parseInt(s2) } 
-            });
-        }
-    },
-
-    changeView: () => {
-        const mode = document.getElementById('musViewMode').value;
-        const container = document.getElementById('musStatsContainer');
-        const divExamPlayer = document.getElementById('divExamPlayer');
-        const divExamPair = document.getElementById('divExamPair');
-        const chart = document.getElementById('musChartSection');
-
-        container.innerHTML = "";
-        if(divExamPlayer) divExamPlayer.classList.add('hidden');
-        if(divExamPair) divExamPair.classList.add('hidden');
-        if(chart) chart.classList.add('hidden');
-
-        if (mode === 'ranking_pair' || mode === 'ranking_player') {
-            app.mus.renderRanking(container, mode);
-        } 
-        else if (mode === 'recent_log') {
-            app.mus.renderLog(container, 'ALL');
-        }
-        else if (mode === 'examinar_persona') {
-            if(divExamPlayer) divExamPlayer.classList.remove('hidden');
-            app.mus.renderPlayerSelects();
-            app.mus.runAnalysis();
-        }
-        else if (mode === 'examinar_pareja') {
-            if(divExamPair) divExamPair.classList.remove('hidden');
-            app.mus.renderPlayerSelects();
-            app.mus.runAnalysis();
-        }
-        else if (mode === 'rachas') {
-            app.mus.renderRachas(container);
-        }
-        else if (mode === 'predictor') {
-            app.mus.renderPredictor(container);
-        }
-        else if (mode === 'administracion') {
-            app.mus.renderAdminPanel(container);
-        }
-    },
-
+    // --- FUNCIONES DE ANÁLISIS, RANKING Y LOGS ---
     toggleDayByDay: (active, max) => {
         app.mus.dayByDayActive = active;
         if (active) app.mus.dayByDayLimit = max;
@@ -402,7 +732,7 @@ app.mus = {
             
             const reqUser = app.myPlayerName ? app.myPlayerName.toLowerCase() : "";
             const addedByUser = m.addedBy ? m.addedBy.toLowerCase() : "";
-            const isAdmin = reqUser === "administrador de mus" || reqUser === "musero" || reqUser === "xarlie" || reqUser === "administrador m";
+            const isAdmin = app.mus.isAdmin();
             const isOwner = reqUser !== "" && reqUser === addedByUser;
 
             if (isAdmin || isOwner) {
@@ -440,14 +770,12 @@ app.mus = {
             }
         } 
         else if (mode === 'examinar_pareja') {
-            // Leemos los dos nuevos desplegables
             const p1 = document.getElementById('musExamPair1').value;
             const p2 = document.getElementById('musExamPair2').value;
             const examType = document.getElementById('musExamTypePair').value;
             
             if (!p1 || p1 === 'all' || !p2 || p2 === 'all') return;
 
-            // Formamos el string de pareja ordenado alfabéticamente (como lo lee el resto del código)
             const pair = [p1, p2].sort().join(' y ');
 
             if (examType === 'vs_pair_win') {
@@ -460,7 +788,7 @@ app.mus = {
     },
 
     renderAdminPanel: (container) => {
-        if (app.myPlayerName.toLowerCase() !== 'administrador m') return;
+        if (!app.mus.isAdmin()) return;
         
         let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
         html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
@@ -510,6 +838,43 @@ app.mus = {
         container.innerHTML = html;
     },
 
+    adminRenamePlayer: (oldName) => {
+        const newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
+        if(newName && newName.trim() !== "" && newName !== oldName) {
+            socket.emit('mus_action', { type: 'adminEditPlayer', user: app.myPlayerName, value: { oldName, newName: newName.trim() } });
+        }
+    },
+    
+    adminDeletePlayer: (name) => {
+        if(confirm(`¿Seguro que quieres eliminar al jugador "${name}" de la lista?\n(Las partidas que haya jugado se mantendrán intactas en el historial)`)) {
+            socket.emit('mus_action', { type: 'adminDeletePlayer', user: app.myPlayerName, value: name });
+        }
+    },
+    
+    adminEditMatchPlayers: (id) => {
+        const m = app.mus.data.matches.find(x => x.id === id);
+        if(!m) return;
+        const p1 = prompt("Jugador 1 (Equipo 1):", m.p1) || m.p1;
+        const p2 = prompt("Jugador 2 (Equipo 1):", m.p2) || m.p2;
+        const p3 = prompt("Jugador 3 (Equipo 2):", m.p3) || m.p3;
+        const p4 = prompt("Jugador 4 (Equipo 2):", m.p4) || m.p4;
+        
+        if(confirm(`Nuevos equipos:\nAzul: ${p1} y ${p2}\nRojo: ${p3} y ${p4}\n\n¿Guardar cambios?`)) {
+            socket.emit('mus_action', { type: 'adminEditMatch', user: app.myPlayerName, value: { id, p1, p2, p3, p4, s1: m.s1, s2: m.s2 } });
+        }
+    },
+    
+    adminEditMatchScore: (id) => {
+        const m = app.mus.data.matches.find(x => x.id === id);
+        if(!m) return;
+        const s1 = prompt(`Puntuación Equipo Azul (${m.p1} y ${m.p2}):`, m.s1);
+        const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
+        
+        if(s1 !== null && s2 !== null) {
+            socket.emit('mus_action', { type: 'adminEditMatch', user: app.myPlayerName, value: { id, p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, s1: parseInt(s1), s2: parseInt(s2) } });
+        }
+    },
+
     renderRanking: (container, mode) => {
         const matches = app.mus.getFilteredMatches();
         let matchesToProcess = [...matches].sort((a,b) => a.id - b.id);
@@ -526,7 +891,6 @@ app.mus = {
         let stats = {}; 
 
         if (app.mus.normalizeActive) {
-            // ALGORITMO NORMALIZAR MÁGICO (Estadística de Fuerza Relativa 10 Sim)
             const uniquePlayers = Array.from(new Set(matchesToProcess.flatMap(m => [m.p1, m.p2, m.p3, m.p4])));
             const allPairs = [];
             for (let i = 0; i < uniquePlayers.length; i++) {
@@ -607,7 +971,6 @@ app.mus = {
                 }
             }
         } else {
-            // CÁLCULO TRADICIONAL
             const add = (k, myS, oppS) => {
                 if(!stats[k]) stats[k] = {rWon:0, rLost:0, pPlayed:0};
                 stats[k].pPlayed++;
@@ -695,7 +1058,6 @@ app.mus = {
         });
         html += `</table></div>`;
 
-        // BOTONES DE FILTRO Y DÍA A DÍA
         html += `
         <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; margin-top: 5px; margin-bottom: 20px;">
             <label style="color:#666; font-size: 0.75em; cursor:pointer;">
@@ -719,89 +1081,89 @@ app.mus = {
             ` : ''}
         </div>`;
 
+        // --- HISTORIAL TOP 20 RACHAS ---
+        const ascMatches = [...matchesToProcess].sort((a,b) => a.id - b.id);
         let streaks = {}; 
         let allWinStreaks = [];
         let allLossStreaks = [];
 
-        matchesToProcess.forEach(m => {
-            if (m.s1 + m.s2 <= 1) return;
+        ascMatches.forEach(m => {
+            if (m.s1 + m.s2 <= 1) return; // Ignorar partidas nulas o incompletas
             let t1Won = null;
             if (m.s1 > m.s2) t1Won = true;
             else if (m.s1 < m.s2) t1Won = false;
 
-            const processEntity = (entity, won, myScore, oppScore, oppNames) => {
+            const processEntity = (entity, won, myScore, oppScore) => {
                 if (won === null) return; 
                 if (!streaks[entity]) streaks[entity] = { type: null, val: 0 };
                 
                 if (won) {
                     if (streaks[entity].type === 'loss') {
-                        allLossStreaks.push({ n: entity, val: streaks[entity].val, endedBy: oppNames });
+                        // Racha de derrota cortada
+                        allLossStreaks.push({ n: entity, val: streaks[entity].val, active: false });
                         streaks[entity] = { type: 'win', val: myScore };
                     } else {
+                        // Sigue ganando
                         streaks[entity].type = 'win';
                         streaks[entity].val += myScore;
                     }
                 } else {
                     if (streaks[entity].type === 'win') {
-                        allWinStreaks.push({ n: entity, val: streaks[entity].val, endedBy: oppNames });
+                        // Racha de victoria cortada
+                        allWinStreaks.push({ n: entity, val: streaks[entity].val, active: false });
                         streaks[entity] = { type: 'loss', val: oppScore };
                     } else {
+                        // Sigue perdiendo
                         streaks[entity].type = 'loss';
                         streaks[entity].val += oppScore;
                     }
                 }
             };
 
-            const t1Names = `${m.p1} & ${m.p2}`;
-            const t2Names = `${m.p3} & ${m.p4}`;
-
             if (mode === 'ranking_pair') {
                 const t1 = [m.p1, m.p2].sort().join(' y ');
                 const t2 = [m.p3, m.p4].sort().join(' y ');
-                processEntity(t1, t1Won, m.s1, m.s2, t2Names);
-                processEntity(t2, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names);
+                processEntity(t1, t1Won, m.s1, m.s2);
+                processEntity(t2, t1Won === null ? null : !t1Won, m.s2, m.s1);
             } else {
-                [m.p1, m.p2].forEach(p => processEntity(p, t1Won, m.s1, m.s2, t2Names));
-                [m.p3, m.p4].forEach(p => processEntity(p, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names));
+                [m.p1, m.p2].forEach(p => processEntity(p, t1Won, m.s1, m.s2));
+                [m.p3, m.p4].forEach(p => processEntity(p, t1Won === null ? null : !t1Won, m.s2, m.s1));
             }
         });
 
+        // Al terminar de iterar, guardamos las rachas actuales (que nunca se cortaron) y las marcamos como ACTIVAS
         Object.entries(streaks).forEach(([n, data]) => {
-            if (data.type === 'win') allWinStreaks.push({ n, val: data.val, endedBy: '-' });
-            if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, endedBy: '-' });
+            if (data.type === 'win') allWinStreaks.push({ n, val: data.val, active: true });
+            if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, active: true });
         });
 
+        // Ordenar de mayor racha a menor
         allWinStreaks.sort((a,b) => b.val - a.val);
         allLossStreaks.sort((a,b) => b.val - a.val);
+
+        const formatStreak = (s, i, color, isWin) => `
+            <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
+                <div style="display:flex; justify-content:space-between;">
+                    <span><b>${i+1}. ${s.n}</b></span>
+                    <span style="color:${color}; font-weight:bold;">${isWin ? '+' : '-'}${s.val} rondas</span>
+                </div>
+                ${s.active ? `<div style="font-size:0.85em; color:${color}; margin-top:2px; font-weight:bold;">🔥 AÚN ACTIVA</div>` : ''}
+            </div>
+        `;
 
         const titleText = mode === 'ranking_pair' ? 'Parejas' : 'Individual';
 
         html += `
-            <h3 style="color:#e1b12c; margin-top:20px; margin-bottom:5px;">🔥 Top 15 Rachas (${titleText})</h3>
+            <h3 style="color:#e1b12c; margin-top:20px; margin-bottom:5px;">📜 Salón de la Fama: Top 20 Rachas (${titleText})</h3>
             <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:250px; overflow-y:auto;">
-                    <div style="font-size:1em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Victoria</div>
-                    ${allWinStreaks.slice(0,15).map((s, i) => `
-                        <div style="margin-bottom:8px; font-size:0.9em; border-bottom:1px solid #333; padding-bottom:5px;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span><b>${i+1}.</b> ${s.n}</span>
-                                <span style="color:#2ed573; font-weight:bold;">+${formatNumber(s.val)}</span>
-                            </div>
-                            <div style="font-size:0.8em; color:#aaa;">${s.endedBy === '-' ? '<span style="color:#2ed573">🟢 ACTIVA</span>' : `Cortada por <span style="color:#ff7675">${s.endedBy}</span>`}</div>
-                        </div>
-                    `).join('')}
+                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:300px; overflow-y:auto;">
+                    <div style="font-size:1em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Mayores Rachas de Victoria</div>
+                    ${allWinStreaks.slice(0,20).map((s, i) => formatStreak(s, i, '#2ed573', true)).join('')}
                 </div>
-                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:250px; overflow-y:auto;">
-                    <div style="font-size:1em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Derrota</div>
-                    ${allLossStreaks.slice(0,15).map((s, i) => `
-                        <div style="margin-bottom:8px; font-size:0.9em; border-bottom:1px solid #333; padding-bottom:5px;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span><b>${i+1}.</b> ${s.n}</span>
-                                <span style="color:#ff4757; font-weight:bold;">-${formatNumber(s.val)}</span>
-                            </div>
-                            <div style="font-size:0.8em; color:#aaa;">${s.endedBy === '-' ? '<span style="color:#ff4757">🔴 ACTIVA</span>' : `Salvados vs <span style="color:#74b9ff">${s.endedBy}</span>`}</div>
-                        </div>
-                    `).join('')}
+                
+                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:300px; overflow-y:auto;">
+                    <div style="font-size:1em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Mayores Rachas de Derrota</div>
+                    ${allLossStreaks.slice(0,20).map((s, i) => formatStreak(s, i, '#ff4757', false)).join('')}
                 </div>
             </div>
         `;
@@ -827,9 +1189,6 @@ app.mus = {
 
         ascMatches.forEach(m => {
             if (m.s1 + m.s2 <= 1) return;
-            const t1 = [m.p1, m.p2].sort().join(' y ');
-            const t2 = [m.p3, m.p4].sort().join(' y ');
-            
             let t1Won = null;
             if (m.s1 > m.s2) t1Won = true;
             else if (m.s1 < m.s2) t1Won = false;
@@ -850,19 +1209,17 @@ app.mus = {
                 
                 if (won) {
                     if (dict[entity].type === 'loss') {
-                        allLossStreaks.push({ n: entity, val: dict[entity].val, end: dateStr, endedBy: oppNames });
-                        dict[entity] = { type: 'win', val: myScore, start: dateStr };
+                        allLossStreaks.push({ n: entity, val: dict[entity].val, endedBy: oppNames });
+                        dict[entity] = { type: 'win', val: myScore };
                     } else {
-                        if (dict[entity].type !== 'win') dict[entity].start = dateStr;
                         dict[entity].type = 'win';
                         dict[entity].val += myScore;
                     }
                 } else {
                     if (dict[entity].type === 'win') {
-                        allWinStreaks.push({ n: entity, val: dict[entity].val, end: dateStr, endedBy: oppNames });
-                        dict[entity] = { type: 'loss', val: oppScore, start: dateStr };
+                        allWinStreaks.push({ n: entity, val: dict[entity].val, endedBy: oppNames });
+                        dict[entity] = { type: 'loss', val: oppScore };
                     } else {
-                        if (dict[entity].type !== 'loss') dict[entity].start = dateStr;
                         dict[entity].type = 'loss';
                         dict[entity].val += oppScore;
                     }
@@ -872,6 +1229,9 @@ app.mus = {
             const t1Names = `${m.p1} & ${m.p2}`;
             const t2Names = `${m.p3} & ${m.p4}`;
 
+            const t1 = [m.p1, m.p2].sort().join(' y ');
+            const t2 = [m.p3, m.p4].sort().join(' y ');
+            
             [m.p1, m.p2].forEach(p => processEntity(p, t1Won, m.s1, m.s2, t2Names, false));
             [m.p3, m.p4].forEach(p => processEntity(p, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names, false));
 
@@ -948,9 +1308,7 @@ app.mus = {
             histPairRounds[t1] = (histPairRounds[t1] || 0) + total;
             histPairRounds[t2] = (histPairRounds[t2] || 0) + total;
         });
-        const top3Pairs = Object.entries(histPairRounds)
-                                .sort((a,b) => b[1] - a[1])
-                                .slice(0, 3);
+        const top3Pairs = Object.entries(histPairRounds).sort((a,b) => b[1] - a[1]).slice(0, 3);
 
         let stomps = [];
         ascMatches.forEach(m => {
@@ -1066,7 +1424,7 @@ app.mus = {
                                 <span style="color:#2ed573; font-weight:bold;">+${s.val} rondas</span>
                             </div>
                             <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
-                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#2ed573">🟢 AÚN ACTIVA</span>' : `Cortada el ${s.end} por <b style="color:#ff7675">${s.endedBy}</b>`}
+                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#2ed573">🟢 AÚN ACTIVA</span>' : ``}
                             </div>
                         </div>
                     `).join('')}
@@ -1081,7 +1439,7 @@ app.mus = {
                                 <span style="color:#ff4757; font-weight:bold;">-${s.val} rondas</span>
                             </div>
                             <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
-                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#ff4757">🔴 AÚN ACTIVA</span>' : `Salvados el ${s.end} contra <b style="color:#74b9ff">${s.endedBy}</b>`}
+                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#ff4757">🔴 AÚN ACTIVA</span>' : ``}
                             </div>
                         </div>
                     `).join('')}
@@ -1493,7 +1851,6 @@ app.mus = {
         const matches = app.mus.getRoomMatches();
         const partnersSet = new Set();
 
-        // Buscamos quién ha sido pareja del jugador 1
         matches.forEach(m => {
             if (m.p1 === p1) partnersSet.add(m.p2);
             if (m.p2 === p1) partnersSet.add(m.p1);
@@ -1504,7 +1861,7 @@ app.mus = {
         const partnerOpts = Array.from(partnersSet).sort().map(p => `<option value="${p}">${p}</option>`).join('');
         p2Select.innerHTML = `<option value="all">-- Jugador 2 --</option>` + partnerOpts;
         
-        app.mus.runAnalysis(); // Intentar analizar por si ya había algo
+        app.mus.runAnalysis(); 
     },
 
     getUniquePairs: () => {
@@ -1521,6 +1878,13 @@ app.mus = {
 
 socket.on('mus_data', (d) => {
     app.mus.data = d;
+    
+    // Si el torneo actual fue eliminado, cambiar a ABSOLUTA
+    if (app.mus.currentRoom !== 'ABSOLUTA' && !d.rooms.find(r => r.name === app.mus.currentRoom)) {
+        app.mus.currentRoom = 'ABSOLUTA';
+        alert('El torneo ha sido eliminado correctamente.');
+    }
+    
     app.mus.renderRoomSelector();
     app.mus.changeView(); 
 });

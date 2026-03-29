@@ -311,7 +311,7 @@ window.app = {
                 if (isAdm || (app.musWhitelist && app.musWhitelist.includes(lowerName))) {
                     btnHubStats.classList.remove('hidden');
                 } else {
-                    btnHubStats.classList.add('hidden');
+                    //btnHubStats.classList.add('hidden');
                 }
             }
         }
@@ -361,7 +361,7 @@ window.app = {
                 if (isAdm || app.musWhitelist.includes(lowerName)) {
                     musCard.classList.remove('hidden');
                 } else {
-                    musCard.classList.add('hidden');
+                    //musCard.classList.add('hidden');
                 }
             }
         }
