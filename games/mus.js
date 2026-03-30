@@ -693,36 +693,106 @@ module.exports = {
             const dbMatches = db.prepare('SELECT * FROM mus_matches WHERE roomId = ?').all(roomName);
             
             try {
-                const doc = new PDFDocument({ margin: 40, size: 'A4' });
+                const doc = new PDFDocument({ margin: 24, size: 'A4' });
                 const writeStream = fs.createWriteStream(filePath);
                 doc.pipe(writeStream);
 
-                // Diseño del PDF (Simplificado)
-                doc.fontSize(25).text(roomName.toUpperCase(), { align: 'center' });
-                doc.fontSize(12).text(state.description || "", { align: 'center' });
-                doc.moveDown();
+                // Fondo transparente estilo mus (dos capas de color)
+                doc.save();
+                doc.opacity(0.08).rect(0, 0, doc.page.width, doc.page.height).fill('#0b7f38');
+                doc.opacity(0.15).circle(doc.page.width * 0.25, doc.page.height * 0.25, 170).fill('#ffffff');
+                doc.circle(doc.page.width * 0.75, doc.page.height * 0.35, 150).fill('#ffffff');
+                doc.restore();
 
-                // Tabla de Grupos si existen
-                if (state.groups) {
-                    Object.keys(state.groups).forEach(gName => {
-                        doc.fontSize(16).fillColor('green').text(`Grupo ${gName}`);
-                        state.groups[gName].standings.forEach(s => {
-                            doc.fontSize(10).fillColor('black').text(`${s.pair}: ${s.pts} pts`);
-                        });
-                        doc.moveDown();
-                    });
+                // Cabecera verde tipo imagen
+                doc.rect(0, 0, doc.page.width, 85).fill('#0b7f38');
+                doc.fillColor('white').font('Helvetica-Bold').fontSize(32).text(roomName.toUpperCase(), 0, 20, { align: 'center' });
+                const descriptionText = (state.description || '').toUpperCase();
+                if (descriptionText) {
+                    doc.font('Helvetica').fontSize(14).text(descriptionText, 0, 54, { align: 'center' });
                 }
 
-                // Cuadro de eliminatorias
-                if (state.bracket && state.bracket.rounds) {
-                    doc.fontSize(16).fillColor('blue').text("Eliminatorias");
-                    state.bracket.rounds.forEach((r, idx) => {
-                        doc.fontSize(12).text(`Ronda ${idx + 1}`);
-                        r.matches.forEach(m => {
-                            doc.fontSize(10).text(`${m.p1} vs ${m.p2} -> Ganador: ${m.winner || 'Pendiente'}`);
-                        });
+                doc.moveDown(5);
+                doc.fillColor('#0c2d18').font('Helvetica-Bold').fontSize(20).text('FASE DE GRUPOS', { align: 'left' });
+                doc.moveDown(0.5);
+
+                // Grupos en 2 columnas estilo tabla
+                const groups = state.groups || {};
+                const groupKeys = Object.keys(groups);
+                const pageW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+                const colW = (pageW - 20) / 2;
+                let xStart = doc.page.margins.left;
+                let yStart = doc.y;
+                let col = 0;
+
+                groupKeys.forEach((gName, idx) => {
+                    if (col === 2) {
+                        col = 0;
+                        xStart = doc.page.margins.left;
+                        yStart += 170;
+                        doc.y = yStart;
+                    }
+
+                    doc.save();
+                    doc.translate(xStart, yStart);
+                    doc.rect(0, 0, colW, 130).fill('#f0fff4');
+                    doc.fillColor('#0b7f38').font('Helvetica-Bold').fontSize(14).text(`GRUPO ${gName}`, 8, 10);
+                    doc.fillColor('#000').font('Helvetica-Bold').fontSize(10).text('Pareja', 8, 30);
+                    doc.text('Pts', colW - 70, 30, { width: 40, align: 'right' });
+                    doc.text('G', colW - 30, 30, { width: 20, align: 'right' });
+                    doc.text('P', colW - 10, 30, { width: 20, align: 'right' });
+                    doc.text('Dif', colW + 10, 30, { width: 30, align: 'right' });
+
+                    let rowY = 45;
+                    (groups[gName].standings || []).forEach(s => {
+                        doc.font('Helvetica').fontSize(10).fillColor('#222').text(s.pair, 8, rowY, { width: colW - 80 });
+                        doc.text(`${s.pts}`, colW - 70, rowY, { width: 40, align: 'right' });
+                        doc.text(`${s.w}`, colW - 30, rowY, { width: 20, align: 'right' });
+                        doc.text(`${s.l}`, colW - 10, rowY, { width: 20, align: 'right' });
+                        doc.text(`${s.diff > 0 ? '+'+s.diff : s.diff}`, colW + 10, rowY, { width: 30, align: 'right' });
+                        rowY += 14;
                     });
-                }
+
+                    doc.restore();
+
+                    col += 1;
+                    xStart += colW + 20;
+                });
+
+                // Colocación manual para evitar mezcla de bloques
+                let minBracketY = yStart + 170;
+                if (minBracketY < 220) minBracketY = 220;
+                doc.y = minBracketY;
+
+                // Cuadro final (misma página)
+                doc.fillColor('#0c2d18').font('Helvetica-Bold').fontSize(20).text('CUADRO FINAL', doc.page.margins.left, doc.y, { align: 'left' });
+                doc.y += 22;
+
+                const b = state.bracket || {};
+                const rounds = b.rounds || [];
+                rounds.forEach((round, i) => {
+                    const roundName = i === 0 ? 'R1' : (i === rounds.length - 1 ? 'FINAL' : `Ronda ${i+1}`);
+                    doc.fillColor('#1d3f1f').font('Helvetica-Bold').fontSize(16).text(roundName, { align: 'left' });
+                    doc.y += 16;
+                    round.matches.forEach(m => {
+                        let score = '';
+                        if (typeof m.s1 === 'number' && typeof m.s2 === 'number') score = ` ${m.s1} - ${m.s2}`;
+                        const mark = m.winner ? '🏆' : '•';
+                        doc.font('Helvetica').fontSize(12).fillColor('#000').text(`${mark} ${m.p1 || '???'} vs ${m.p2 || '???'}${score}`, doc.page.margins.left + 12, doc.y, { align: 'left' });
+                        doc.y += 14;
+                    });
+                    doc.y += 8;
+                });
+
+                // Zona de campeón al final
+                const championSectionY = Math.max(doc.y + 18, 460);
+                doc.save();
+                doc.rect(doc.page.margins.left, championSectionY, doc.page.width - doc.page.margins.left - doc.page.margins.right, 70).fill('#f1c40f');
+                doc.fillColor('#16232e').font('Helvetica-Bold').fontSize(18).text('CAMPEÓN DEL TORNEO', doc.page.margins.left, championSectionY + 10, { align: 'center', width: doc.page.width - doc.page.margins.left - doc.page.margins.right });
+
+                const champion = (b.champion || 'SIN DEFINIR').toUpperCase();
+                doc.fillColor('#0a0a0a').font('Helvetica-Bold').fontSize(24).text(champion, doc.page.margins.left, championSectionY + 35, { align: 'center', width: doc.page.width - doc.page.margins.left - doc.page.margins.right });
+                doc.restore();
 
                 doc.end();
 
