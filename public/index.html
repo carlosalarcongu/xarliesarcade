@@ -1859,6 +1859,10 @@
         <div id="tvEditControls" class="hidden" style="margin-bottom:15px; text-align:right; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
             <button id="btnRandBracket" class="kick-btn hidden" style="width:auto; background:#9b59b6; padding:8px 15px;" onclick="app.torneos.randomizeBracket()">🎲 Randomizar</button>
             <button id="btnManualBye" class="kick-btn hidden" style="width:auto; background:#34495e; padding:8px 15px;" onclick="app.torneos.openManualByeModal()">👉 Elegir Repesca</button>
+            <button id="btnAdvanceBracket" class="kick-btn hidden" style="width:auto; background:#e67e22; padding:8px 15px;" onclick="app.torneos.advanceToBracket()">🏆 Avanzar a Eliminatorias</button>
+            <button id="btnModifyPairs" class="kick-btn" style="width:auto; background:#8e44ad; padding:8px 15px;" onclick="app.torneos.modifyPairs()">👥 Modificar Parejas</button>
+            <button id="btnModifyResults" class="kick-btn" style="width:auto; background:#f39c12; padding:8px 15px;" onclick="app.torneos.modifyResults()">📊 Modificar Resultados</button>
+            <button id="btnModifyMatchups" class="kick-btn" style="width:auto; background:#27ae60; padding:8px 15px;" onclick="app.torneos.modifyMatchups()">⚔️ Modificar Enfrentamientos</button>
             <button class="main-btn" style="width:auto; background:#2ed573; padding:8px 15px;" onclick="app.torneos.openAddResultModal()">🖊️ Anotar/Editar Resultado</button>
         </div>
 
@@ -1907,6 +1911,7 @@
             <select id="tcFormat" onchange="app.torneos.toggleFormatOptions()" style="width:100%; margin-bottom:15px; padding:10px; border-radius:5px;">
                 <option value="BRACKET">Eliminatorias (Cuadro)</option>
                 <option value="LEAGUE">Liguilla (Puntos)</option>
+                <option value="GROUPS_BRACKET">Grupos + Eliminatorias</option>
             </select>
 
             <div id="tcLeagueConfig" class="hidden" style="background:#1e272e; padding:10px; border-radius:5px; margin-bottom:15px;">
@@ -1944,6 +1949,33 @@
                 <div style="display:flex; justify-content:space-between;">
                     <span style="color:#aaa; font-size:0.8em;">Partido 3er y 4to puesto:</span>
                     <input type="checkbox" id="tcThirdPlace" style="width:20px; height:20px;">
+                </div>
+            </div>
+
+            <div id="tcGroupsConfig" class="hidden" style="background:#1e272e; padding:10px; border-radius:5px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="color:#aaa; font-size:0.8em;">Número de Grupos:</span>
+                    <select id="tcNumGroups" style="padding:2px; border-radius:3px;">
+                        <option value="2">2 Grupos</option>
+                        <option value="4">4 Grupos</option>
+                        <option value="8">8 Grupos</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="color:#aaa; font-size:0.8em;">Avance a Eliminatorias:</span>
+                    <select id="tcAdvanceMethod" style="padding:2px; border-radius:3px;">
+                        <option value="ORDER">Por Orden (1A vs 2B, 2A vs 1B)</option>
+                        <option value="RANDOM">Aleatorio</option>
+                        <option value="MANUAL">Manual (Admin decide)</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#aaa; font-size:0.8em;">Jugadores por Grupo:</span>
+                    <select id="tcPlayersPerGroup" style="padding:2px; border-radius:3px;">
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                    </select>
                 </div>
             </div>
 
