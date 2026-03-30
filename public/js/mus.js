@@ -183,6 +183,9 @@ app.mus = {
         const btnAdvance = document.getElementById('musTAdvanceBtn');
         const cArea = document.getElementById('musTContent');
 
+        let html = `<div id="musTStatusMsg" style="color: #f1c40f; font-size: 0.8em; margin-bottom: 10px; min-height: 1.2em;"></div>`;
+        html += `<div style="display:flex; flex-direction:column; gap:20px;">`; // Esta línea ya la tienes, asegúrate de que el mensaje quede arriba.
+
         if (state.phase === 'REGISTRATION') {
             document.getElementById('musTInfo').innerText = "Fase: Inscripción Abierta";
             btnStart.classList.remove('hidden'); btnAdvance.classList.add('hidden');
@@ -394,7 +397,7 @@ app.mus = {
 
     // --- NUEVA FUNCIÓN: CARGAR PLANTILLA ---
     loadPredefinedPlayers: () => {
-        const players = ['xarlie', 'japa', 'luis', 'marcos', 'acebo', 'nacho', 'lucas', 'mario', 'javimali', 'dani', 'clau', 'maria'];
+        const players = ['Xarlie', 'Japa', 'Luis', 'Marcos', 'Acebo', 'Nacho', 'Lucas', 'Mario', 'Javimali', 'Dani', 'Clau', 'Maria'];
         if (confirm("¿Añadir a los 12 jugadores predefinidos de golpe?")) {
             app.mus.tourneyAction('addPlayers', players);
         }
@@ -490,36 +493,42 @@ app.mus = {
         if (action === 'addPlayer' && document.getElementById('tAddPlayerName')) {
             document.getElementById('tAddPlayerName').value = "";
         }
+
+        // Función auxiliar para usar en todo el Mus
+        app.mus.helperNormalize = (str) => {
+            if (!str) return str;
+            const clean = str.trim();
+            return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+        };
     },
 
     startTournament: () => { if(confirm("¿Cerrar inscripciones e iniciar el torneo?")) app.mus.tourneyAction('start', null); },
     advanceToBracket: () => { if(confirm("¿Finalizar fase de grupos y crear eliminatorias?")) app.mus.tourneyAction('advanceToBracket', null); },
-    deleteTournament: () => {
-        if(!confirm("⚠️ ¿Seguro que quieres ELIMINAR este torneo?\n\nSe generará un PDF con el resumen que se descargará automáticamente.")) return;
-        
-        // Mostrar estado
-        alert("⏳ Generando PDF del torneo... Por favor espera.");
-        
+    downloadPDF: () => {
+        const msgEl = document.getElementById('musTStatusMsg');
+        if(msgEl) msgEl.innerText = "⏳ Generando PDF...";
+
         socket.emit('mus_deleteTournamentPDF', { room: app.mus.currentRoom, user: app.myPlayerName }, (result) => {
             if (result.success) {
-                setTimeout(() => {
-                    // Descargar el PDF
-                    const a = document.createElement('a');
-                    a.href = `/downloads/${result.fileName}`;
-                    a.download = result.fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }, 300);
-                
-                // Eliminar el torneo después de un tiempo
-                setTimeout(() => {
-                    socket.emit('mus_action', { type: 'deleteTournament', room: app.mus.currentRoom, user: app.myPlayerName });
-                }, 2000);
+                const a = document.createElement('a');
+                a.href = `/downloads/${result.fileName}`;
+                a.download = result.fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                if(msgEl) msgEl.innerText = "✅ PDF descargado con éxito.";
             } else {
-                alert('❌ Error al generar PDF: ' + (result.error || 'Desconocido'));
+                if(msgEl) msgEl.innerText = "❌ Error al generar PDF.";
             }
+            // Limpiar mensaje a los 3 segundos
+            setTimeout(() => { if(msgEl) msgEl.innerText = ""; }, 3000);
         });
+    },
+
+    deleteTournament: () => {
+        if(confirm("⚠️ ¿Seguro que quieres ELIMINAR este torneo? (Esta acción no generará PDF)")) {
+            socket.emit('mus_action', { type: 'deleteTournament', room: app.mus.currentRoom, user: app.myPlayerName });
+        }
     },
 
     // --- FUNCIONES COMUNES DE PARTIDAS ---
@@ -791,6 +800,14 @@ app.mus = {
         if (!app.mus.isAdmin()) return;
         
         let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
+        
+        html += `
+            <div class="card" style="background: rgba(46, 213, 115, 0.1); border: 1px solid #2ed573; margin-bottom: 20px;">
+                <p style="font-size: 0.8em; color: #ccc; margin-bottom: 10px;">Corrige nombres (ej: "carlos" -> "Carlos") y fusiona duplicados.</p>
+                <button onclick="app.mus.adminNormalizeNames()" class="main-btn" style="background:#2ed573; padding: 10px; margin:0;">✨ Normalizar Nombres</button>
+            </div>
+        `;
+
         html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
         html += `<ul style="list-style:none; padding:0; text-align:left; max-height: 250px; overflow-y: auto;">`;
         app.mus.data.players.forEach(p => {
@@ -827,8 +844,8 @@ app.mus = {
                             <span style="color:#ff7675">${m.p3} y ${m.p4}</span> (<span style="color:#fff; font-weight:bold">${m.s2}</span>)
                         </div>
                         <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
-                            <button onclick="app.mus.adminEditMatchPlayers(${m.id})" style="background:#9b59b6; padding:4px 8px; font-size:0.8em; width:auto;">👥 Jugadores</button>
-                            <button onclick="app.mus.adminEditMatchScore(${m.id})" style="background:#e67e22; padding:4px 8px; font-size:0.8em; width:auto;">🔢 Resultado</button>
+                            <button onclick="app.mus.adminEditMatchPlayers('${m.id}')" style="background:#9b59b6; padding:4px 8px; font-size:0.8em; width:auto;">👥 Jugadores</button>
+                            <button onclick="app.mus.adminEditMatchScore('${m.id}')" style="background:#e67e22; padding:4px 8px; font-size:0.8em; width:auto;">🔢 Resultado</button>
                         </div>
                     </div>
                 </div>`;
@@ -839,9 +856,17 @@ app.mus = {
     },
 
     adminRenamePlayer: (oldName) => {
-        const newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
+        let newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
         if(newName && newName.trim() !== "" && newName !== oldName) {
-            socket.emit('mus_action', { type: 'adminEditPlayer', user: app.myPlayerName, value: { oldName, newName: newName.trim() } });
+            // Normalizamos antes de enviar: "cARLOS" -> "Carlos"
+            newName = newName.trim();
+            const normalized = newName.charAt(0).toUpperCase() + newName.slice(1).toLowerCase();
+            
+            socket.emit('mus_action', { 
+                type: 'adminEditPlayer', 
+                user: app.myPlayerName, 
+                value: { oldName, newName: normalized } 
+            });
         }
     },
     
@@ -852,26 +877,41 @@ app.mus = {
     },
     
     adminEditMatchPlayers: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
+        // Buscamos convirtiendo ambos a String para evitar fallos de tipo
+        const m = app.mus.data.matches.find(x => String(x.id) === String(id));
+        if(!m) return alert("Partida no encontrada");
+
         const p1 = prompt("Jugador 1 (Equipo 1):", m.p1) || m.p1;
         const p2 = prompt("Jugador 2 (Equipo 1):", m.p2) || m.p2;
         const p3 = prompt("Jugador 3 (Equipo 2):", m.p3) || m.p3;
         const p4 = prompt("Jugador 4 (Equipo 2):", m.p4) || m.p4;
         
         if(confirm(`Nuevos equipos:\nAzul: ${p1} y ${p2}\nRojo: ${p3} y ${p4}\n\n¿Guardar cambios?`)) {
-            socket.emit('mus_action', { type: 'adminEditMatch', user: app.myPlayerName, value: { id, p1, p2, p3, p4, s1: m.s1, s2: m.s2 } });
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { id: String(id), p1, p2, p3, p4, s1: m.s1, s2: m.s2 } 
+            });
         }
     },
-    
+
     adminEditMatchScore: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
+        const m = app.mus.data.matches.find(x => String(x.id) === String(id));
+        if(!m) return alert("Partida no encontrada");
+
         const s1 = prompt(`Puntuación Equipo Azul (${m.p1} y ${m.p2}):`, m.s1);
         const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
         
         if(s1 !== null && s2 !== null) {
-            socket.emit('mus_action', { type: 'adminEditMatch', user: app.myPlayerName, value: { id, p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, s1: parseInt(s1), s2: parseInt(s2) } });
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { 
+                    id: String(id), 
+                    p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, 
+                    s1: parseInt(s1), s2: parseInt(s2) 
+                } 
+            });
         }
     },
 
@@ -1873,7 +1913,13 @@ app.mus = {
             stats[[m.p3, m.p4].sort().join(' y ')] = 1;
         });
         return Object.keys(stats).sort();
-    }
+    },
+
+    adminNormalizeNames: () => {
+        if(confirm("¿Quieres normalizar todos los nombres? (Primera letra mayúscula, resto minúsculas). Esto fusionará registros duplicados automáticamente.")) {
+            socket.emit('mus_action', { type: 'adminNormalizeNames', user: app.myPlayerName });
+        }
+    },
 };
 
 socket.on('mus_data', (d) => {
@@ -1882,7 +1928,6 @@ socket.on('mus_data', (d) => {
     // Si el torneo actual fue eliminado, cambiar a ABSOLUTA
     if (app.mus.currentRoom !== 'ABSOLUTA' && !d.rooms.find(r => r.name === app.mus.currentRoom)) {
         app.mus.currentRoom = 'ABSOLUTA';
-        alert('El torneo ha sido eliminado correctamente.');
     }
     
     app.mus.renderRoomSelector();

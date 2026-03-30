@@ -292,6 +292,29 @@ module.exports = {
                 io.emit('mus_data', getFullMusData());
             }
 
+            // --- ACCIÓN: ELIMINAR TORNEO (SOLO BBDD) ---
+            if (action.type === 'deleteTournament') {
+                if (!isAdmin) return socket.emit('mus_msg', 'No tienes permisos para eliminar el torneo.');
+                
+                const roomName = action.room;
+                if (!roomName) return;
+
+                try {
+                    // Eliminamos la sala de la tabla mus_rooms
+                    // Nota: Esto NO borra los mus_matches históricos, solo la instancia del torneo
+                    db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
+                    
+                    // Notificamos a todos los clientes para que refresquen la lista de salas
+                    io.emit('mus_data', getFullMusData());
+                    
+                    // Enviamos un mensaje de confirmación opcional al administrador
+                    socket.emit('mus_msg', `Torneo "${roomName}" eliminado correctamente.`);
+                } catch (error) {
+                    console.error('Error al eliminar torneo:', error);
+                    socket.emit('mus_msg', 'Error interno al eliminar el torneo.');
+                }
+            }
+
             if (action.type === 'addMatch') {
                 const m = action.value;
                 const id = String(Date.now());
@@ -392,14 +415,52 @@ module.exports = {
                   .run(v.p1, v.p2, v.p3, v.p4, parseInt(v.s1), parseInt(v.s2), String(v.id));
                 io.emit('mus_data', getFullMusData());
             }
+
+            // --- NUEVA ACCIÓN: NORMALIZAR NOMBRES ---
+            if (action.type === 'adminNormalizeNames') {
+                if (!isAdmin) return;
+
+                const normalize = (str) => {
+                    if (!str) return str;
+                    const clean = str.trim();
+                    return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+                };
+
+                // 1. Obtener todos los jugadores
+                const players = db.prepare('SELECT name FROM mus_players').all();
+
+                for (let p of players) {
+                    const oldName = p.name;
+                    const newName = normalize(oldName);
+
+                    if (oldName !== newName) {
+                        // Actualizar tabla de jugadores
+                        db.prepare('UPDATE OR IGNORE mus_players SET name = ? WHERE name = ?').run(newName, oldName);
+                        // Actualizar todas las menciones en las partidas
+                        db.prepare('UPDATE mus_matches SET p1 = ? WHERE p1 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET p2 = ? WHERE p2 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET p3 = ? WHERE p3 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET p4 = ? WHERE p4 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET addedBy = ? WHERE addedBy = ?').run(newName, oldName);
+                    }
+                }
+
+                // 2. Limpiar duplicados que hayan podido quedar tras la normalización
+                // (Por ejemplo, si existía "carlos" y "Carlos", ahora ambos son "Carlos")
+                db.prepare(`
+                    DELETE FROM mus_players 
+                    WHERE rowid NOT IN (SELECT MIN(rowid) FROM mus_players GROUP BY name)
+                `).run();
+
+                io.emit('mus_data', getFullMusData());
+                socket.emit('mus_msg', 'Nombres normalizados y duplicados eliminados.');
+            }
         });
 
         // =========================================================================
-        // ================== GENERADOR DE PDF EXTREMO COMPACTO ====================
+        // ================== GENERADOR DE PDF Y CIERRE DE TORNEO ==================
         // =========================================================================
-        // =========================================================================
-        // ================== GENERADOR DE PDF EXTREMO COMPACTO ====================
-        // =========================================================================
+        
         socket.on('mus_deleteTournamentPDF', (data, callback) => {
             const reqUser = (data.user || "").toLowerCase();
             const isAdmin = ['administrador m', 'xarlie', 'musero', 'japa', 'administrador g'].includes(reqUser);
@@ -414,251 +475,69 @@ module.exports = {
             const fs = require('fs');
             
             const downloadsDir = path.join(__dirname, '../public/downloads');
-            const fontRegular = path.join(__dirname, '../public/fonts/Poppins-Regular.ttf');
-            const fontBold = path.join(__dirname, '../public/fonts/Poppins-Bold.ttf');
-            
             if (!fs.existsSync(downloadsDir)) fs.mkdirSync(downloadsDir, { recursive: true });
 
             const fileName = `torneo_${roomName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
             const filePath = path.join(downloadsDir, fileName);
             
-            // Necesitamos los scores reales para dibujarlos en el bracket
+            // Traer partidas para el PDF
             const dbMatches = db.prepare('SELECT * FROM mus_matches WHERE roomId = ?').all(roomName);
             
-            const generatePDF = () => {
-                return new Promise((resolve, reject) => {
-                    const doc = new PDFDocument({ margin: 40, size: 'A4' });
-                    const writeStream = fs.createWriteStream(filePath);
-                    const imagePath = path.join(__dirname, '../public/css/image.png');
-                    
-                    // REGISTRAR LA FUENTE POPPINS SI EXISTE (Si no, fallback a Helvetica)
-                    if (fs.existsSync(fontRegular) && fs.existsSync(fontBold)) {
-                        doc.registerFont('MainFont', fontRegular);
-                        doc.registerFont('MainFont-Bold', fontBold);
-                    } else {
-                        doc.registerFont('MainFont', 'Helvetica');
-                        doc.registerFont('MainFont-Bold', 'Helvetica-Bold');
-                    }
+            try {
+                const doc = new PDFDocument({ margin: 40, size: 'A4' });
+                const writeStream = fs.createWriteStream(filePath);
+                doc.pipe(writeStream);
 
-                    doc.pipe(writeStream);
+                // Diseño del PDF (Simplificado)
+                doc.fontSize(25).text(roomName.toUpperCase(), { align: 'center' });
+                doc.fontSize(12).text(state.description || "", { align: 'center' });
+                doc.moveDown();
 
-                    // Función para pintar el fondo (Imagen blur + Capa verde-blanca)
-                    const drawBackground = () => {
-                        try {
-                            if (fs.existsSync(imagePath)) {
-                                doc.image(imagePath, 0, 0, { width: 595, height: 842, opacity: 0.2 });
-                            }
-                        } catch (e) {}
-                        
-                        doc.rect(0, 0, 595, 842).fillColor('#e8f5e9').fillOpacity(0.88).fill();
-                        doc.fillOpacity(1).fillColor('#000000');
-                    };
-
-                    doc.on('pageAdded', drawBackground);
-                    // FORZAR UNA SÓLO PÁGINA: evitar que locatePage agregue páginas automáticas
-                    const originalAddPage = doc.addPage.bind(doc);
-                    doc.addPage = (...args) => {
-                        // no-op para bloquear páginas extra
-                        return doc;
-                    };
-                    drawBackground();
-
-                    // === CABECERA ===
-                    doc.font('MainFont-Bold').fontSize(26).fillColor('#1b5e20').text(roomName.toUpperCase(), { align: 'center' });
-                    if (state.description) {
-                        doc.font('MainFont').fontSize(12).fillColor('#424242').text(state.description, { align: 'center' });
-                    }
-                    doc.moveDown(2);
-
-                    // === FASE DE GRUPOS ===
-                    if (state.groups && Object.keys(state.groups).length > 0) {
-
-                        const groupNames = Object.keys(state.groups).sort().slice(0, 2);
-                        const colWidth = 250;
-                        const startX = 40;
-                        const groupBaseY = doc.y;
-                        let maxY = groupBaseY;
-
-                        groupNames.forEach((gName, idx) => {
-                            const g = state.groups[gName];
-                            const x = startX + idx * (colWidth + 20);
-                            let y = groupBaseY;
-
-                            doc.font('MainFont-Bold').fontSize(13).fillColor('#2e7d32').text(`Grupo ${gName}`, x, y, {width: colWidth});
-                            y += 18;
-
-                            doc.font('MainFont-Bold').fontSize(9).fillColor('#000');
-                            doc.text('Pareja', x, y, {width: 150});
-                            doc.text('Pts', x + 155, y, {width: 45, align:'center'});
-                            doc.text('Dif', x + 205, y, {width: 45, align:'center'});
-                            y += 13;
-
-                            g.standings.forEach((s, sIdx) => {
-                                if (y > 740) return;
-                                if (sIdx % 2 === 0) {
-                                    doc.rect(x, y - 2, colWidth, 14).fill('#f1f8e9').fillOpacity(1);
-                                }
-
-                                doc.font('MainFont').fontSize(9).fillColor('#000');
-                                doc.text(s.pair, x, y, {width: 150, ellipsis: true});
-                                doc.text(String(s.pts), x + 155, y, {width: 45, align:'center'});
-                                const diff = s.diff > 0 ? `+${s.diff}` : `${s.diff}`;
-                                doc.text(diff, x + 205, y, {width: 45, align:'center'});
-                                y += 14;
-                            });
-
-                            if (g.matches && g.matches.length > 0) {
-                                y += 8;
-                                doc.font('MainFont-Bold').fontSize(10).fillColor('#1b5e20').text('Resultados', x, y, {width: colWidth});
-                                y += 12;
-
-                                g.matches.forEach(m => {
-                                    if (y > 760) return;
-                                    let score = 'vs';
-                                    let dbM = dbMatches.find(x => x.tourneyMatchId === m.id);
-                                    if (dbM) score = `${dbM.s1} - ${dbM.s2}`;
-                                    else if (m.s1 != null && m.s2 != null) score = `${m.s1} - ${m.s2}`;
-                                    let text = `${m.p1} ${score} ${m.p2}`;
-                                    if ((m.p1 || '').includes('BYE') || (m.p2 || '').includes('BYE')) {
-                                        const byeName = (m.p1 || '').includes('BYE') ? m.p2 : m.p1;
-                                        text = `${byeName} pasa de ronda (BYE)`;
-                                    }
-                                    doc.font('MainFont').fontSize(8).fillColor('#000').text(text, x, y, {width: colWidth, ellipsis: true});
-                                    y += 11;
-                                });
-                            }
-
-                            maxY = Math.max(maxY, y);
+                // Tabla de Grupos si existen
+                if (state.groups) {
+                    Object.keys(state.groups).forEach(gName => {
+                        doc.fontSize(16).fillColor('green').text(`Grupo ${gName}`);
+                        state.groups[gName].standings.forEach(s => {
+                            doc.fontSize(10).fillColor('black').text(`${s.pair}: ${s.pts} pts`);
                         });
-
-                        doc.y = Math.min(maxY + 16, 760);
-                    }
-
-                    // === ELIMINATORIAS (BRACKETS) ===
-                    if (state.bracket && state.bracket.rounds && state.bracket.rounds.length > 0) {
-
-                        const rounds = state.bracket.rounds;
-                        const colWidth = 130;  
-                        const boxW = 110;      
-                        const boxH = 35;       
-                        const spacing = 25;    
-                        let baseY = doc.y;
-
-                        let feeders = {};
-                        rounds.forEach(r => r.matches.forEach(m => {
-                            if (m.nextMatchId) {
-                                if (!feeders[m.nextMatchId]) feeders[m.nextMatchId] = [];
-                                feeders[m.nextMatchId].push(m);
-                            }
-                        }));
-
-                        let coords = {};
-
-                        const maxMatchesInRound = Math.max(...rounds.map(r => r.matches.length));
-                        // Mantener en una sola página (no agregar páginas nuevas)
-
-                        rounds.forEach((r, rIdx) => {
-                            doc.font('MainFont-Bold').fontSize(10).fillColor('#2e7d32').text(`Ronda ${rIdx+1}`, 40 + rIdx * colWidth, baseY - 15);
-
-                            r.matches.forEach((m, mIdx) => {
-                                let x = 40 + rIdx * colWidth;
-                                let y;
-                                
-                                if (rIdx === 0) {
-                                    y = baseY + mIdx * (boxH + spacing); 
-                                } else {
-                                    let myFeeders = feeders[m.id];
-                                    if (myFeeders && myFeeders.length === 2 && coords[myFeeders[0].id] && coords[myFeeders[1].id]) {
-                                        y = (coords[myFeeders[0].id].y + coords[myFeeders[1].id].y) / 2;
-                                    } else if (myFeeders && myFeeders.length === 1 && coords[myFeeders[0].id]) {
-                                        y = coords[myFeeders[0].id].y;
-                                    } else {
-                                        y = baseY + mIdx * (boxH + spacing);
-                                    }
-                                }
-                                coords[m.id] = {x, y};
-
-                                const isFinalMatch = m.isFinal || (rIdx === rounds.length - 1 && mIdx === 0);
-                                if (isFinalMatch && m.winner) {
-                                    doc.font('MainFont-Bold').fontSize(14).fillColor('#f9a825').text('👑', x + boxW / 2 - 8, y - 14);
-                                }
-
-                                doc.lineWidth(1.5).strokeColor('#4caf50').rect(x, y, boxW, boxH).fillAndStroke('#ffffff', '#4caf50');
-
-                                doc.fillColor('#000').font(m.winner === m.p1 ? 'MainFont-Bold' : 'MainFont').fontSize(8);
-                                const p1Display = isFinalMatch && m.winner === m.p1 ? `👑 ${m.p1}` : m.p1;
-                                doc.text(p1Display.substring(0, 20), x + 5, y + 6, {width: boxW - 10, ellipsis: true});
-
-                                doc.moveTo(x, y + 17).lineTo(x + boxW, y + 17).lineWidth(0.5).strokeColor('#e0e0e0').stroke();
-
-                                doc.font(m.winner === m.p2 ? 'MainFont-Bold' : 'MainFont');
-                                const p2Display = isFinalMatch && m.winner === m.p2 ? `👑 ${m.p2}` : m.p2;
-                                doc.text(p2Display.substring(0, 20), x + 5, y + 21, {width: boxW - 10, ellipsis: true});
-
-                                let dbM = dbMatches.find(x => x.tourneyMatchId === m.id);
-                                let scoreT = '-';
-                                if (dbM) scoreT = `${dbM.s1} - ${dbM.s2}`;
-                                else if (m.s1 != null && m.s2 != null) scoreT = `${m.s1} - ${m.s2}`;
-                                doc.fillColor('#d32f2f').font('MainFont-Bold').fontSize(7);
-                                doc.text(scoreT, x, y + boxH + 2, {width: boxW, align: 'center'});
-                            });
-                        });
-
-                        rounds.forEach((r, rIdx) => {
-                            if (rIdx === 0) return; 
-                            r.matches.forEach(m => {
-                                let myFeeders = feeders[m.id];
-                                if (myFeeders) {
-                                    let myC = coords[m.id];
-                                    myFeeders.forEach(feeder => {
-                                        let fC = coords[feeder.id];
-                                        if (myC && fC) {
-                                            doc.lineWidth(1.5).strokeColor('#2e7d32');
-                                            doc.moveTo(fC.x + boxW, fC.y + boxH/2)
-                                               .lineTo(fC.x + boxW + 10, fC.y + boxH/2)
-                                               .lineTo(fC.x + boxW + 10, myC.y + boxH/2)
-                                               .lineTo(myC.x, myC.y + boxH/2)
-                                               .stroke();
-                                        }
-                                    });
-                                }
-                            });
-                        });
-                        
-                        if (state.bracket.champion) {
-                            doc.moveDown(2);
-                            doc.font('MainFont-Bold').fontSize(24).fillColor('#f57f17').text('🏆 CAMPEÓN 🏆', { align: 'center', width: 215 });
-                            doc.moveDown(0.5);
-                            doc.font('MainFont-Bold').fontSize(20).fillColor('#1b5e20').text(state.bracket.champion.toUpperCase(), { align: 'center', width: 215 });
-                        }
-                    }
-
-                    // === PIE DE PÁGINA ===
-                    doc.fontSize(7).font('MainFont').fillColor('#777777').text(`Generado: ${new Date().toLocaleDateString('es-ES')} - Xarlie's Arcade`, 20, 810, { align: 'center', width: 555 });
-
-                    doc.end();
-                    
-                    writeStream.on('finish', () => {
-                        resolve(fileName);
+                        doc.moveDown();
                     });
-                    
-                    writeStream.on('error', reject);
-                    doc.on('error', reject);
-                });
-            };
+                }
 
-            generatePDF()
-                .then(fileName => {
-                    db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
-                    io.emit('mus_data', getFullMusData());
-                    socket.emit('tournament_deleted', { room: roomName });
+                // Cuadro de eliminatorias
+                if (state.bracket && state.bracket.rounds) {
+                    doc.fontSize(16).fillColor('blue').text("Eliminatorias");
+                    state.bracket.rounds.forEach((r, idx) => {
+                        doc.fontSize(12).text(`Ronda ${idx + 1}`);
+                        r.matches.forEach(m => {
+                            doc.fontSize(10).text(`${m.p1} vs ${m.p2} -> Ganador: ${m.winner || 'Pendiente'}`);
+                        });
+                    });
+                }
+
+                doc.end();
+
+                writeStream.on('finish', () => {
+                    // Solo devolvemos el nombre del archivo para que el front lo descargue
                     callback({ success: true, fileName });
-                })
-                .catch(err => {
-                    console.error('Error generando PDF:', err);
-                    callback({ success: false, error: err.message });
                 });
+
+            } catch (err) {
+                console.error('Error generando PDF:', err);
+                callback({ success: false, error: err.message });
+            }
         });
+
+        // Función para eliminar definitivamente el torneo
+        if (action.type === 'deleteTournament') {
+            if (!isAdmin) return socket.emit('mus_msg', 'No autorizado');
+            const roomName = action.room;
+            
+            db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
+            io.emit('mus_data', getFullMusData());
+        }
+
+        
 
     },
     
