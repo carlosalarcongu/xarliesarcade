@@ -526,16 +526,18 @@ module.exports = {
                 console.error('Error generando PDF:', err);
                 callback({ success: false, error: err.message });
             }
-        });
 
-        // Función para eliminar definitivamente el torneo
-        if (action.type === 'deleteTournament') {
-            if (!isAdmin) return socket.emit('mus_msg', 'No autorizado');
-            const roomName = action.room;
             
-            db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
-            io.emit('mus_data', getFullMusData());
-        }
+
+            // Función para eliminar definitivamente el torneo
+            if (action.type === 'deleteTournament') {
+                if (!isAdmin) return socket.emit('mus_msg', 'No autorizado');
+                const roomName = action.room;
+                
+                db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
+                io.emit('mus_data', getFullMusData());
+            }
+        });
 
         
 
