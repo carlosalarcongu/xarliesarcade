@@ -13,11 +13,13 @@ app.torres = {
     syncSettings: () => {
         const themeSel = document.getElementById('torresTheme');
         const silentCheck = document.getElementById('torresSilent');
+        const chuletasCheck = document.getElementById('torresChuletas');
         if(!themeSel || !silentCheck) return;
 
         app.torres.send('updateSettings', { 
             theme: themeSel.value, 
-            silent: silentCheck.checked 
+            silent: silentCheck.checked,
+            chuletas: chuletasCheck ? chuletasCheck.checked : false
         });
     },
 
@@ -38,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const silentCheck = document.getElementById('torresSilent');
     if (silentCheck) silentCheck.addEventListener('change', () => { if (app.torres.iAmAdmin) app.torres.syncSettings(); });
 
+    const chuletasCheck = document.getElementById('torresChuletas');
+    if (chuletasCheck) chuletasCheck.addEventListener('change', () => { if (app.torres.iAmAdmin) app.torres.syncSettings(); });
+
     const chatInput = document.getElementById('torresInput');
     if (chatInput) {
         chatInput.addEventListener('keydown', (e) => {
@@ -52,14 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
 socket.on('torres_updateState', (data) => {
     if (app.currentRoom !== 'torres') return;
 
-    const { players, gameInProgress, settings, chatHistory } = data;
+    const { players, gameInProgress, settings, chatHistory, wordPool } = data;
     
     const me = players.find(p => p.id === app.myPlayerId);
     app.torres.iAmAdmin = me ? me.isAdmin : false;
 
-    // Sincronizar UI Lobby (Con comprobaciones de seguridad)
     const themeEl = document.getElementById('torresTheme');
     const silentEl = document.getElementById('torresSilent');
+    const chuletasEl = document.getElementById('torresChuletas');
     
     if (themeEl && document.activeElement !== themeEl) {
         themeEl.value = settings.theme;
@@ -68,6 +73,10 @@ socket.on('torres_updateState', (data) => {
     if (silentEl && document.activeElement !== silentEl) {
         silentEl.checked = settings.silentMode;
         silentEl.disabled = !app.torres.iAmAdmin;
+    }
+    if (chuletasEl && document.activeElement !== chuletasEl) {
+        chuletasEl.checked = settings.chuletas;
+        chuletasEl.disabled = !app.torres.iAmAdmin;
     }
 
     const adminPanel = document.getElementById('torresAdminPanel');
@@ -81,14 +90,13 @@ socket.on('torres_updateState', (data) => {
         document.getElementById('torresBtnRes')?.classList.remove('hidden');
         document.getElementById('torresBtnEnd')?.classList.remove('hidden');
     } else {
-        if(adminPanel) adminPanel.classList.remove('hidden'); // Ver config, pero no tocar
+        if(adminPanel) adminPanel.classList.remove('hidden'); 
         if(startBtn) startBtn.classList.add('hidden');
         if(waitMsg) waitMsg.classList.remove('hidden');
         document.getElementById('torresBtnRes')?.classList.add('hidden');
         document.getElementById('torresBtnEnd')?.classList.add('hidden');
     }
 
-    // Actualizar lista de jugadores en el Lobby
     const countEl = document.getElementById('torresPlayerCount');
     if(countEl) countEl.innerText = players.length;
     
@@ -101,7 +109,6 @@ socket.on('torres_updateState', (data) => {
             </li>`).join('');
     }
 
-    // --- MODO JUEGO ---
     if(gameInProgress) {
         app.showScreen('torresGame');
         
@@ -110,6 +117,18 @@ socket.on('torres_updateState', (data) => {
             myCardWord.innerText = me ? me.word : "???";
             if(me && me.isWinner) myCardWord.innerText += " 🏆 ¡GANASTE!";
             if(me && me.isDead) myCardWord.innerText += " 💀 ¡ELIMINADO!";
+        }
+
+        const chuletasArea = document.getElementById('torresChuletasArea');
+        const chuletasList = document.getElementById('torresChuletasList');
+        if (chuletasArea && chuletasList) {
+            if (settings.chuletas && wordPool && wordPool.length > 0) {
+                chuletasArea.classList.remove('hidden');
+                chuletasList.innerHTML = wordPool.map(w => `<div style="padding:3px; border-bottom:1px solid #444;">${w}</div>`).join('');
+            } else {
+                chuletasArea.classList.add('hidden');
+                chuletasList.innerHTML = "";
+            }
         }
 
         const grid = document.getElementById('torresPlayersGrid');

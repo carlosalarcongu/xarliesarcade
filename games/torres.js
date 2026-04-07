@@ -31,7 +31,7 @@ const THEMES = {
         "Jugadores que jugaron en Arabia Saudí", "Jugadores que fueron suplentes en una final", 
         "Jugadores con premio Pichichi", "Jugadores que han marcado en 3 Mundiales", 
         "Jugadores con asistencia de tacón famosa", "Jugadores que jugaron en el mismo club que Messi", 
-        "Jugadores que jugaron en el mismo club que Cristiano", "Jugadores con más de 20 títulos", "Jugadores con gol en su debut"
+        "Jugadores que jugaron en el mismo club que Cristiano", "Jugadores con más de 20 títulos", "Jugadores con gol en su debut", "Jugadores con más de 10 goles en una liga","Jugadores que han jugado un Mundial", "Jugadores que han sido MVP de un partido","Jugadores con más de 50 asistencias", "Jugadores que han jugado en dos grandes de Europa","Jugadores que han ganado una liga", "Jugadores con más de 5 temporadas en primera división", "Jugadores que han marcado de falta", "Jugadores que han sido internacionales", "Jugadores que han llevado brazalete de capitán"
     ],
     ESTUDIOS: [
         "Personas con carrera universitaria", "Personas con máster", "Personas con doctorado", "Personas que repitieron curso", 
@@ -68,7 +68,7 @@ const THEMES = {
         "Animales que son mascotas comunes", "Animales que ponen huevos", "Animales con alas", "Animales con caparazón", 
         "Animales que saltan", "Animales con bigotes", "Animales que viven bajo tierra", "Animales con pico", 
         "Animales sociales", "Animales solitarios", "Animales con más de 20 años de vida", "Animales que migran", 
-        "Animales considerados peligrosos"
+        "Animales considerados peligrosos","Animales que viven en granjas", "Animales que tienen garras", "Animales que hacen sonidos fuertes", "Animales que viven en manada", "Animales que son rápidos en tierra", "Animales que pueden trepar", "Animales con ojos grandes", "Animales que cazan", "Animales que comen insectos", "Animales que viven cerca del agua"
     ], 
     COMIDA: [
         "Comidas picantes", "Comidas dulces", "Comidas saladas", "Comidas veganas", "Comidas vegetarianas", 
@@ -83,13 +83,36 @@ const THEMES = {
         "Comidas con tomate", "Comidas con patata", "Comidas con especias", "Comidas tradicionales", "Comidas exóticas", 
         "Comidas callejeras", "Comidas con frutos secos", "Comidas con legumbres", "Comidas con azúcar", "Comidas con miel", 
         "Comidas fermentadas", "Comidas que se comen frías", "Comidas que se comen calientes", "Comidas con aceite de oliva", 
-        "Comidas típicas de Asia", "Comidas típicas de América", "Comidas típicas de Europa"
-    ] 
-}
+        "Comidas típicas de Asia", "Comidas típicas de América", "Comidas típicas de Europa","Comidas con limón", "Comidas con mantequilla", "Comidas con jamón", "Comidas que llevan queso fundido", "Comidas típicas de bares", "Comidas que se comen con cuchara", "Comidas que se comen con las manos", "Comidas para compartir", "Comidas con base de masa", "Comidas con huevo frito"
+    ],
+    CINE_Y_SERIES: [
+        "Películas de acción", "Películas de comedia", "Películas de terror", "Películas románticas", 
+        "Películas de animación", "Películas con secuelas", "Películas ganadoras de Oscar", "Series de Netflix", 
+        "Series españolas", "Series con más de 5 temporadas", "Personajes protagonistas", "Villanos famosos", 
+        "Actores conocidos", "Películas basadas en libros", "Películas de superhéroes", "Series de crimen", 
+        "Películas que todo el mundo ha visto", "Películas de los 90", "Series juveniles", "Películas con plot twist"
+    ],
+
+    VIDEOJUEGOS: [
+        "Juegos de disparos", "Juegos de aventura", "Juegos de mundo abierto", "Juegos multijugador", 
+        "Juegos de estrategia", "Juegos de deportes", "Juegos de carreras", "Juegos indie", 
+        "Juegos con modo historia", "Juegos difíciles", "Juegos famosos", "Personajes de videojuegos", 
+        "Juegos retro", "Juegos de consola", "Juegos de PC", "Juegos gratuitos", "Juegos con zombies", 
+        "Juegos de supervivencia", "Juegos con crafting", "Juegos competitivos"
+    ],
+
+    GEOGRAFIA: [
+        "Países de Europa", "Países de América", "Países de Asia", "Capitales del mundo", "Ciudades españolas", 
+        "Ciudades europeas", "Ríos famosos", "Montañas", "Islas", "Países con costa", "Países sin costa", 
+        "Países grandes", "Países pequeños", "Lugares turísticos", "Desiertos", "Selvas", "Países con más población", 
+        "Países fríos", "Países cálidos", "Países que hablan español"
+    ]
+};
 
 const defaultSettings = { 
     theme: 'MIX', 
-    silentMode: false 
+    silentMode: false,
+    chuletas: false
 };
 
 function createRoom(roomId) {
@@ -120,9 +143,20 @@ function checkRoomInactivity(roomId) {
     }
 }
 
+function getThemeWords(theme) {
+    if (theme === 'MIX' || !THEMES[theme]) {
+        let pool = [];
+        Object.values(THEMES).forEach(arr => pool = pool.concat(arr));
+        return [...new Set(pool)].sort();
+    }
+    return [...THEMES[theme]].sort();
+}
+
 function broadcastRoom(io, roomId) {
     const room = rooms[roomId];
     if (!room || !io) return;
+
+    const wordPool = room.settings.chuletas ? getThemeWords(room.settings.theme) : [];
 
     room.players.forEach(targetPlayer => {
         if (!targetPlayer.connected || !targetPlayer.socketId) return;
@@ -134,7 +168,6 @@ function broadcastRoom(io, roomId) {
             isDead: p.isDead,
             isWinner: p.isWinner,
             connected: p.connected,
-            // CORRECCIÓN CLAVE: Si el jugador ha ganado o ha muerto, se le revela su propia palabra.
             word: (room.gameInProgress && p.id === targetPlayer.id && !p.isDead && !p.isWinner) ? "???" : p.word 
         }));
 
@@ -143,6 +176,7 @@ function broadcastRoom(io, roomId) {
             gameInProgress: room.gameInProgress,
             settings: room.settings,
             chatHistory: room.chatHistory,
+            wordPool: wordPool,
             roomId: roomId
         });
     });
@@ -154,12 +188,13 @@ const handleSocket = (io, socket) => {
         const room = rooms[roomId];
         if (!room) return;
 
-        const me = room.players.find(p => p.socketId === socket.id);
+        const me = room.players.find(p => p.uuid === socket.data.uuid);
         if (!me) return; 
 
         if (action.type === 'updateSettings' && me.isAdmin) {
             if (action.value.theme) room.settings.theme = action.value.theme;
             if (typeof action.value.silent !== 'undefined') room.settings.silentMode = !!action.value.silent;
+            if (typeof action.value.chuletas !== 'undefined') room.settings.chuletas = !!action.value.chuletas;
             broadcastRoom(io, roomId);
         }
 
@@ -175,7 +210,6 @@ const handleSocket = (io, socket) => {
         if (action.type === 'startGame' && me.isAdmin) {
             if (room.players.length <= 1) return; 
 
-            // Si es MIX o una temática que no existe, juntar todas
             let wordPool = [];
             if (room.settings.theme === 'MIX' || !THEMES[room.settings.theme]) {
                 Object.values(THEMES).forEach(arr => {
@@ -249,9 +283,11 @@ const handleSocket = (io, socket) => {
     });
 };
 
-const handleJoin = (socket, nameRaw, targetRoomId) => {
+const handleJoin = (socket, nameRaw, targetRoomId, data = {}) => {
     const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
+    const uuid = data.uuid || socket.id;
     let room;
+
     if (!targetRoomId || targetRoomId === 'NEW') {
         if (Object.keys(rooms).length >= 4) return socket.emit('joinError', 'Máximo de salas alcanzado.');
         const newId = Utils.getRandomCapital(Object.keys(rooms));
@@ -266,42 +302,55 @@ const handleJoin = (socket, nameRaw, targetRoomId) => {
     
     socket.join('torres_' + room.id);
     socket.data.roomId = room.id; 
+    socket.data.uuid = uuid;
     
-    const existing = room.players.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
-    if (existing) {
-        if (!existing.connected) return handleRejoin(socket, existing.id, room.id);
-        return socket.emit('joinError', 'Nombre en uso.');
+    let p = room.players.find(player => player.uuid === uuid);
+
+    if (p) {
+        if (p.timeout) clearTimeout(p.timeout);
+        p.socketId = socket.id;
+        p.connected = true;
+        p.name = cleanName;
+    } else {
+        const existingName = room.players.find(player => player.name.toLowerCase() === cleanName.toLowerCase());
+        if (existingName && existingName.connected) return socket.emit('joinError', 'Nombre en uso.');
+        
+        p = Utils.createPlayer(socket.id, cleanName);
+        p.uuid = uuid;
+        
+        if (room.players.length === 0 || ['administrador m', 'xarlie', 'musero'].includes(cleanName.toLowerCase())) {
+            p.isAdmin = true;
+        }
+        
+        room.players.push(p);
     }
-    
-    const p = Utils.createPlayer(socket.id, cleanName);
-    p.connected = true; 
-    
-    if (room.players.length === 0 || cleanName.toLowerCase().includes('admin')) {
-        p.isAdmin = true;
-    }
-    
-    room.players.push(p);
     
     socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'torres', roomId: room.id });
     checkRoomInactivity(room.id); 
     broadcastRoom(socket.server, room.id);
 };
 
-const handleRejoin = (socket, savedId, savedRoomId) => {
+const handleRejoin = (socket, savedId, savedRoomId, data = {}) => {
     const room = rooms[savedRoomId];
     if (!room) return socket.emit('sessionExpired');
-    const p = room.players.find(x => x.id === savedId);
-    if(p) {
+
+    const uuid = data.uuid;
+    const p = room.players.find(x => x.uuid === uuid || x.id === savedId);
+    
+    if (p) {
         if (p.timeout) clearTimeout(p.timeout);
         p.socketId = socket.id;
         p.connected = true;
         socket.join('torres_' + room.id);
         socket.data.roomId = room.id;
+        socket.data.uuid = uuid || p.uuid;
         socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'torres', roomId: room.id, isRejoin: true });
         checkRoomInactivity(room.id);
         
         setTimeout(() => broadcastRoom(socket.server, room.id), 100);
-    } else socket.emit('sessionExpired');
+    } else {
+        socket.emit('sessionExpired');
+    }
 };
 
 const handleLeave = (playerId, roomId, io, forced = false) => {

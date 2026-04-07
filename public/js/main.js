@@ -2,6 +2,11 @@
 window.socket = io();
 const socket = window.socket;
 
+if (!localStorage.getItem('arcade_uuid')) {
+    localStorage.setItem('arcade_uuid', 'id-' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36));
+}
+window.arcadeUUID = localStorage.getItem('arcade_uuid');
+
 const GAME_RULES = {
     impostor: `🕵️ EL IMPOSTOR\n--------------------------------\n🎯 OBJETIVO\n- Civiles: Descubrir quién es el impostor.\n- Impostor: Descubrir la palabra secreta o sobrevivir sin ser detectado.\n\n🕹️ DINÁMICA\n1. Configuración: El admin elige número de impostores, categoría (ej. Comida) y si hay Pistas o no.\n\n2. Roles:\n   - Toca tu tarjeta para ver tu rol.\n   - Civiles ven la "Palabra Secreta" (ej. "Pizza").\n   - El Impostor ve "IMPOSTOR" (y una pista vaga si están activas).\n\n3. Descripción:\n   - Por turnos, cada jugador dice UNA sola palabra relacionada con la secreta.\n   - Civiles: Sed vagos para que el impostor no sepa la palabra, pero claros para que sepan que sois ciudadanos.\n   - Impostor: Escucha, deduce y miente para encajar.\n   \n4. Votación:\n   - Pulsad los nombres en la pantalla para votar al sospechoso.\n\n5. Resolución:\n   - Si se expulsa a todos los impostores: Ganan Civiles.\n   - Si el número de impostores es el mismo al de ciudadanos: Gana los Impostores.\n   - Si el Impostor es pillado, tiene una última oportunidad: ¡Adivinar la palabra! Si acierta, gana él.`,
     lobo: `🐺 EL LOBO (Werewolf)\n--------------------------------\n🎯 OBJETIVO\n- Pueblo: Eliminar a todos los Lobos.\n- Lobos: Eliminar al Pueblo hasta igualarlos en número.\n\n🕹️ DINÁMICA\n(Una persona que no esté en la sala actúa como Narrador y guía las fases de viva voz)\n(En el futuro se desarrollará un modo en el que cada jugador interactúe con la pantalla)\n\n1. Roles Especiales:\n   - 🔮 Vidente: Ve el rol de un jugador cada noche.\n   - 👧 Niña: Puede abrir los ojos con cuidado (si la pillan, muere).\n   - 💘 Cupido: Enamora a dos (si uno muere, el otro también).\n   - 🔫 Cazador: Si muere, mata a otro inmediatamente.\n\n2. La Noche (Ojos cerrados):\n   - El Admin despierta a los Lobos. Ellos miran su móvil (ven a sus compañeros) y eligen víctima en silencio.\n   - El Admin despierta a los roles especiales para sus acciones secuencialmente.\n\n3. El Día (Ojos abiertos):\n   - Se anuncia quién murió. Debate y acusaciones.\n   - Votación: Usad la interfaz para linchar a un sospechoso.\n   - El más votado muere y revela rol.`,
@@ -24,7 +29,7 @@ const ROOM_EMOJIS = {
 };
 
 window.app = {
-    sessionToken: null, // EL NUEVO TOKEN DE INMORTALIDAD
+    sessionToken: null,
     currentRoom: null,
     currentRoomId: null, 
     pendingRoomId: null,
@@ -34,7 +39,6 @@ window.app = {
     categoriesCache: {},
     currentScreenId: 'hubScreen', 
 
-    // --- ACTUALIZA LA SESIÓN EN EL BACKEND ---
     syncSession: () => {
         if (app.sessionToken) {
             socket.emit('updateSession', {
@@ -161,7 +165,7 @@ window.app = {
                 return;
             }
             app.isAuthenticatedUser = true; 
-            app.syncSession(); // Guardamos en el backend que nos hemos autenticado
+            app.syncSession();
             document.getElementById('passwordModal').classList.add('hidden');
             if (callback) callback();
         });
@@ -357,7 +361,6 @@ window.app = {
         if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber', 'analytics'].includes(room)) {
             if(room === 'mus') { 
                 app.showScreen('musVueApp'); 
-                // Lanzamos un grito al aire para que Vue lo escuche y sepa que hemos entrado
                 window.dispatchEvent(new CustomEvent('iniciar-mus', { 
                     detail: { jugador: app.myPlayerName } 
                 }));
@@ -375,14 +378,14 @@ window.app = {
             if (room === 'fiesta') {
                  const name = app.myPlayerName || "Fiestero";
                  const uniqueRoomId = 'FIESTA-MAIN'; 
-                 socket.emit('joinRoom', { name, room: 'fiesta', roomId: uniqueRoomId }); 
+                 socket.emit('joinRoom', { name, room: 'fiesta', roomId: uniqueRoomId, uuid: window.arcadeUUID }); 
                  return;
             }
 
             if(room === 'consejo') { 
                 const autoName = app.myPlayerName || "Sabio";
                 const autoRoomId = 'CONSEJO-' + Math.floor(Math.random() * 10000);
-                socket.emit('joinRoom', { name: autoName, room: 'consejo', roomId: autoRoomId });
+                socket.emit('joinRoom', { name: autoName, room: 'consejo', roomId: autoRoomId, uuid: window.arcadeUUID });
                 return; 
             }
         }
@@ -394,7 +397,7 @@ window.app = {
             app.myPlayerId = savedId;
             app.currentRoom = room;
             app.currentRoomId = savedRoomId;
-            socket.emit('rejoin', { savedId, savedRoom: room, savedRoomId });
+            socket.emit('rejoin', { savedId, savedRoom: room, savedRoomId, uuid: window.arcadeUUID });
         } 
         else {
             app.currentRoom = room;
@@ -440,10 +443,9 @@ window.app = {
     },
 
     editName: () => {
+        localStorage.removeItem('global_username');
         app.myPlayerName = null;
         app.isAuthenticatedUser = false;
-        app.syncSession(); // Reseteamos la sesión en el backend
-
         const input = document.getElementById('username');
         if(input) input.value = "";
         app.renderLoginScreen(app.currentRoom);
@@ -460,8 +462,8 @@ window.app = {
 
         socket.emit('checkAuthRequirement', name, (res) => {
             const finalizeLogin = () => {
+                localStorage.setItem('global_username', name);
                 app.myPlayerName = name; 
-                app.syncSession(); // Guarda nombre y auth local en el backend
                 socket.emit('registerVisit', name);
                 app.currentRoom = null;
                 app.pendingRoomId = null;
@@ -496,11 +498,11 @@ window.app = {
         }
 
         const finalizeJoin = () => {
+            localStorage.setItem('global_username', name);
             app.myPlayerName = name; 
-            app.syncSession();
             socket.emit('registerVisit', name);
             if (app.currentRoom) {
-                socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId });
+                socket.emit('joinRoom', { name, room: app.currentRoom, roomId: targetId, uuid: window.arcadeUUID });
             } else {
                 app.showScreen('hubScreen');
             }
@@ -526,7 +528,11 @@ window.app = {
             : `🚨 ATENCIÓN: ¿Seguro que quieres borrar TODOS los registros históricos de "${name}"? Esto no se puede deshacer.`;
         
         if (confirm(msg)) {
-            socket.emit('analytics_deleteRecord', { admin: app.myPlayerName, name: name, type: type });
+            socket.emit('analytics_deleteRecord', {
+                admin: app.myPlayerName,
+                name: name,
+                type: type
+            });
         }
     },
 
@@ -541,16 +547,18 @@ window.app = {
         }
         if (app.mus && app.mus.resetUI) app.mus.resetUI();
         
+        localStorage.removeItem('global_username');
         app.myPlayerName = null;
         app.isAuthenticatedUser = false;
         app.currentRoom = null;
         app.currentRoomId = null;
-        app.syncSession(); // Borramos el estado en el backend
         
         app.renderLoginScreen(null);
     },
 
-    showStatsMenu: () => { app.showScreen('statsSelectionScreen'); },
+    showStatsMenu: () => {
+        app.showScreen('statsSelectionScreen');
+    },
 
     goBackToHub: (forceLogout = false, skipHistory = false) => {
         if (app.mus && app.mus.resetUI) app.mus.resetUI();
@@ -586,9 +594,18 @@ window.app = {
         }
     },
 
-    showDevMessage: () => { alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!"); },
-    showLegalModal: () => { document.getElementById('legalModal').classList.remove('hidden'); },
-    closeLegalModal: () => { document.getElementById('legalModal').classList.add('hidden'); },
+    showDevMessage: () => {
+        alert("🚧 ¡Obras en proceso!\n\nEste juego aún está en desarrollo. ¡Vuelve pronto!");
+    },
+
+    showLegalModal: () => {
+        document.getElementById('legalModal').classList.remove('hidden');
+    },
+
+    closeLegalModal: () => {
+        document.getElementById('legalModal').classList.add('hidden');
+    },
+
     acceptLegal: () => {
         localStorage.setItem('legal_accepted', 'true');
         document.getElementById('legalBanner').classList.add('hidden');
@@ -619,8 +636,6 @@ window.addEventListener('popstate', (event) => {
     }
 });
 
-// --- RECEPTORES DE SOCKET.IO ---
-
 socket.on('forceKickIfUnregistered', (kickedName) => {
     if (app.myPlayerName === kickedName && !app.isAuthenticatedUser) {
         alert("⚠️ ATENCIÓN: Alguien acaba de registrar tu nickname oficialmente. Has sido desconectado.");
@@ -631,10 +646,13 @@ socket.on('forceKickIfUnregistered', (kickedName) => {
 socket.on('authRequestsList', (data) => {
     const list = document.getElementById('authAdminList');
     if (!list) return;
+    
     const requests = data.requests || [];
     const musWhitelist = data.musWhitelist || [];
     
-    let reqHtml = `<div class="admin-glass-box"><h3 class="admin-gold-title">🆕 Peticiones de Cuenta</h3>`;
+    let reqHtml = `<div class="admin-glass-box">
+        <h3 class="admin-gold-title">🆕 Peticiones de Cuenta</h3>`;
+    
     if (requests.length === 0) {
         reqHtml += "<p style='color:var(--text-muted); font-size:0.9em; text-align:center;'>No hay solicitudes pendientes.</p>";
     } else {
@@ -671,8 +689,11 @@ socket.on('authRequestsList', (data) => {
                 <button class="kick-btn" onclick="if(confirm('¿Quitar acceso a ${name}?')) socket.emit('removeMusWhitelist', {admin: app.myPlayerName, name: '${name}'})" style="background:var(--accent-red); padding:6px 12px; width:auto; margin:0; font-size:0.8em; box-shadow:none;">Eliminar</button>
             </li>`;
     });
+    
     if (musWhitelist.length === 0) musHtml += "<p style='color:var(--text-muted); text-align:center;'>Lista vacía.</p>";
+    
     musHtml += `</ul></div>`;
+
     list.innerHTML = reqHtml + musHtml;
 });
 
@@ -698,6 +719,7 @@ socket.on('hubRoomsUpdate', (rooms) => {
     const gameContainer = document.getElementById('gameActiveRooms');
     if (gameContainer && app.currentRoom) {
         const myGameRooms = rooms.filter(r => r.game === app.currentRoom);
+        
         if (myGameRooms.length === 0) {
             gameContainer.innerHTML = "<p style='color:var(--text-muted); font-style:italic;'>No hay salas creadas. ¡Crea una!</p>";
         } else {
@@ -786,10 +808,6 @@ socket.on('updateMusWhitelist', (list) => {
     }
 });
 
-
-// =========================================================
-// INICIO CENTRALIZADO (EL TOKEN DE INMORTALIDAD)
-// =========================================================
 window.onload = function() {
     if (!localStorage.getItem('legal_accepted')) {
         const banner = document.getElementById('legalBanner');
@@ -800,40 +818,36 @@ window.onload = function() {
     app.initFloatingWidget();
     if(app.feedback && app.feedback.init) app.feedback.init();
     
-    // --- MAGIA: GESTIÓN DEL TOKEN (DNI DEL NAVEGADOR) ---
-    let token = localStorage.getItem('arcade_session_token');
-    if (!token) {
-        // Creamos un UUID rudimentario si es la primera vez que entra
-        token = 'tk_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-        localStorage.setItem('arcade_session_token', token);
-    }
-    app.sessionToken = token;
-
-    // Contactamos al servidor con el Token
-    socket.emit('initSession', token, (res) => {
-        if (res.success && res.session.username) {
-            // El servidor nos conoce
-            app.myPlayerName = res.session.username;
-            app.isAuthenticatedUser = (res.session.is_authenticated === 1);
-            socket.emit('registerVisit', app.myPlayerName);
-        } else {
-            // Somos nuevos o nos hemos borrado el nombre
-            app.myPlayerName = null;
-            socket.emit('registerVisit', 'Anónimo');
-        }
-
-        // Una vez recuperada la identidad, intentamos recuperar la sala
-        const activeSession = app.findActiveSession();
-        if (activeSession) {
-            app.selectRoom(activeSession);
-        } else {
-            app.showScreen('hubScreen');
-        }
+    const savedGlobalName = localStorage.getItem('global_username');
+    if (savedGlobalName) {
+        let correctedName = savedGlobalName.toLowerCase();
         
-        // Eliminamos el localStorage antiguo de nombre para usar solo la sesión validada
-        localStorage.removeItem('global_username');
-    });
-    // ----------------------------------------------------
+        if (correctedName !== 'administrador m') {
+            correctedName = correctedName.replace(/[^a-z0-9]/g, '');
+        }
+
+        if (correctedName.length > 0) {
+            localStorage.setItem('global_username', correctedName);
+            app.myPlayerName = correctedName; 
+            
+            socket.emit('checkAuthRequirement', correctedName, (res) => {
+                if (res.needsPassword) {
+                    app.isAuthenticatedUser = true;
+                } else {
+                    app.isAuthenticatedUser = false;
+                }
+                if(app.currentScreenId) app.showScreen(app.currentScreenId, true);
+            });
+            
+            socket.emit('registerVisit', correctedName);
+        } else {
+            localStorage.removeItem('global_username');
+            app.myPlayerName = null;
+            socket.emit('registerVisit', 'Anónimo'); 
+        }
+    } else {
+        socket.emit('registerVisit', 'Anónimo');
+    }
 
     const nameInput = document.getElementById('username');
     if (nameInput) {
@@ -853,4 +867,11 @@ window.onload = function() {
             socket.emit('requestHubRooms');
         }
     }, 5000);
+
+    const activeSession = app.findActiveSession();
+    if (activeSession) {
+        app.selectRoom(activeSession);
+    } else {
+        app.showScreen('hubScreen');
+    }
 };

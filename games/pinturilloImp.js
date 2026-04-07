@@ -248,46 +248,71 @@ const handleSocket = (io, socket) => {
     });
 };
 
-const handleJoin = (socket, name, targetRoomId) => {
+const handleJoin = (socket, nameRaw, targetRoomId, data = {}) => {
+    const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
+    const uuid = data.uuid || socket.id;
     let roomId = targetRoomId;
-    if (!roomId || roomId === 'NEW') roomId = Utils.getRandomCapital(Object.keys(rooms));
+
+    if (!roomId || roomId === 'NEW') {
+        if (Object.keys(rooms).length >= 4) return socket.emit('joinError', 'Máximo de salas alcanzado.');
+        roomId = Utils.getRandomCapital(Object.keys(rooms));
+    }
     const room = ensureRoom(roomId);
-    
-    const existing = room.players.find(p => p.rawName.toLowerCase() === name.trim().toLowerCase());
-    if (existing) {
-        existing.socketId = socket.id;
-        existing.connected = true; 
+
+    socket.join('pintu_' + room.id);
+    socket.data.roomId = room.id;
+    socket.data.uuid = uuid;
+
+    let p = room.players.find(player => player.uuid === uuid);
+
+    if (p) {
+        if (p.timeout) clearTimeout(p.timeout);
+        p.socketId = socket.id;
+        p.connected = true;
+        p.name = cleanName;
     } else {
-        const p = Utils.createPlayer(socket.id, name);
-        p.isDead = false; p.votedFor = null;
-        if (room.players.length === 0) p.isAdmin = true;
+        const existingName = room.players.find(player => player.name.toLowerCase() === cleanName.toLowerCase());
+        if (existingName && existingName.connected) return socket.emit('joinError', 'Nombre en uso.');
+
+        p = Utils.createPlayer(socket.id, cleanName);
+        p.uuid = uuid;
+        p.isDead = false;
+        p.votedFor = null;
+
+        const lowerName = cleanName.toLowerCase();
+        if (room.players.length === 0 || ['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
+            p.isAdmin = true;
+        }
+        
         room.players.push(p);
     }
 
-    socket.data.roomId = roomId; 
-    socket.join('pintu_' + roomId); 
-    
-    const myPlayer = room.players.find(p => p.socketId === socket.id);
-
     socket.emit('pintuImpCategories', getPublicCategories());
-    socket.emit('joinedSuccess', { playerId: myPlayer.id, name, room: 'pinturilloImp', roomId });
+    socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'pinturilloImp', roomId: room.id });
     
     if(room.gameInProgress) {
         if(room.phase === 'DRAW') socket.emit('pintuImpCanvasHistory', room.canvasHistory);
-        if(room.turnData[myPlayer.id]) socket.emit('pintuImpRole', room.turnData[myPlayer.id]);
+        if(room.turnData[p.id]) socket.emit('pintuImpRole', room.turnData[p.id]);
     }
-    broadcast(socket.server, roomId);
+    
+    broadcast(socket.server, room.id);
 };
 
-const handleRejoin = (socket, savedId, savedRoomId) => {
+const handleRejoin = (socket, savedId, savedRoomId, data = {}) => {
     const room = rooms[savedRoomId];
     if (!room) return socket.emit('sessionExpired');
 
-    const p = room.players.find(x => x.id === savedId);
+    const uuid = data.uuid;
+    const p = room.players.find(x => x.uuid === uuid || x.id === savedId);
+    
     if(p) {
+        if (p.timeout) clearTimeout(p.timeout);
         p.socketId = socket.id; 
         p.connected = true;
+        p.uuid = uuid || p.uuid;
+        
         socket.data.roomId = savedRoomId;
+        socket.data.uuid = p.uuid;
         socket.join('pintu_' + savedRoomId);
         
         socket.emit('pintuImpCategories', getPublicCategories());

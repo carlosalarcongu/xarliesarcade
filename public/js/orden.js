@@ -7,7 +7,8 @@ app.orden = {
     syncSettings: () => {
         const cat = document.getElementById('ordenCategory').value;
         const diff = document.getElementById('ordenDifficulty').value;
-        app.orden.send('updateSettings', { category: cat, difficulty: diff });
+        const ch = document.getElementById('ordenChuletas')?.checked || false;
+        app.orden.send('updateSettings', { category: cat, difficulty: diff, chuletas: ch });
     },
 
     start: () => app.orden.send('start', {}),
@@ -15,9 +16,7 @@ app.orden = {
     
     toggleReady: () => app.orden.send('toggleReady', {}),
     
-    // Sugerir (Jugadores)
     suggest: (targetId, dir) => {
-        // Efecto visual instantáneo
         const btn = document.getElementById(`btn-${dir}-${targetId}`);
         if(btn) {
             btn.classList.add('pulse-anim');
@@ -26,7 +25,6 @@ app.orden = {
         app.orden.send('suggest', { targetId, dir });
     },
 
-    // Mover (Admin)
     move: (targetId, dir) => {
         app.orden.send('move', { targetId, dir });
     },
@@ -56,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     attach('ordenCategory');
     attach('ordenDifficulty');
+    attach('ordenChuletas');
 });
 
 socket.on('ordenPrivate', (valObj) => {
@@ -63,7 +62,6 @@ socket.on('ordenPrivate', (valObj) => {
     const wordEl = document.getElementById('ordenMyWord');
     if(wordEl) wordEl.innerText = valObj.val;
     
-    // Resetear visualización carta
     const card = document.getElementById('ordenCard');
     if(card) {
         card.classList.remove('reveal-content');
@@ -74,15 +72,13 @@ socket.on('ordenPrivate', (valObj) => {
 socket.on('updateOrden', (data) => {
     if (app.currentRoom !== 'orden') return;
 
-    const { players, orderedList, state, settings, categories } = data;
+    const { players, orderedList, state, settings, categories, wordPool } = data;
     const me = players.find(p => p.id === app.myPlayerId);
     if(me) app.orden.iAmAdmin = me.isAdmin;
 
-    // --- LOBBY ---
     if (state.phase === 'LOBBY') {
         app.showScreen('ordenLobby');
         
-        // Rellenar Selects
         const catSel = document.getElementById('ordenCategory');
         if (catSel && catSel.children.length === 0) {
             categories.forEach(c => {
@@ -90,14 +86,14 @@ socket.on('updateOrden', (data) => {
             });
         }
 
-        // Sync inputs
         if (settings) {
             if(!app.orden.iAmAdmin || document.activeElement !== catSel) catSel.value = settings.category;
             const diffSel = document.getElementById('ordenDifficulty');
             if(!app.orden.iAmAdmin || document.activeElement !== diffSel) diffSel.value = settings.difficulty;
+            const chSel = document.getElementById('ordenChuletas');
+            if(chSel && (!app.orden.iAmAdmin || document.activeElement !== chSel)) chSel.checked = settings.chuletas;
         }
 
-        // Panel Admin
         const adminPanel = document.getElementById('ordenAdminPanel');
         const waitMsg = document.getElementById('ordenWaitMsg');
         
@@ -106,15 +102,18 @@ socket.on('updateOrden', (data) => {
             waitMsg.classList.add('hidden');
             document.getElementById('ordenCategory').disabled = false;
             document.getElementById('ordenDifficulty').disabled = false;
+            const ch = document.getElementById('ordenChuletas');
+            if(ch) ch.disabled = false;
         } else {
             adminPanel.classList.remove('hidden');
             waitMsg.classList.remove('hidden');
             document.getElementById('ordenCategory').disabled = true;
             document.getElementById('ordenDifficulty').disabled = true;
+            const ch = document.getElementById('ordenChuletas');
+            if(ch) ch.disabled = true;
             document.getElementById('btnStartOrden').classList.add('hidden');
         }
 
-        // Lista Jugadores
         const list = document.getElementById('ordenPlayerList');
         list.innerHTML = players.map(p => `
             <li>
@@ -123,16 +122,24 @@ socket.on('updateOrden', (data) => {
             </li>
         `).join('');
     }
-
-    // --- JUEGO (PLAYING / RESULT) ---
     else {
         app.showScreen('ordenGame');
         
-        // RESULTADO
         const resArea = document.getElementById('ordenResultArea');
         const listArea = document.getElementById('ordenListArea');
         const controls = document.getElementById('ordenControls');
         const adminControls = document.getElementById('ordenAdminControls');
+
+        const chuletasArea = document.getElementById('ordenChuletasArea');
+        const chuletasList = document.getElementById('ordenChuletasList');
+        if(chuletasArea && chuletasList) {
+            if (settings.chuletas && wordPool && wordPool.length > 0) {
+                chuletasArea.classList.remove('hidden');
+                chuletasList.innerHTML = wordPool.map(w => `<div style="padding:3px; border-bottom:1px solid #444;">${w}</div>`).join('');
+            } else {
+                chuletasArea.classList.add('hidden');
+            }
+        }
 
         if (state.phase === 'RESULT') {
             resArea.classList.remove('hidden');
@@ -144,7 +151,6 @@ socket.on('updateOrden', (data) => {
             document.getElementById('ordenResultTitle').style.color = success ? "#2ed573" : "#ff4757";
             document.getElementById('ordenResultScore').innerText = `${state.result.score}% Ordenado`;
             
-            // --- NUEVO: RENDERIZAR LISTA CORRECTA CON NOMBRES ---
             const correctDiv = document.getElementById('ordenCorrectContainer');
             if (correctDiv && state.result.correctList) {
                 let html = '<h4 style="color:#aaa; margin-top:0; border-bottom:1px solid #555; padding-bottom:5px;">Orden Correcto:</h4><ul style="padding:0; list-style:none;">';
@@ -167,7 +173,6 @@ socket.on('updateOrden', (data) => {
             else document.getElementById('btnOrdenReset').classList.add('hidden');
 
         } else {
-            // Limpiar lista anterior si volvemos a jugar
             const correctDiv = document.getElementById('ordenCorrectContainer');
             if(correctDiv) correctDiv.innerHTML = "";
             
@@ -177,7 +182,6 @@ socket.on('updateOrden', (data) => {
             else adminControls.classList.add('hidden');
         }
 
-        // RENDERIZAR LISTA ORDENADA
         const ul = document.getElementById('ordenSortList');
         ul.innerHTML = "";
 
@@ -185,7 +189,6 @@ socket.on('updateOrden', (data) => {
             const li = document.createElement('li');
             li.className = "orden-item";
             if (state.phase === 'RESULT') {
-                // Modo Resultado: Mostrar valores
                 li.style.flexDirection = "column";
                 li.style.alignItems = "flex-start";
                 li.innerHTML = `
@@ -195,8 +198,6 @@ socket.on('updateOrden', (data) => {
                     </div>
                 `;
             } else {
-                // Modo Juego: Flechas y Votos
-                // Botones Admin vs Sugerencia
                 const upAction = app.orden.iAmAdmin ? `app.orden.move('${p.id}', 'up')` : `app.orden.suggest('${p.id}', 'up')`;
                 const downAction = app.orden.iAmAdmin ? `app.orden.move('${p.id}', 'down')` : `app.orden.suggest('${p.id}', 'down')`;
                 
@@ -230,7 +231,6 @@ socket.on('updateOrden', (data) => {
             ul.appendChild(li);
         });
 
-        // Botón Listo (Solo si no estás listo)
         const btnReady = document.getElementById('btnOrdenReady');
         if (me.isReady) {
             btnReady.innerText = "ESPERANDO...";

@@ -1,3 +1,4 @@
+// public/js/impostor.js
 app.impostor = {
     iAmAdmin: false,
     
@@ -75,8 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- LISTENERS DEL SOCKET ---
-
 socket.on('impostorCategories', (cats) => {
     const sel = document.getElementById('impostorCategory');
     if(sel) {
@@ -143,7 +142,6 @@ socket.on('updateState', (data) => {
 
     const list = document.getElementById('playerList');
     if(list) {
-        // En el lobby también quitamos la restricción para que el admin pueda echarse a sí mismo
         list.innerHTML = players.map(p => `
             <li>
                 <span>${p.name} ${p.isAdmin ? '👑' : ''} ${p.isObserver ? '👁️' : ''}</span>
@@ -193,7 +191,6 @@ socket.on('updateState', (data) => {
                     if (p.votesReceived > 0) html += `<div style="color:#ffa502; font-weight:900; font-size:1.2em;">${p.votesReceived} VOTOS</div>`;
                 }
 
-                // CONTROLES ADMIN (AQUÍ SE PERMITE AHORA HACERLO SOBRE SÍ MISMO)
                 if(app.impostor.iAmAdmin && !p.isObserver) {
                     html += `<div style="margin-top:5px; display:flex; justify-content:center; gap:5px; z-index:5;">
                         <button style="padding:2px 5px; background:#444; font-size:0.7em;" onclick="app.impostor.kill(event, '${p.id}')">💀</button>

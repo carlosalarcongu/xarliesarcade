@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config();
 
 const express = require('express');
@@ -13,11 +14,9 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- BASE DE DATOS DE USUARIOS Y SESIONES ---
 const db = new Database(path.join(__dirname, 'arcade.db'));
 db.prepare('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, email TEXT)').run();
 db.prepare('CREATE TABLE IF NOT EXISTS mus_whitelist (username TEXT PRIMARY KEY)').run();
-// NUEVA TABLA: Para recordar los navegadores de los jugadores (Token de Inmortalidad)
 db.prepare('CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, username TEXT, is_authenticated INTEGER, last_seen DATETIME)').run();
 
 const REQ_FILE = path.join(__dirname, 'pending_requests.json');
@@ -61,12 +60,9 @@ Object.keys(gamesModules).forEach(key => {
 io.on('connection', (socket) => {
     socket.setMaxListeners(30); 
 
-    // --- NUEVO: SISTEMA DE SESIONES INMORTALES ---
     socket.on('initSession', (token, callback) => {
-        // Buscamos si este navegador ya ha estado aquí antes
         const session = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token);
         if (session) {
-            // Actualizamos la hora de su última visita
             db.prepare('UPDATE sessions SET last_seen = CURRENT_TIMESTAMP WHERE token = ?').run(token);
             callback({ success: true, session });
         } else {
@@ -75,11 +71,9 @@ io.on('connection', (socket) => {
     });
 
     socket.on('updateSession', (data) => {
-        // Guardamos o actualizamos el estado del jugador en su navegador actual
         db.prepare('INSERT OR REPLACE INTO sessions (token, username, is_authenticated, last_seen) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
           .run(data.token, data.username, data.isAuthenticated ? 1 : 0);
     });
-    // ----------------------------------------------
 
     socket.on('checkAuthRequirement', (name, callback) => {
         const username = name.toLowerCase();
@@ -139,7 +133,6 @@ io.on('connection', (socket) => {
         if (callback) callback({ success: true });
     });
 
-    // --- PANEL DE ADMINISTRADORES ---
     socket.on('getAuthRequests', (adminName) => {
         if (!['musero', 'administrador m', 'xarlie'].includes((adminName || '').toLowerCase())) return;
         const requests = getRequests();
@@ -192,7 +185,6 @@ io.on('connection', (socket) => {
         socket.emit('updateMusWhitelist', musWhitelist);
     });
 
-    // --- MANEJO DE JUEGOS ---
     Object.keys(gamesModules).forEach(key => {
         const module = gamesModules[key];
         if (module && typeof module.handleSocket === 'function') {
@@ -216,29 +208,29 @@ io.on('connection', (socket) => {
         socket.emit('hubRoomsUpdate', allRooms);
     });
 
-    socket.on('joinRoom', ({ name, room, roomId }) => {
-        if (!name || !room) return;
-        const module = gamesModules[room];
+    socket.on('joinRoom', (data) => {
+        if (!data.name || !data.room) return;
+        const module = gamesModules[data.room];
         if (module && typeof module.handleJoin === 'function') {
-            module.handleJoin(socket, name, roomId);
+            module.handleJoin(socket, data.name, data.roomId, data);
         } else if (module && typeof module === 'function') {
-             if (room === 'lobo') require('./games/lobo').handleJoin(socket, name);
-             else if (room === 'anecdotas') require('./games/anecdotas').handleJoin(socket, name);
-             else if (room === 'elmas') require('./games/elmas').handleJoin(socket, name);
-             else if (room === 'pinturilloImp') require('./games/pinturilloImp').handleJoin(socket, name);
+             if (data.room === 'lobo') require('./games/lobo').handleJoin(socket, data.name);
+             else if (data.room === 'anecdotas') require('./games/anecdotas').handleJoin(socket, data.name);
+             else if (data.room === 'elmas') require('./games/elmas').handleJoin(socket, data.name);
+             else if (data.room === 'pinturilloImp') require('./games/pinturilloImp').handleJoin(socket, data.name);
         }
     });
 
-    socket.on('rejoin', ({ savedId, savedRoom, savedRoomId }) => {
-        if (!savedId || !savedRoom) return;
-        const module = gamesModules[savedRoom];
+    socket.on('rejoin', (data) => {
+        if (!data.savedId || !data.savedRoom) return;
+        const module = gamesModules[data.savedRoom];
         if (module && typeof module.handleRejoin === 'function') {
-            module.handleRejoin(socket, savedId, savedRoomId);
+            module.handleRejoin(socket, data.savedId, data.savedRoomId, data);
         } else {
-             if (savedRoom === 'lobo') require('./games/lobo').handleRejoin(socket, savedId);
-             else if (savedRoom === 'anecdotas') require('./games/anecdotas').handleRejoin(socket, savedId);
-             else if (savedRoom === 'elmas') require('./games/elmas').handleRejoin(socket, savedId);
-             else if (savedRoom === 'pinturilloImp') require('./games/pinturilloImp').handleRejoin(socket, savedId);
+             if (data.savedRoom === 'lobo') require('./games/lobo').handleRejoin(socket, data.savedId);
+             else if (data.savedRoom === 'anecdotas') require('./games/anecdotas').handleRejoin(socket, data.savedId);
+             else if (data.savedRoom === 'elmas') require('./games/elmas').handleRejoin(socket, data.savedId);
+             else if (data.savedRoom === 'pinturilloImp') require('./games/pinturilloImp').handleRejoin(socket, data.savedId);
         }
     });
 

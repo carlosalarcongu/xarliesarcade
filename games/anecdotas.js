@@ -1,6 +1,5 @@
 const Utils = require('./utils');
 
-// Almacén de salas
 const rooms = {};
 
 function createRoom(roomId) {
@@ -10,7 +9,7 @@ function createRoom(roomId) {
         gameInProgress: false,
         anecdoteQueue: [],
         currentRoundIndex: 0,
-        roundStage: 'LOBBY', // LOBBY, VOTING, REVEAL, PODIUM
+        roundStage: 'LOBBY', 
         inactivityTimer: null
     };
     return rooms[roomId];
@@ -75,10 +74,9 @@ const handleSocket = (io, socket) => {
         const room = rooms[roomId];
         if (!room) return socket.emit('error', 'Sala no encontrada.');
 
-        const me = room.players.find(p => p.socketId === socket.id);
+        const me = room.players.find(p => p.uuid === socket.data.uuid);
         if (!me) return;
 
-        // GUARDAR ANÉCDOTA
         if (action.type === 'saveAnecdote') {
             if (room.gameInProgress) return;
             const text = action.text.trim();
@@ -88,13 +86,11 @@ const handleSocket = (io, socket) => {
             }
         }
 
-        // KICK
         if (action.type === 'kick') {
             if (!me.isAdmin) return;
             handleLeave(action.targetId, roomId, io, true);
         }
 
-        // START
         if (action.type === 'start') {
             if (!me.isAdmin) return;
             
@@ -115,14 +111,12 @@ const handleSocket = (io, socket) => {
             broadcastRoom(io, roomId);
         }
 
-        // VOTAR
         if (action.type === 'vote') {
             if (!room.gameInProgress || room.roundStage !== 'VOTING') return;
             me.votedFor = action.targetId;
             broadcastRoom(io, roomId);
         }
 
-        // NEXT
         if (action.type === 'next') {
             if (!me.isAdmin || !room.gameInProgress) return;
 
@@ -148,7 +142,6 @@ const handleSocket = (io, socket) => {
             broadcastRoom(io, roomId);
 
             setTimeout(() => {
-                // Verificar que la sala sigue existiendo antes de continuar
                 if (!rooms[roomId]) return; 
                 
                 room.currentRoundIndex++;
@@ -182,7 +175,6 @@ const handleSocket = (io, socket) => {
             }, 5000);
         }
 
-        // RESET
         if (action.type === 'reset') {
             if (!me.isAdmin) return;
             room.gameInProgress = false;
@@ -205,8 +197,9 @@ const handleSocket = (io, socket) => {
     });
 };
 
-const handleJoin = (socket, nameRaw, targetRoomId) => {
+const handleJoin = (socket, nameRaw, targetRoomId, data = {}) => {
     const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
+    const uuid = data.uuid || socket.id;
     let room;
 
     if (!targetRoomId || targetRoomId === 'NEW') {
@@ -223,39 +216,56 @@ const handleJoin = (socket, nameRaw, targetRoomId) => {
 
     socket.join('anecdotas_' + room.id);
     socket.data.roomId = room.id;
+    socket.data.uuid = uuid;
 
-    const existing = room.players.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
-    if (existing) {
-        if (!existing.connected) return handleRejoin(socket, existing.id, room.id);
-        return socket.emit('joinError', 'Nombre en uso.');
+    let p = room.players.find(player => player.uuid === uuid);
+
+    if (p) {
+        if (p.timeout) clearTimeout(p.timeout);
+        p.socketId = socket.id;
+        p.connected = true;
+        p.name = cleanName;
+    } else {
+        const existingName = room.players.find(player => player.name.toLowerCase() === cleanName.toLowerCase());
+        if (existingName && existingName.connected) return socket.emit('joinError', 'Nombre en uso.');
+
+        p = Utils.createPlayer(socket.id, cleanName);
+        p.uuid = uuid;
+        p.anecdote = "";
+        p.votedFor = null;
+        p.score = 0;
+        
+        const lowerName = cleanName.toLowerCase();
+        if (room.players.length === 0 || ['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
+            p.isAdmin = true;
+        }
+
+        room.players.push(p);
     }
-
-    const basePlayer = Utils.createPlayer(socket.id, cleanName);
-    if(room.players.length === 0 || cleanName.toLowerCase() === 'admin') basePlayer.isAdmin = true;
-
-    const newPlayer = { ...basePlayer, anecdote: "", votedFor: null };
     
-    room.players.push(newPlayer);
-    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'anecdotas', roomId: room.id });
-    
+    socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'anecdotas', roomId: room.id });
     checkRoomInactivity(room.id);
     broadcastRoom(socket.server, room.id);
 };
 
-const handleRejoin = (socket, savedId, savedRoomId) => {
+const handleRejoin = (socket, savedId, savedRoomId, data = {}) => {
     const room = rooms[savedRoomId];
     if (!room) return socket.emit('sessionExpired');
 
-    const p = room.players.find(x => x.id === savedId);
+    const uuid = data.uuid;
+    const p = room.players.find(x => x.uuid === uuid || x.id === savedId);
+    
     if (p) {
-        if(p.timeout) clearTimeout(p.timeout);
+        if (p.timeout) clearTimeout(p.timeout);
         p.socketId = socket.id;
         p.connected = true;
+        p.uuid = uuid || p.uuid;
         
         socket.join('anecdotas_' + room.id);
         socket.data.roomId = room.id;
+        socket.data.uuid = p.uuid;
         
-        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'anecdotas', roomId: room.id, isRejoin: true });
+        socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'anecdotas', roomId: room.id, isRejoin: true });
         broadcastRoom(socket.server, room.id);
     } else {
         socket.emit('sessionExpired');
@@ -279,7 +289,6 @@ const handleLeave = (playerId, roomId, io, forced = false) => {
     checkRoomInactivity(roomId);
     
     if (room.players.length === 0) {
-        // Reset state opcional, pero mejor destruir si queda vacía
         room.gameInProgress = false;
         room.currentRoundIndex = 0;
     }

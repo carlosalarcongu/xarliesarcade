@@ -222,8 +222,9 @@ const handleSocket = (io, socket) => {
     });
 };
 
-const handleJoin = (socket, nameRaw, targetRoomId) => {
+const handleJoin = (socket, nameRaw, targetRoomId, data = {}) => {
     const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
+    const uuid = data.uuid || socket.id;
     let room;
 
     if (!targetRoomId || targetRoomId === 'NEW') {
@@ -240,40 +241,56 @@ const handleJoin = (socket, nameRaw, targetRoomId) => {
 
     socket.join('elmas_' + room.id);
     socket.data.roomId = room.id;
+    socket.data.uuid = uuid;
 
-    const existing = room.players.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
-    if (existing) {
-        if (!existing.connected) return handleRejoin(socket, existing.id, room.id);
-        return socket.emit('joinError', 'Nombre en uso.');
+    let p = room.players.find(player => player.uuid === uuid);
+
+    if (p) {
+        if (p.timeout) clearTimeout(p.timeout);
+        p.socketId = socket.id;
+        p.connected = true;
+        p.name = cleanName;
+    } else {
+        const existingName = room.players.find(player => player.name.toLowerCase() === cleanName.toLowerCase());
+        if (existingName && existingName.connected) return socket.emit('joinError', 'Nombre en uso.');
+
+        const basePlayer = Utils.createPlayer(socket.id, cleanName);
+        p = { ...basePlayer, votedFor: null, score: 0 };
+        p.uuid = uuid;
+        
+        const lowerName = cleanName.toLowerCase();
+        if (room.players.length === 0 || ['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
+            p.isAdmin = true;
+        }
+
+        room.players.push(p);
     }
-
-    const basePlayer = Utils.createPlayer(socket.id, cleanName);
-    const newPlayer = { ...basePlayer, votedFor: null, score: 0 };
     
-    if (room.players.length === 0 || cleanName.toLowerCase() === 'admin') newPlayer.isAdmin = true;
-    
-    room.players.push(newPlayer);
-    
-    socket.emit('joinedSuccess', { playerId: newPlayer.id, name: newPlayer.name, room: 'elmas', roomId: room.id });
+    socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'elmas', roomId: room.id });
     
     checkRoomInactivity(room.id);
     broadcastRoom(socket.server, room.id);
 };
 
-const handleRejoin = (socket, savedId, savedRoomId) => {
+const handleRejoin = (socket, savedId, savedRoomId, data = {}) => {
     const room = rooms[savedRoomId];
+    
     if (!room) return socket.emit('sessionExpired');
 
-    const p = room.players.find(x => x.id === savedId);
+    const uuid = data.uuid;
+    const p = room.players.find(x => x.uuid === uuid || x.id === savedId);
+    
     if (p) {
-        if(p.timeout) clearTimeout(p.timeout);
+        if (p.timeout) clearTimeout(p.timeout);
         p.socketId = socket.id;
         p.connected = true;
+        p.uuid = uuid || p.uuid;
         
         socket.join('elmas_' + room.id);
         socket.data.roomId = room.id;
+        socket.data.uuid = p.uuid;
         
-        socket.emit('joinedSuccess', { playerId: savedId, name: p.name, room: 'elmas', roomId: room.id, isRejoin: true });
+        socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'elmas', roomId: room.id, isRejoin: true });
         broadcastRoom(socket.server, room.id);
     } else {
         socket.emit('sessionExpired');

@@ -1,3 +1,4 @@
+// games/impostor.js
 const database = require('./database');
 const Utils = require('./utils');
 
@@ -65,7 +66,7 @@ function broadcastRoom(io, roomId) {
         hasVoted: !!p.votedFor,
         votesReceived: room.players.filter(v => v.votedFor === p.id).length,
         revealedRole: (p.isDead && room.turnData[p.id]) ? room.turnData[p.id].role : null,
-        gameWord: p.gameWord // NUEVO: La palabra que han dicho en su turno
+        gameWord: p.gameWord 
     }));
 
     let currentTurnId = null;
@@ -87,11 +88,9 @@ function getPublicCategories() {
     return Object.keys(database).map(k => ({ id: k, label: database[k].label || k }));
 }
 
-// NUEVO: Función para calcular porcentajes de voto y notificar eliminación
 function notifyElimination(room, eliminatedPlayer) {
     if (!room.settings.silentMode) return;
     
-    // Contar votos activos (jugadores vivos que no son observadores)
     const validVoters = room.players.filter(p => !p.isDead && !p.isObserver);
     const totalVotesMade = validVoters.filter(p => p.votedFor !== null).length;
     
@@ -105,7 +104,6 @@ function notifyElimination(room, eliminatedPlayer) {
             type: 'system_elimination'
         });
     } else {
-        // Asesinato directo de admin
         room.chatHistory.push({
             name: "SISTEMA",
             text: `💀 <b>${eliminatedPlayer.name}</b> ha sido ELIMINADO por el Administrador. Era: ${room.turnData[eliminatedPlayer.id]?.role || '?'}`,
@@ -123,7 +121,7 @@ const handleSocket = (io, socket) => {
         const room = rooms[roomId];
         if (!room) return;
 
-        const me = room.players.find(p => p.socketId === socket.id);
+        const me = room.players.find(p => p.uuid === socket.data.uuid);
         if (!me) return; 
 
         if (action.type === 'updateSettings' && me.isAdmin) {
@@ -134,29 +132,24 @@ const handleSocket = (io, socket) => {
             broadcastRoom(io, roomId);
         }
 
-        // --- SISTEMA DE CHAT CON ANTI-SPAM ---
         if (action.type === 'chat') {
-            // Verificar si está baneado
             if (me.chatBanUntil && Date.now() < me.chatBanUntil) {
-                return; // Bloqueado silenciosamente
+                return; 
             } else if (me.chatBanUntil) {
-                me.chatBanUntil = null; // Quitar ban caducado
+                me.chatBanUntil = null; 
             }
 
             const msgText = String(action.value).trim().substring(0, 100);
             if(msgText) {
-                // Control Anti-Spam Automático
                 const now = Date.now();
                 if (!me.msgTimestamps) me.msgTimestamps = [];
                 me.msgTimestamps.push(now);
                 
-                // Limpiar timestamps más antiguos de 10 segundos
                 me.msgTimestamps = me.msgTimestamps.filter(t => now - t < 10000);
                 
-                // Si ha enviado más de 5 en los últimos 10s -> BAN
                 if (me.msgTimestamps.length > 5) {
-                    me.chatBanUntil = now + 10000; // 10s ban
-                    me.msgTimestamps = []; // Reset
+                    me.chatBanUntil = now + 10000; 
+                    me.msgTimestamps = []; 
                     
                     room.chatHistory.push({
                         name: "SISTEMA",
@@ -178,7 +171,6 @@ const handleSocket = (io, socket) => {
                 if (currentTurnId === me.id && !me.isDead) {
                     const wordText = String(action.value).trim().substring(0, 50);
                     if(wordText) {
-                        // NUEVO: Guardar la palabra en el perfil del jugador
                         me.gameWord = wordText;
 
                         room.chatHistory.push({ name: me.name, text: wordText, type: 'gameWord' });
@@ -211,7 +203,7 @@ const handleSocket = (io, socket) => {
             
             room.players.forEach(p => { 
                 p.isDead = false; p.votedFor = null; p.isObserver = false; 
-                p.gameWord = null; // Limpiar palabras anteriores
+                p.gameWord = null; 
                 p.msgTimestamps = [];
                 p.chatBanUntil = null;
             });
@@ -258,7 +250,6 @@ const handleSocket = (io, socket) => {
             }, 3500);
         }
 
-        // --- VOTACIONES CON NOTIFICACIÓN CHAT ---
         if (action.type === 'vote' && room.gameInProgress && !me.isDead && !me.isObserver) {
             me.votedFor = (me.votedFor === action.targetId) ? null : action.targetId;
             
@@ -280,11 +271,10 @@ const handleSocket = (io, socket) => {
         if (me.isAdmin) {
              if (action.type === 'kick') handleLeave(action.targetId, roomId, io, true); 
              
-             // NUEVO: Ban manual
              if (action.type === 'banChat') {
                 const p = room.players.find(pl => pl.id === action.targetId);
                 if (p) {
-                    p.chatBanUntil = Date.now() + 10000; // 10s
+                    p.chatBanUntil = Date.now() + 10000; 
                     room.chatHistory.push({
                         name: "SISTEMA",
                         text: `🚫 El Admin ha silenciado a <b>${p.name}</b> por 10s.`,
@@ -302,7 +292,7 @@ const handleSocket = (io, socket) => {
                     if (!p.isDead) p.votedFor = null;
                     else {
                         io.to(p.socketId).emit('youDied'); 
-                        notifyElimination(room, p); // Llamada a la notificación
+                        notifyElimination(room, p); 
                         
                         if(room.gameInProgress && room.settings.silentMode) {
                             if(room.turn.currentIndex < room.turn.order.length) {
@@ -356,12 +346,11 @@ const handleSocket = (io, socket) => {
     });
 };
 
-// ... handleJoin, handleRejoin, handleLeave ...
-// (El resto de la lógica de conexión no cambia, te dejo la base normal)
-
-const handleJoin = (socket, nameRaw, targetRoomId) => {
+const handleJoin = (socket, nameRaw, targetRoomId, data = {}) => {
     const cleanName = nameRaw.replace(/👑|👤/g, '').trim();
+    const uuid = data.uuid || socket.id;
     let room;
+
     if (!targetRoomId || targetRoomId === 'NEW') {
         if (Object.keys(rooms).length >= 4) return socket.emit('joinError', 'Máximo de salas alcanzado.');
         const newId = Utils.getRandomCapital(Object.keys(rooms));
@@ -373,39 +362,62 @@ const handleJoin = (socket, nameRaw, targetRoomId) => {
              else return socket.emit('joinError', 'La sala no existe.');
         }
     }
+
     socket.join('impostor_' + room.id);
-    socket.data.roomId = room.id; 
-    const existing = room.players.find(p => p.name.toLowerCase() === cleanName.toLowerCase());
-    if (existing) {
-        if (!existing.connected) return handleRejoin(socket, existing.id, room.id);
-        return socket.emit('joinError', 'Nombre en uso.');
+    socket.data.roomId = room.id;
+    socket.data.uuid = uuid;
+
+    let p = room.players.find(player => player.uuid === uuid);
+
+    if (p) {
+        if (p.timeout) clearTimeout(p.timeout);
+        p.socketId = socket.id;
+        p.connected = true;
+        p.name = cleanName;
+    } else {
+        const existingName = room.players.find(player => player.name.toLowerCase() === cleanName.toLowerCase());
+        if (existingName && existingName.connected) return socket.emit('joinError', 'Nombre en uso.');
+        
+        p = Utils.createPlayer(socket.id, cleanName);
+        p.uuid = uuid;
+        
+        if (room.players.length === 0 || ['administrador m', 'xarlie', 'musero'].includes(cleanName.toLowerCase())) {
+            p.isAdmin = true;
+        }
+        
+        if (room.gameInProgress) p.isObserver = true;
+        room.players.push(p);
     }
-    const p = Utils.createPlayer(socket.id, cleanName);
-    if (room.players.length === 0 || cleanName.toLowerCase() === 'admin' || cleanName.toLowerCase() === 'xarlie') p.isAdmin = true;
-    if (room.gameInProgress) p.isObserver = true;
-    room.players.push(p);
+
     socket.emit('impostorCategories', getPublicCategories());
     socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'impostor', roomId: room.id });
     checkRoomInactivity(room.id); 
     broadcastRoom(socket.server, room.id);
 };
 
-const handleRejoin = (socket, savedId, savedRoomId) => {
+const handleRejoin = (socket, savedId, savedRoomId, data = {}) => {
     const room = rooms[savedRoomId];
     if (!room) return socket.emit('sessionExpired');
-    const p = room.players.find(x => x.id === savedId);
-    if(p) {
+    
+    const uuid = data.uuid;
+    const p = room.players.find(x => x.uuid === uuid || x.id === savedId);
+    
+    if (p) {
         if (p.timeout) clearTimeout(p.timeout);
         p.socketId = socket.id;
         p.connected = true;
+        p.uuid = uuid || p.uuid;
         socket.join('impostor_' + room.id);
         socket.data.roomId = room.id;
+        socket.data.uuid = p.uuid;
         socket.emit('impostorCategories', getPublicCategories());
         socket.emit('joinedSuccess', { playerId: p.id, name: p.name, room: 'impostor', roomId: room.id, isRejoin: true });
-        if(room.gameInProgress && room.turnData[p.id]) socket.emit('privateRole', room.turnData[p.id]);
+        if (room.gameInProgress && room.turnData[p.id]) socket.emit('privateRole', room.turnData[p.id]);
         checkRoomInactivity(room.id);
         broadcastRoom(socket.server, room.id);
-    } else socket.emit('sessionExpired');
+    } else {
+        socket.emit('sessionExpired');
+    }
 };
 
 const handleLeave = (playerId, roomId, io, forced = false) => {

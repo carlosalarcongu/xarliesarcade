@@ -1113,6 +1113,10 @@
                     <option value="HARD">Difícil (Random)</option>
                 </select>
             </div>
+            <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                <span>Chuletas:</span>
+                <input type="checkbox" id="ordenChuletas" style="width:20px; height:20px;">
+            </div>
             <button id="btnStartOrden" class="start-btn" onclick="app.orden.start()">▶️ EMPEZAR</button>
         </div>
         
@@ -1134,6 +1138,14 @@
 
         <div id="ordenListArea" style="width:100%; margin-bottom: 20px;">
             <ul id="ordenSortList"></ul>
+        </div>
+
+        <div id="ordenChuletasArea" class="hidden card" style="background: #2f3542; padding: 15px; border-radius: 10px; border: 2px dashed #00cec9; margin-bottom: 20px;">
+            <h4 style="color:#00cec9; margin-top:0; text-align:left; display:flex; justify-content:space-between;">
+                📝 Posibles Valores
+                <button onclick="document.getElementById('ordenChuletasList').classList.toggle('hidden')" class="kick-btn" style="padding:2px 8px; width:auto; margin:0; background:#444;">👁️</button>
+            </h4>
+            <div id="ordenChuletasList" class="hidden" style="max-height:150px; overflow-y:auto; text-align:left; color:#ccc; font-size:0.85em; margin-top:10px;"></div>
         </div>
 
         <div id="ordenResultArea" class="hidden" style="text-align:center; margin-bottom:20px; background:#2f3542; padding:15px; border-radius:10px;">
@@ -1605,6 +1617,10 @@
                     <span>Modo Silencioso:</span>
                     <input type="checkbox" id="torresSilent" style="width:20px; height:20px;">
                 </div>
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0 0 0; justify-content:space-between;">
+                    <span>Chuletas (Ver palabras):</span>
+                    <input type="checkbox" id="torresChuletas" style="width:20px; height:20px;">
+                </div>
             </div>
             <button class="start-btn" onclick="app.torres.startGame()">▶️ EMPEZAR PARTIDA</button>
         </div>
@@ -1626,6 +1642,13 @@
             <h3 style="margin:0; color:#aaa;">TU PALABRA:</h3>
             <p id="torresMyWord" style="font-size: 2.5em; font-weight: 900; color: #fff; margin: 10px 0;">???</p>
             <p style="font-size: 0.8em; color: #7f8fa6;">Adivina qué eres haciendo preguntas.</p>
+            <div id="torresChuletasArea" class="hidden card" style="background: #2f3542; padding: 15px; border-radius: 10px; border: 2px dashed #f1c40f; margin-bottom: 20px;">
+                <h4 style="color:#f1c40f; margin-top:0; text-align:left; display:flex; justify-content:space-between;">
+                    📝 Posibles Palabras
+                    <button onclick="document.getElementById('torresChuletasList').classList.toggle('hidden')" class="kick-btn" style="padding:2px 8px; width:auto; margin:0; background:#444;">👁️ Ver / Ocultar</button>
+                </h4>
+                <div id="torresChuletasList" class="hidden" style="max-height:150px; overflow-y:auto; text-align:left; color:#ccc; font-size:0.85em; margin-top:10px;"></div>
+            </div>
         </div>
 
         <div id="torresSilentArea" class="hidden" style="width:100%; margin-bottom:20px;">
