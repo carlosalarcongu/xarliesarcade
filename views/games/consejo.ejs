@@ -1,0 +1,44 @@
+<div id="consejoScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Salir</button>
+        </div>
+        
+        <h2 style="color:#ecf0f1; font-family:'Cinzel', serif;">🦉 Consejo de Sabios</h2>
+
+        <div class="admin-panel">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px;">
+                <h4 style="margin:0 0 10px 0; color:#aaa;">👥 Los Sabios</h4>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="consejoNameInput" placeholder="Nombre..." style="margin:0; text-align:left;">
+                    <button class="main-btn" onclick="app.consejo.addName()" style="width:auto; padding:0 20px; margin:0;">+</button>
+                </div>
+                <div id="consejoNamesList" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <h4 style="margin:0 0 10px 0; color:#aaa;">📜 El Tema</h4>
+                <div class="control-row">
+                    <span>Categoría:</span>
+                    <select id="consejoTopicSelect" style="width: 60%;"></select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button class="main-btn" onclick="app.consejo.spinQuestion()" style="background:#3498db; color:white;">❓ Pregunta</button>
+                <button class="main-btn" onclick="app.consejo.spinPlayer()" style="background:#9b59b6; color:white;">👉 Elegido</button>
+            </div>
+        </div>
+
+        <div id="consejoResultArea" class="hidden" style="width:100%; text-align:center;">
+            
+            <div id="consejoQuestionCard" class="card hidden" style="background: linear-gradient(135deg, #2c3e50, #000); border: 2px solid #3498db; min-height: 150px; display:flex; align-items:center; justify-content:center;">
+                <p id="consejoQuestionText" style="font-size: 1.4em; font-weight:bold; color: #ecf0f1; font-family: 'Poppins', sans-serif;">...</p>
+            </div>
+
+            <div id="consejoPlayerCard" class="card hidden" style="background: linear-gradient(135deg, #4a235a, #000); border: 2px solid #9b59b6; margin-top:15px;">
+                <div style="font-size:0.9em; color:#aaa; text-transform:uppercase;">El elegido es:</div>
+                <div id="consejoPlayerText" style="font-size: 2.5em; font-weight:900; color: #fff; margin-top:5px;">...</div>
+            </div>
+        </div>
+    </div>
+

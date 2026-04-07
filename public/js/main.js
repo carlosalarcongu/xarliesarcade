@@ -268,7 +268,7 @@ window.app = {
             'fiestaScreen', 'statsSelectionScreen',
             'fifaScreen', 'torresLobby', 'torresGame',
             'darkstoriesScreen', 'beberScreen', 'beberStatsScreen',
-            'analyticsScreen', 'authAdminScreen', 'musVueApp'
+            'analyticsScreen', 'authAdminScreen'
         ];
         
         screens.forEach(s => {
@@ -359,13 +359,7 @@ window.app = {
         }
 
         if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber', 'analytics'].includes(room)) {
-            if(room === 'mus') { 
-                app.showScreen('musVueApp'); 
-                window.dispatchEvent(new CustomEvent('iniciar-mus', { 
-                    detail: { jugador: app.myPlayerName } 
-                }));
-                return; 
-            }            
+            if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
             if(room === 'trivial') { if(app.trivial.init) app.trivial.init(); return; }

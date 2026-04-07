@@ -1,0 +1,121 @@
+<div id="impostorLobby" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h2 style="color:#ffa502">🕵️ Impostor Lobby</h2>
+        
+        <div id="impostorAdminPanel" class="hidden admin-panel">
+            <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #444;">
+                
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Impostores:</span>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <button onclick="app.impostor.changeImpostors(-1)" style="width:30px; height:30px; padding:0;">-</button>
+                        <span id="impostorCountDisp" style="font-weight:bold; width:20px; text-align:center">1</span>
+                        <button onclick="app.impostor.changeImpostors(1)" style="width:30px; height:30px; padding:0;">+</button>
+                    </div>
+                </div>
+
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                    <span>Categoría:</span>
+                    <select id="impostorCategory" style="width:120px; border-radius:5px; padding:2px;"></select>
+                </div>
+
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Pistas:</span>
+                    <input type="checkbox" id="impostorHints" style="width:20px; height:20px;">
+                </div>
+
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0 0 0; justify-content:space-between; border-top:1px solid #444; padding-top:5px;">
+                    <span>Modo Silencioso:</span>
+                    <input type="checkbox" id="impostorSilent" style="width:20px; height:20px;">
+                </div>
+            </div>
+            <button class="start-btn" onclick="app.impostor.startGame()">▶️ EMPEZAR PARTIDA</button>
+        </div>
+
+        <p id="waitMsg" style="color:#aaa; font-style:italic;">Esperando al administrador...</p>
+        <h3>Jugadores (<span id="playerCount">0</span>)</h3>
+        <ul id="playerList"></ul>
+    </div>
+
+<div id="impostorGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>    
+        
+        <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px;">
+            <h2 style="margin:0">En Curso</h2>
+        </div>
+
+        <div id="observerMsg" class="hidden" style="background:#e67e22; color:white; padding:10px; border-radius:5px; margin-bottom:15px; font-weight:bold; border:2px solid #d35400;">
+            👁️ Solo eres un observador en esta partida, espera a la siguiente...
+        </div>
+
+        <div id="roleCard" class="blur-content" onclick="app.impostor.toggleRole()">
+            <h1 id="myRoleTitle">...</h1>
+            <p id="myRoleWord" style="font-size: 2em; font-weight: 900; color: #ffeaa7; margin: 10px 0;">...</p>
+            <p id="myRoleInfo" style="font-size: 0.9em; color: #ccc;">...</p>
+        </div>
+        <div class="card-note">👆 Clicar o mantener para ver rol</div>
+        
+        <div style="font-size: 0.8em; color:#888; margin-bottom: 20px;">
+            Iniciador: <span id="starterName" style="color:white">...</span> | Cat: <span id="catsPlayed" style="color:white">...</span>
+        </div>
+
+        <div id="voteSection" class="hidden" style="width:100%">
+            <h3 style="color:#ff4757">🗳️ ¡VOTAR AL IMPOSTOR!</h3>
+            
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px; gap: 5px;">
+                 <button id="btnShowResults" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px; background:#ffa502;" onclick="app.impostor.revealResults()">👁️ Resultados</button>
+                 <button id="btnEndVoting" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px;" onclick="app.impostor.resetGame()">⏹️ Finalizar</button>
+                 <button id="btnClearVotes" class="kick-btn hidden" style="width:auto; font-size:0.8em; padding:5px 10px; background:#555;" onclick="app.impostor.clearVotes()">Limpiar Votos</button>
+            </div>
+            
+            <div id="voteGrid" class="vote-grid"></div>
+        </div>
+
+        <div id="impostorSilentArea" class="hidden" style="width:100%; margin-top:20px; border-top:1px solid #555; padding-top:15px;">
+            <h3 style="color:#00cec9; margin-top:0; display:flex; align-items:center; gap:5px;">
+                🤫 Modo Silencioso <span style="font-size:0.6em; color:#aaa; font-weight:normal;">(Por turnos)</span>
+            </h3>
+
+            <div id="impostorSpokenWords" style="background:#1e272e; padding:10px; border-radius:5px; border-left:3px solid #00cec9; margin-bottom:10px; font-size:0.85em; text-align:left; overflow-x:auto; white-space:nowrap;">
+                </div>
+            
+            <div id="impostorChatLog" style="background:#222; height:200px; overflow-y:auto; padding:10px; border-radius:5px; border:1px solid #444; margin-bottom:10px; font-size:0.9em; text-align:left;">
+                <div style="color:#aaa; font-style:italic;">La partida ha comenzado...</div>
+            </div>
+
+            <div style="display:flex; gap:5px; margin-bottom:5px;">
+                <input type="text" id="impostorInput" placeholder="Escribe aquí..." style="flex:1; padding:10px; border-radius:5px; border:none;" autocomplete="off">
+            </div>
+
+            <div style="display:flex; gap:5px;">
+                <button id="btnImpWord" onclick="app.impostor.sendWord()" class="main-btn" style="background:#0984e3; flex:1; font-size:0.9em;">🖊️ PALABRA (Juego)</button>
+                <button id="btnImpChat" onclick="app.impostor.sendChat()" class="main-btn" style="background:#636e72; flex:1; font-size:0.9em;">💬 Conversación</button>
+            </div>
+            
+            <div id="turnIndicator" style="color:#e1b12c; font-weight:bold; margin-top:10px; min-height:20px; font-size:0.9em; background:rgba(225, 177, 44, 0.1); padding:5px; border-radius:5px;">
+                Esperando turno...
+            </div>
+        </div>
+
+        <div id="countdownOverlay" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; display:flex; justify-content:center; align-items:center;">
+            <div id="countdownNumber" style="font-size:10em; color:#ff4757; font-weight:900;">3</div>
+        </div>
+
+        <div id="summaryModal" class="hidden modal-overlay">
+            <h1 style="color:#e17055; font-size:3em;">RESUMEN</h1>
+            <h2 id="sumWord" style="color:#ffeaa7; font-size:2.5em; margin:10px 0;"></h2>
+            <p id="sumHint" style="color:#ccc"></p>
+            <div style="background:#ff4757; color:white; padding:10px; width:100%; border-radius:10px; margin:20px 0;">
+                <h3>🔪 Eran Impostores:</h3>
+                <div id="sumImpostors" style="font-size:1.5em; font-weight:bold;"></div>
+            </div>
+            <button onclick="document.getElementById('summaryModal').classList.add('hidden')" class="main-btn">Continuar</button>
+        </div>
+    </div>
+

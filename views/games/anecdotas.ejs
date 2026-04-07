@@ -1,0 +1,45 @@
+<div id="anecdotasLobby" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h2 style="color:#ff9ff3">📜 Anécdotas</h2>
+        <div class="card" style="background:#dfe6e9; border:none;">
+            <h3 style="color:#2d3436">Tu historia:</h3>
+            <textarea id="anecdotaInput" class="anecdota-input" placeholder="Cuenta algo breve..."></textarea>
+            <button id="saveAnecdotaBtn" class="main-btn" onclick="app.anecdotas.save()" style="background:#6c5ce7;">💾 Listo</button>
+        </div>
+        <ul id="anecdotasList"></ul>
+        <button id="anecdotasStartBtn" class="start-btn hidden" onclick="app.anecdotas.start()">▶️ EMPEZAR</button>
+    </div>
+
+<div id="anecdotasGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <div id="anecdotasRevealModal" class="hidden modal-overlay">
+            <h2 style="color:#ccc">El autor era...</h2>
+            <h1 style="color:#2ed573; font-size:3.5em; margin:20px 0;" id="revealAuthor">...</h1>
+            <div id="revealVoters" style="color:#fff; font-weight:bold;"></div>
+            <p style="color:#aaa; margin-top:30px;">Siguiente en 5s...</p>
+        </div>
+        <div id="anecdotasPodiumModal" class="hidden modal-overlay">
+            <h1 style="color:#f1c40f; margin-bottom:30px;">🏆 GANADORES</h1>
+            <div class="podium-container">
+                <div class="podium-bar p-silver"><span class="p-name" id="anecPodium2">...</span>🥈</div>
+                <div class="podium-bar p-gold"><span class="p-name" id="anecPodium1">...</span>🥇</div>
+                <div class="podium-bar p-bronze"><span class="p-name" id="anecPodium3">...</span>🥉</div>
+            </div>
+            <button onclick="app.anecdotas.reset()" class="main-btn" style="margin-top:30px">Volver al Lobby</button>
+        </div>
+        <h3 id="roundCounter" style="color:#aaa">Ronda 1</h3>
+        <div class="anecdota-card">
+            <p id="currentAnecdotaText">...</p>
+        </div>
+        <p style="text-align:center; margin-bottom:10px;">¿De quién es?</p>
+        <div id="votingGrid" class="vote-grid"></div>
+        <button id="nextRoundBtn" class="main-btn hidden" onclick="app.anecdotas.next()">Siguiente ➡</button>
+        <button onclick="app.anecdotas.reset()" class="kick-btn hidden" style="margin-top:20px">Reset Total</button>
+    </div>
+

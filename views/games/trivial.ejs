@@ -1,0 +1,100 @@
+<div id="trivialScreen" class="hidden">
+        
+        <div class="back-nav">
+            <button onclick="app.goBackToHub(true)">🚪 Salir</button>
+            <div id="trivialTurnIndicator" class="turn-badge" style="background:#2f3542; color:white; padding:5px 10px; border-radius:15px; border:1px solid #7f8fa6;">Turno: ...</div>
+        </div>
+
+        <div id="trivialLobby" class="hidden">
+            <h1 style="color:#f1c40f; font-family:'Times New Roman', serif; text-transform: uppercase; letter-spacing: 2px;">🧀 Trivial Pursuit</h1>
+            
+            <div id="trivTeamList" class="team-grid"></div>
+
+            <div class="triv-admin-only hidden admin-panel" style="margin-top:20px;">
+                <h3 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px;">Configuración</h3>
+                <div style="display:flex; gap:10px; justify-content:center; margin-bottom:10px;">
+                    <button class="kick-btn" onclick="app.trivial.addTeam()" style="width:auto; font-size:0.8em;">+ Equipo</button>
+                </div>
+                <button class="start-btn" onclick="app.trivial.startGame()">▶️ COMENZAR PARTIDA</button>
+            </div>
+            <p id="trivWaitMsg" style="color:#aaa; font-style:italic; margin-top:20px;">Esperando al administrador...</p>
+        </div>
+
+        <div id="trivialGame" class="hidden" style="width:100%;">
+            
+            <div id="trivHUD" class="triv-hud-container"></div>
+
+            <div class="triv-board-wrapper">
+                <div id="trivialBoardNodes"></div>
+                
+                <div class="dice-stage">
+                    <div id="diceCube" class="dice-cube">
+                        <div class="dice-face df-1">⚀</div>
+                        <div class="dice-face df-2">⚁</div>
+                        <div class="dice-face df-3">⚂</div>
+                        <div class="dice-face df-4">⚃</div>
+                        <div class="dice-face df-5">⚄</div>
+                        <div class="dice-face df-6">⚅</div>
+                    </div>
+                </div>
+                <div id="diceTrigger" class="dice-trigger hidden" onclick="app.trivial.rollDice()"></div>
+            </div>
+
+            <div id="trivLog" class="triv-log-container"></div>
+
+            <div id="trivCardOverlay" class="card-overlay hidden">
+                <div class="triv-card-container">
+                    <div id="trivCardInner" class="triv-card-inner">
+                        
+                        <div class="triv-card-front" id="trivFrontStyle">
+                            <div id="qIcon" style="font-size:3em; margin-bottom:10px;">🌍</div>
+                            <h3 id="qCat" style="text-transform:uppercase; letter-spacing:2px; margin-bottom:20px;">GEO</h3>
+                            <p id="qText" style="font-size:1.3em; font-weight:bold; line-height:1.4;">¿Pregunta?</p>
+                            
+                            <div id="trivActiveLockMsg" class="hidden" style="margin-top:auto; color:#e74c3c; font-weight:bold; font-size:0.9em; background:rgba(255,255,255,0.9); padding:10px; border-radius:5px;">
+                                🚫 TU EQUIPO JUEGA <br> No puedes ver la respuesta
+                            </div>
+                        </div>
+
+                        <div class="triv-card-back">
+                            <div style="font-size:3em; margin-bottom:10px;">💡</div>
+                            <h3 style="color:#aaa">Respuesta:</h3>
+                            <p id="qAns" style="font-size:1.6em; font-weight:bold; color:#f1c40f; margin:20px 0;">Respuesta</p>
+                            
+                            <div id="trivAdminCtrls" class="hidden" style="width:100%; display:flex; gap:10px; margin-top:auto;">
+                                <button onclick="app.trivial.validate(false)" class="kick-btn" style="border-color:#e74c3c; color:#e74c3c; background:white;">❌ FALLO</button>
+                                <button onclick="app.trivial.validate(true)" class="kick-btn" style="border-color:#2ed573; color:#2ed573; background:white;">✅ ACIERTO</button>
+                            </div>
+                        </div>
+
+                        <div id="trivBackMask" class="hidden" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#2f3542; border-radius:15px; backface-visibility:hidden; transform: rotateY(180deg); display:flex; justify-content:center; align-items:center; z-index:20;">
+                            <span style="font-size:3em">🔒</span>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <button id="btnFlipTriv" class="main-btn" onclick="app.trivial.flipCard()" style="margin-top:20px; width:auto; padding:10px 40px; background:white; color:black; border:2px solid black; font-weight:bold;">🔄 VOLTEAR TARJETA</button>
+            </div>
+
+            <button class="triv-admin-only hidden mini-fab" onclick="document.getElementById('trivAdminPanel').classList.remove('hidden')">⚙️</button>
+        </div>
+
+        <div id="trivialPodium" class="hidden">
+            <h1 style="color:#f1c40f">🏆 RESULTADOS 🏆</h1>
+            <div id="trivPodiumList" style="width:100%; max-width:400px; margin-top:20px;"></div>
+            <button class="triv-admin-only hidden main-btn" onclick="app.trivial.backToLobby()" style="margin-top:20px">Volver al Lobby</button>
+        </div>
+
+        <div id="trivAdminPanel" class="hidden modal-overlay">
+            <div class="card" style="background:#222; border:2px solid #f1c40f;">
+                <h3>Panel de Control</h3>
+                <div style="display:grid; gap:10px;">
+                    <button class="kick-btn" onclick="app.trivial.forceNext()">Forzar Siguiente Turno</button>
+                    <button class="kick-btn" onclick="app.trivial.endGame()">Acabar Partida</button>
+                </div>
+                <button onclick="document.getElementById('trivAdminPanel').classList.add('hidden')" style="margin-top:15px; width:100%; background:#555;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+

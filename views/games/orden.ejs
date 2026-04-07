@@ -1,0 +1,71 @@
+<div id="ordenLobby" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
+        <h2 style="color:#00cec9">🔢 Orden</h2>
+        
+        <div id="ordenAdminPanel" class="admin-panel hidden">
+            <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                <span>Categoría:</span>
+                <select id="ordenCategory" style="width:140px; border-radius:5px;"></select>
+            </div>
+            <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                <span>Dificultad:</span>
+                <select id="ordenDifficulty" style="width:140px; border-radius:5px;">
+                    <option value="EASY">Fácil (Secuencial)</option>
+                    <option value="MEDIUM">Medio (Saltos)</option>
+                    <option value="HARD">Difícil (Random)</option>
+                </select>
+            </div>
+            <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                <span>Chuletas:</span>
+                <input type="checkbox" id="ordenChuletas" style="width:20px; height:20px;">
+            </div>
+            <button id="btnStartOrden" class="start-btn" onclick="app.orden.start()">▶️ EMPEZAR</button>
+        </div>
+        
+        <p id="ordenWaitMsg" style="color:#aaa">Esperando al admin...</p>
+        <ul id="ordenPlayerList" style="margin-top:20px;"></ul>
+    </div>
+
+<div id="ordenGame" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
+
+        <div id="ordenCard" class="blur-content" onclick="app.orden.toggleCard()" style="margin-bottom: 20px; background: #2f3542; padding: 20px; border-radius: 10px; border: 2px solid #00cec9;">
+            <h1 style="margin:0; font-size:1.5em; color:#ccc;">Tu Posición:</h1>
+            <p id="ordenMyWord" style="font-size:2em; color:#fff; font-weight:900; margin:10px 0;">...</p>
+        </div>
+        <div class="card-note">👆 Toca para ver</div>
+
+        <div id="ordenListArea" style="width:100%; margin-bottom: 20px;">
+            <ul id="ordenSortList"></ul>
+        </div>
+
+        <div id="ordenChuletasArea" class="hidden card" style="background: #2f3542; padding: 15px; border-radius: 10px; border: 2px dashed #00cec9; margin-bottom: 20px;">
+            <h4 style="color:#00cec9; margin-top:0; text-align:left; display:flex; justify-content:space-between;">
+                📝 Posibles Valores
+                <button onclick="document.getElementById('ordenChuletasList').classList.toggle('hidden')" class="kick-btn" style="padding:2px 8px; width:auto; margin:0; background:#444;">👁️</button>
+            </h4>
+            <div id="ordenChuletasList" class="hidden" style="max-height:150px; overflow-y:auto; text-align:left; color:#ccc; font-size:0.85em; margin-top:10px;"></div>
+        </div>
+
+        <div id="ordenResultArea" class="hidden" style="text-align:center; margin-bottom:20px; background:#2f3542; padding:15px; border-radius:10px;">
+            <h1 id="ordenResultTitle">...</h1>
+            <h2 id="ordenResultScore" style="color:#fff">...</h2>
+            <div id="ordenCorrectContainer" style="margin-top:20px; text-align:left; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; max-height:300px; overflow-y:auto;"></div>
+            <button id="btnOrdenReset" onclick="app.orden.reset()" class="main-btn hidden">Volver al Lobby</button>
+        </div>
+
+        <div id="ordenControls" style="width:100%">
+            <button id="btnOrdenReady" onclick="app.orden.toggleReady()" class="main-btn" style="background:#2ed573; margin-bottom:10px;">¡LISTO!</button>
+            <div id="ordenAdminControls" class="hidden">
+                <button onclick="app.orden.resolve()" class="kick-btn" style="background:#ffa502; color:#222;">✅ RESOLVER RONDA</button>
+                <button onclick="app.orden.reset()" class="kick-btn" style="margin-top:10px; background:#555;">Resetear</button>
+            </div>
+        </div>
+    </div>
+

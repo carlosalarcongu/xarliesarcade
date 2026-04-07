@@ -1,0 +1,43 @@
+<div id="feedbackScreen" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h2 style="color:#a29bfe">💌 Feedback</h2>
+        <div class="card">
+            <select id="fbType" onchange="app.feedback.renderForm()" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px;">
+                <option value="newword">✨ Idea / Palabra</option>
+                <option value="bug">🐛 Reportar Error</option>
+                <option value="general">💬 Comentario</option>
+            </select>
+            <div id="fbWordForm">
+                <label style="color:#74b9ff; font-weight:bold; font-size: 0.9em;">Categoría existente:</label>
+                <select id="fbCategory" style="width:100%; margin-bottom:10px; padding:8px; border-radius:5px; background:#fff; color:#000;">
+                    <option value="">-- Cargando categorías... --</option>
+                </select>
+
+                <label style="color:#74b9ff; font-weight:bold; font-size: 0.9em;">O sugiere una nueva categoría:</label>
+                <input type="text" id="fbNewCategory" placeholder="Ej: Videojuegos retro" style="width:100%; margin-bottom:15px; padding:8px; border-radius:5px; background:#fff; color:#000;">
+
+                <label style="color:#2ed573; font-weight:bold; font-size: 0.9em;">Palabra sugerida:</label>
+                <input type="text" id="fbWord" placeholder="Ej: Pac-Man" style="width:100%; margin-bottom:10px; padding:8px; border-radius:5px; background:#fff; color:#000;">
+
+                <label style="color:#eccc68; font-weight:bold; font-size: 0.9em;">Pista (opcional):</label>
+                <input type="text" id="fbHint" placeholder="Ej: Come fantasmas" style="width:100%; margin-bottom:15px; padding:8px; border-radius:5px; background:#fff; color:#000;">
+            </div>
+            <div id="fbStandardForm" class="hidden">
+                <textarea id="fbContent" rows="3" style="width:100%; border-radius:5px; padding:5px;" placeholder="Escribe aquí..."></textarea>
+            </div>
+            <button onclick="app.feedback.submit()" class="main-btn" style="background:#a29bfe; box-shadow:0 4px 0 #6c5ce7">Enviar</button>
+        </div>
+        <button onclick="app.feedback.toggleReadMode()" class="secondary">📖 Leer Feedback</button>
+        <div id="feedbackReadSection" class="hidden">
+            <ul id="feedbackList" style="margin-top:10px; max-height:300px; overflow-y:auto; background:#222; padding:10px; border-radius:5px;"></ul>
+        </div>
+
+        <div id="feedbackReadSection" class="hidden" style="margin-top:20px;">
+            <h3 style="color:#fff;">Aportes de la Comunidad</h3>
+            <div id="feedbackList"></div>
+        </div>
+    </div>
+

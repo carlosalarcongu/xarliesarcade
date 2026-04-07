@@ -1,0 +1,109 @@
+<div id="pinturilloImpLobby" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h2 style="color:#7830ff">🎨 El Falso Artista</h2>
+        <div id="pintuImpAdminControls" class="admin-panel hidden">
+            <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #444;">
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Impostores:</span>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <button onclick="app.pinturilloImp.changeImpostors(-1)" style="width:30px; height:30px; padding:0;">-</button>
+                        <span id="pintuImpImpostorCount" style="font-weight:bold; width:20px; text-align:center">1</span>
+                        <button onclick="app.pinturilloImp.changeImpostors(1)" style="width:30px; height:30px; padding:0;">+</button>
+                    </div>
+                </div>
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                    <span>Vueltas:</span>
+                    <input type="number" id="pintuRounds" value="1" min="1" max="5" style="width:50px; text-align:center; border-radius:5px;">
+                </div>
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                    <span>Categoría:</span>
+                    <select id="pintuCategory" style="width:100px; border-radius:5px;">
+                        <option value="MIX">Mezcla</option>
+                        <option value="OBJETO">Objetos</option>
+                        <option value="LUGAR">Lugares</option>
+                        <option value="ACCION">Acciones</option>
+                    </select>
+                </div>
+                <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                    <span>Pistas:</span>
+                    <input type="checkbox" id="pintuHints" style="width:20px; height:20px;">
+                </div>
+            </div>
+            <button class="start-btn" onclick="app.pinturilloImp.start()">▶️ EMPEZAR</button>
+        </div>
+        <p id="pintuImpWaitMsg" style="color:#aaa">Esperando al admin...</p>
+        <h3>Jugadores (<span id="pintuImpCount">0</span>)</h3>
+        <ul id="pintuImpList"></ul>
+    </div>
+
+<div id="pinturilloImpGame" class="hidden" style="width: 100%; height: 100%; position: relative;">
+        <div class="back-nav" style="display:flex; gap:5px; margin-bottom:5px;">
+            <button onclick="document.getElementById('pintuImpPlayersModal').classList.remove('hidden')" style="flex:1; background:#0984e3;">👥 Jugadores</button>
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>
+        
+        <div id="pintuRoundIndicator" style="color:#aaa; font-size:0.8em; text-align:center;">Vuelta 1/1</div>
+        
+        <div id="pintuImpRoleCard" class="blur-content" onclick="app.pinturilloImp.toggleRole()" style="margin: 5px 0; background: #2f3542; padding: 10px; border-radius: 10px; border: 2px dashed #57606f; cursor:pointer;">
+            <h2 id="pintuImpRoleTitle" style="margin:0;">...</h2>
+            <p id="pintuImpRoleWord" style="font-size:1.2em; color:#e1b12c; margin:0;">...</p>
+            <p id="pintuImpHint" style="font-size:0.8em; color:#74b9ff; margin:0; display:none;">...</p>
+        </div>
+
+        <div id="pintuImpDrawArea" style="width:100%; position:relative;">
+            <div id="drawStatus" class="draw-status" style="font-size:0.9em; padding:5px;">...</div>
+            
+            <div class="canvas-container">
+                <canvas id="pintuImpCanvas" width="300" height="300"></canvas>
+            </div>
+
+            <div class="canvas-controls hidden" id="myDrawControls">
+                <button onclick="app.pinturilloImp.undo()" style="width:48%; background:#eb4d4b; padding:10px;">↩ Deshacer</button>
+                <button id="btnPassTurn" onclick="app.pinturilloImp.passTurn()" style="width:48%; background:#6ab04c; padding:10px;" disabled="">Pasar ➡</button>
+            </div>
+        </div>
+
+        <div id="pintuImpVoteSection" style="width:100%; margin-top:10px;">
+            <div style="display:flex; justify-content:flex-end; gap:5px; margin-bottom:5px;">
+                 <button id="pintuImpShowRes" class="kick-btn hidden" style="width:auto; padding:5px; font-size:0.8em; background:#ffa502;" onclick="app.pinturilloImp.revealResults()">👁️ Ver Roles</button>
+                 <button id="pintuImpEndVote" class="kick-btn hidden" style="width:auto; padding:5px; font-size:0.8em;" onclick="app.pinturilloImp.reset()">⏹️ Fin</button>
+                 <button id="pintuImpClearVote" class="kick-btn hidden" style="width:auto; padding:5px; font-size:0.8em; background:#555;" onclick="app.pinturilloImp.clearVotes()">Limpiar</button>
+            </div>
+            <div id="pintuImpVoteGrid" class="vote-grid" style="grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:5px;"></div>
+        </div>
+
+        <div id="pintuChatContainer">
+            <div id="pintuChatBox"></div>
+            
+            <button id="btnOpenChat" onclick="app.pinturilloImp.toggleChat()">💬</button>
+            
+            <div id="pintuChatInputGroup" class="hidden">
+                <input type="text" id="pintuChatInput" placeholder="Escribe..." autocomplete="off">
+                <button onclick="app.pinturilloImp.sendChat()" style="background:#2ecc71; width:30px; padding:0; border-radius:4px;">✔</button>
+                <button onclick="app.pinturilloImp.toggleChat()" style="background:#ff4757; width:30px; padding:0; border-radius:4px;">✖</button>
+            </div>
+        </div>
+
+        <div id="pintuImpPlayersModal" class="hidden modal-overlay">
+            <div class="card" style="background:#2f3542; border:2px solid #0984e3; max-height:80vh; overflow-y:auto;">
+                <h3 style="color:#0984e3">👥 Lista de Jugadores</h3>
+                <ul id="pintuImpInGameList" style="text-align:left; margin-bottom:20px;"></ul>
+                <button onclick="document.getElementById('pintuImpPlayersModal').classList.add('hidden')" class="main-btn">Cerrar</button>
+            </div>
+        </div>
+
+        <div id="pintuImpSummaryModal" class="hidden modal-overlay">
+            <h1 style="color:#e17055;">RESUMEN</h1>
+            <h2 id="pintuImpSumWord" style="color:#ffeaa7;"></h2>
+            <div style="background:#ff4757; color:white; padding:10px; width:100%; border-radius:10px; margin:20px 0;">
+                <h3>🔪 Impostores:</h3>
+                <div id="pintuImpSumImpostors" style="font-weight:bold;"></div>
+            </div>
+            <button onclick="document.getElementById('pintuImpSummaryModal').classList.add('hidden')" class="main-btn">Cerrar</button>
+        </div>
+    </div>
+

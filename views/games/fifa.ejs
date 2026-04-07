@@ -1,0 +1,101 @@
+<div id="fifaScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ SALIR</button>
+            <button onclick="app.fifa.toggleControls()" style="border-radius:0; transform:skewX(-10deg); border:2px solid #00d2d3;">🖊️</button>
+        </div>
+
+        <div class="fifa-header">
+            <h1 style="margin:0; font-style:italic;">Registro de <span style="color:#ff005c">FIFA</span></h1>
+            <p style="font-size:0.8em; color:#00d2d3; letter-spacing:2px;"> TEAM DATABASE</p>
+        </div>
+
+        <div id="fifaControlsArea" class="hidden fifa-panel">
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <label style="color:#aaa; font-size:0.8em; align-self:center;">TORNEO:</label>
+                <select id="fifaRoomSelect" onchange="app.fifa.changeRoom()" style="flex:1"></select>
+                <button onclick="app.fifa.createRoom()">+</button>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                <button class="fifa-btn" onclick="app.fifa.addPlayer()">+ JUGADOR</button>
+                <button class="fifa-btn" onclick="app.fifa.showAddMatchModal()">+ PARTIDO</button>
+                <button class="fifa-btn" onclick="app.fifa.backup()">💾 SAVE</button>
+            </div>
+        </div>
+
+        <div class="fifa-panel" style="margin-top:15px; padding:10px;">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1">
+                    <label style="color:#aaa; font-size:0.7em;">PERIODO</label>
+                    <select id="fifaPeriodFilter" onchange="app.fifa.changeView()" class="fifa-input" style="margin:0;">
+                        <option value="all">Historico</option>
+                        <option value="7days">7 Días</option>
+                        <option value="30days">30 Días</option>
+                        <option value="year">Este Año</option>
+                    </select>
+                </div>
+                <div style="flex:2">
+                    <label style="color:#aaa; font-size:0.7em;">MODO</label>
+                    <select id="fifaViewMode" onchange="app.fifa.changeView()" class="fifa-input" style="margin:0;">
+                        <option value="ranking_player">👤 Ranking Individual</option>
+                        <option value="ranking_pair">👥 Ranking Parejas</option>
+                        <option value="1vs1">⚔️ Cara a Cara (1vs1)</option>
+                        <option value="top_improvement">🚀 Forma (14 días)</option>
+                        <option value="recent_log">📝 Historial</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="fifaDiv1vs1" class="hidden" style="margin-top:15px; border-top:1px solid #ffffff33; padding-top:10px;">
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <select id="fifaP1vs" onchange="app.fifa.runHeadToHead()" style="flex:1; margin:0;"></select>
+                    <span style="font-weight:bold; color:#ff005c; font-style:italic;">VS</span>
+                    <select id="fifaP2vs" onchange="app.fifa.runHeadToHead()" style="flex:1; margin:0;"></select>
+                </div>
+            </div>
+        </div>
+
+        <div id="fifaStatsContainer" style="margin-top:20px; width:100%;"></div>
+        
+        <div id="fifaLogContainer" style="width:100%; padding-bottom:50px;"></div>
+
+        <div id="musAddMatchModal" class="hidden modal-overlay" style="align-items:center; padding-top:50px; overflow-y:auto;">
+            <div style="background:var(--bg-card); padding:20px; border-radius:10px; width:90%; max-width:400px; border:2px solid #e1b12c; box-shadow:var(--card-shadow-3d);">
+                <h3 style="margin-top:0; color:#e1b12c">Anotar Partida</h3>
+                <p id="matchRoomIndicator" style="color:var(--text-muted); font-size:0.8em; margin-bottom:10px;">Sala: ...</p>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="flex:1; text-align:center; background:var(--bg-blue-tint); padding:10px; border-radius:5px; border: 1px solid var(--accent-blue);">
+                        <h4 style="margin:0 0 10px 0; color:var(--accent-blue); font-size:0.9em">Pareja 1</h4>
+                        <select id="musP1" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
+                        <select id="musP2" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
+                        
+                        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:15px;">
+                            <button class="kick-btn" style="width:35px; height:35px; padding:0; min-width:35px; background:var(--accent-red);" onclick="app.mus.changeScore(1, -1)">-</button>
+                            <span id="musS1" style="font-weight:900; font-size:1.8em; color:var(--text-main); width:30px; display:inline-block;">0</span>
+                            <button class="kick-btn" style="width:35px; height:35px; padding:0; min-width:35px; background:var(--accent-green);" onclick="app.mus.changeScore(1, 1)">+</button>
+                        </div>
+                    </div>
+                    
+                    <div style="font-weight:bold; padding:0 10px; color:var(--text-muted)">VS</div>
+                    
+                    <div style="flex:1; text-align:center; background:var(--bg-red-tint); padding:10px; border-radius:5px; border: 1px solid var(--accent-red);">
+                        <h4 style="margin:0 0 10px 0; color:var(--accent-red); font-size:0.9em">Pareja 2</h4>
+                        <select id="musP3" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
+                        <select id="musP4" style="width:100%; margin:2px 0; padding:5px; border-radius:4px;"></select>
+                        
+                        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:15px;">
+                            <button class="kick-btn" style="width:35px; height:35px; padding:0; min-width:35px; background:var(--accent-red);" onclick="app.mus.changeScore(2, -1)">-</button>
+                            <span id="musS2" style="font-weight:900; font-size:1.8em; color:var(--text-main); width:30px; display:inline-block;">0</span>
+                            <button class="kick-btn" style="width:35px; height:35px; padding:0; min-width:35px; background:var(--accent-green);" onclick="app.mus.changeScore(2, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button onclick="document.getElementById('musAddMatchModal').classList.add('hidden')" class="main-btn" style="flex:1; background:var(--border-input)">Cancelar</button>
+                    <button onclick="app.mus.submitMatch()" class="main-btn" style="flex:1; background:#e1b12c; color:#222">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+

@@ -12,7 +12,16 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// --- CONFIGURACIÓN DE EJS ---
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- RUTA PRINCIPAL ---
+app.get('/', (req, res) => {
+    res.render('index'); // Renderiza views/index.ejs
+});
 
 const db = new Database(path.join(__dirname, 'arcade.db'));
 db.prepare('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, email TEXT)').run();

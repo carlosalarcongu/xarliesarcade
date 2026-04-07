@@ -1,0 +1,47 @@
+<div id="statsSelectionScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Volver</button>
+        </div>
+
+        <h2 style="color:#00d2d3; font-family:'Poppins', sans-serif;">Rankings de juegos</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:30px;">Selecciona el registro:</p>
+
+        <div class="hub-grid">
+            
+            <div id="cardMusStats" class="hub-card" onclick="app.selectRoom('mus')" style="border-left-color: #e1b12c;">
+                <div class="hub-icon">🐄</div>
+                <div class="hub-info">
+                    <div class="hub-title">Mus</div>
+                    <div class="hub-desc">Ranking y Parejas.</div>
+                </div>
+                <div style="font-size:1.5em; color:#09c432">➜</div>
+            </div>
+
+            <div class="hub-card" onclick="app.selectRoom('fifa')" style="border-left-color: #2ed573;">
+                <div class="hub-icon">⚽</div>
+                <div class="hub-info">
+                    <div class="hub-title">FIFA</div>
+                    <div class="hub-desc">Partidos 1vs y 2vs2.</div>
+                </div>
+                <div style="font-size:1.5em; color:#e11ed8">🔒</div>
+            </div>
+
+            <div class="hub-card" onclick="app.selectRoom('beber')" style="border-left-color: #f368e0;">
+                <div class="hub-icon">🍻</div>
+                <div class="hub-info">
+                    <div class="hub-title">Beber</div>
+                    <div class="hub-desc">Registro y Ranking de alcohol.</div>
+                </div>
+                <div style="font-size:1.5em; color:#09c432">➜</div>
+            </div>
+
+            <div class="hub-card disabled" style="border-left-color: #57606f; opacity: 0.5;">
+                <div class="hub-icon">➕</div>
+                <div class="hub-info">
+                    <div class="hub-title">Otro</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+

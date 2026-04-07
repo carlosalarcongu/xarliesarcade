@@ -1,0 +1,48 @@
+<div id="elmasLobby" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h2 style="color:#ff9f43">🏆 El MÁS...</h2>
+        <div id="elmasAdminPanel" class="admin-panel hidden">
+            <div class="control-row" style="background:transparent; padding:2px; margin:0; justify-content:space-between;">
+                <span>Rondas:</span>
+                <input type="number" id="elmasRoundsInput" value="5" min="3" max="20" style="width:60px; border:none; border-radius:5px; padding:5px; text-align:center; color:#000; background:#fff;">
+            </div>
+            <button id="btnStartElMas" class="start-btn" onclick="app.elmas.start()">▶️ EMPEZAR</button>
+        </div>
+        <ul id="elmasList" style="margin-top:20px;"></ul>
+        <p id="elmasWaitMsg" style="color:#aaa">Esperando al admin...</p>
+    </div>
+
+<div id="elmasGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h4 id="elmasRoundCount" style="color:#aaa">Ronda 1/5</h4>
+        <div class="card" style="background:#ff9f43; color:#2d3436; border:none; margin-bottom: 20px;">
+            <p id="elmasQuestionText" style="font-size:1.5em; font-weight:900; margin: 10px 0;">...</p>
+        </div>
+        <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-bottom:20px; color:#aaa; font-size:0.9em;">
+            <span>¿Te gustó la pregunta? (Opcional)</span>
+            <button id="btnLike" onclick="app.elmas.rateQuestion('like')" style="background:none; border:none; font-size:1.5em; padding:0;">👍</button>
+            <button id="btnDislike" onclick="app.elmas.rateQuestion('dislike')" style="background:none; border:none; font-size:1.5em; padding:0;">👎</button>
+        </div>
+        <div id="elmasVotingGrid" class="vote-grid"></div>
+        <br>
+        <button id="elmasNextBtn" class="main-btn hidden" onclick="app.elmas.next()">📊 Ver Votos</button>
+        <button id="elmasContinueBtn" class="main-btn hidden" onclick="app.elmas.continue()">➡️ Siguiente Pregunta</button>
+        <button onclick="app.elmas.reset()" class="kick-btn hidden" style="margin-top:30px">Reset Total (Admin)</button>
+    </div>
+
+<div id="elmasPodiumModal" class="hidden modal-overlay">
+        <h1 style="color:#ff9f43; margin-bottom:30px">🏆 RESULTADOS 🏆</h1>
+        <div class="podium-container">
+            <div class="podium-bar p-silver"><span class="p-name" id="podium2">...</span>🥈</div>
+            <div class="podium-bar p-gold"><span class="p-name" id="podium1">...</span>🥇</div>
+            <div class="podium-bar p-bronze"><span class="p-name" id="podium3">...</span>🥉</div>
+        </div>
+        <p style="color:#aaa; margin-top:30px">Cerrando en 10 segundos...</p>
+    </div>
+

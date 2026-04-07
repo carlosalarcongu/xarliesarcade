@@ -1,0 +1,148 @@
+<div id="hubScreen">
+        <div class="header-wrapper">
+            <div class="header-tools-left" style="display:flex; flex-direction:column; gap:2px;">
+                <button id="btnHubStats" class="ignored-btn" onclick="app.showStatsMenu()">
+                    Stats
+                </button>
+                <button id="btnAdminAuth" class="ignored-btn hidden" onclick="app.auth.openAdminPanel()">
+                    Admins
+                </button>
+            </div>
+
+            <h1 style="color:#ffa502; font-size: 2.8em; margin: 0; line-height: 1;">XARLIE'S<br>ARCADE</h1>
+        </div>
+
+        <hr class="shaded-divider">
+
+        <p style="color:#7f8fa6; margin-bottom: 15px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;">Salas de Juego</p>
+        
+        <div class="hub-grid">
+            <div class="hub-card" onclick="app.selectRoom('impostor')" style="border-left-color: #3301c7;">
+                <div class="hub-icon">🕵️</div>
+                <div class="hub-info"><div class="hub-title">El Impostor</div><div class="hub-desc">Palabras ocultas y espías.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('tabu')" style="border-left-color: #ff2158;">
+                <div class="hub-icon">🚫</div>
+                <div class="hub-info"><div class="hub-title">Tabú</div><div class="hub-desc">Equipos y palabras prohibidas.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('elmas')" style="border-left-color: #e1ff3a;">
+                <div class="hub-icon">🏆</div>
+                <div class="hub-info"><div class="hub-title">El MÁS...</div><div class="hub-desc">Vota quién encaja mejor.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('orden')" style="border-left-color: #00cec9;">
+                <div class="hub-icon">🎌</div>
+                <div class="hub-info">
+                    <div class="hub-title">Orden</div>
+                    <div class="hub-desc">Cooperativo. ¡Poneos en fila!</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            <div class="hub-card" onclick="app.selectRoom('anecdotas')" style="border-left-color: #ff9ff3;">
+                <div class="hub-icon">📜</div>
+                <div class="hub-info"><div class="hub-title">Anécdotas</div><div class="hub-desc">Historias verdaderas (o no).</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            
+            <div class="hub-card" onclick="app.selectRoom('cifrasyletras')" style="border-left-color: #0984e3;">
+                <div class="hub-icon">🔣</div>
+                <div class="hub-info">
+                    <div class="hub-title">Cifras y Letras</div>
+                    <div class="hub-desc">Cálculo mental y vocabulario.</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+
+            
+            <div class="hub-card" onclick="app.selectRoom('pinturilloImp')" style="border-left-color: #7830ff;">
+                <div class="hub-icon">🎨</div>
+                <div class="hub-info">
+                    <div class="hub-title">El Falso Artista</div>
+                    <div class="hub-desc">Dibuja, colabora y descubre al impostor.</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">🔒</div>
+            </div>
+
+            <div class="hub-card" onclick="app.selectRoom('torres')" style="border-left-color: #00cec9;">
+                <div class="hub-icon">🗼</div>
+                <div class="hub-info"><div class="hub-title">Torres</div><div class="hub-desc">Adivina tu palabra oculta.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+
+            <div class="hub-card disabled hidden" onclick="app.showDevMessage()" style="border-left-color: #1cff2f;">
+                <div class="hub-icon">🐺</div>
+                <div class="hub-info"><div class="hub-title">El Lobo</div><div class="hub-desc">Roles, noche y deducción.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+            
+            
+            <div class="hub-card disabled" onclick="app.showDevMessage()" style="border-left-color: #e74c3c;">
+                <div class="hub-icon">⚔️</div>
+                <div class="hub-info">
+                    <div class="hub-title">Guerra 7</div>
+                    <div class="hub-desc">Estrategia en tiempo real.</div>
+                </div>
+                <div style="font-size:1.5em; color:#57606f">🔒</div>
+            </div>
+
+            <div class="hub-card" onclick="app.selectRoom('feedback')" style="border-left-color: #416348; ">
+                <div class="hub-icon">💌</div>
+                <div class="hub-info"><div class="hub-title">Feedback</div><div class="hub-desc">Sugerencias y errores.</div></div>
+                <div style="font-size:1.5em; color:#57606f">➜</div>
+            </div>
+        </div>
+        <div id="activeRoomsList" style="margin-top: 30px; width: 100%;"></div>
+
+        <hr class="shaded-divider">
+
+        <div class="mini-grid">
+            <div class="mini-card" onclick="app.selectRoom('fiesta')" style="border-left: 3px solid #ff9ff3;">
+                <span class="mini-icon">🎉</span>
+                <span class="mini-title">Fiesta</span>
+            </div>
+
+            <div class="mini-card hidden" onclick="app.selectRoom('consejo')" style="border-left: 3px solid #ecf0f1;">
+                <span class="mini-icon">🦉</span>
+                <span class="mini-title">Consejo</span>
+            </div>
+
+            <div class="mini-card" onclick="app.selectRoom('contexto')" style="border-left: 3px solid #a55eea;">
+                <span class="mini-icon">🧠</span>
+                <span class="mini-title">Contexto</span>
+            </div>
+
+            <div class="mini-card" onclick="app.showScreen('giveScreen')" style="border-left: 3px solid #00cec9;">
+                <span class="mini-icon">🎁</span>
+                <span class="mini-title">Give XP</span>
+            </div>
+            <div class="mini-card hidden" onclick="app.selectRoom('trivial')" style="border-left: 3px solid #f1c40f;">
+                <span class="mini-icon">🧀</span>
+                <span class="mini-title">Trivial</span>
+            </div>
+            <div class="mini-card" onclick="app.selectRoom('darkstories')" style="border-left: 3px solid #8c7ae6;">
+                <span class="mini-icon">📖</span>
+                <span class="mini-title">Stories</span>
+            </div>
+            <div id="btnHubAnalytics" class="mini-card hidden" onclick="app.selectRoom('analytics')" style="border-left: 3px solid #3498db;">
+                <span class="mini-icon">📈</span>
+                <span class="mini-title">Analytics</span>
+            </div>
+            <div class="mini-card" onclick="app.selectRoom('torneos')" style="border-left: 3px solid #f1c40f;">
+                <span class="mini-icon">🏆</span>
+                <span class="mini-title">Torneos</span>
+            </div>
+        </div>
+        <div style="margin-top: 30px; text-align: center; color: #555;">
+            <a href="https://github.com/carlosalarcongu/xarliesarcade.git" target="_blank" style="font-size: 0.7em; text-decoration: none; color: inherit;">
+                🤠 Ver el proyecto en GitHub 🤠
+            </a>
+        </div>
+
+        <div style="text-align:center; margin-top:40px; margin-bottom:20px;">
+            <a href="javascript:void(0)" onclick="app.showLegalModal()" style="color:#666; font-size:0.7em; text-decoration:underline;">Política de Privacidad y Términos de Uso</a>
+        </div>
+    
+    </div>
+

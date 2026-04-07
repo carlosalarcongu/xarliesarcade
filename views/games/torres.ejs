@@ -1,0 +1,92 @@
+<div id="torresLobby" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h2 style="color:#00cec9">🗼 Torres</h2>
+        
+        <div id="torresAdminPanel" class="hidden admin-panel">
+            <div style="background:#222; padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid #444;">
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0; justify-content:space-between;">
+                    <span>Temática:</span>
+                    <select id="torresTheme" style="width:120px; border-radius:5px; padding:2px;">
+                        <option value="MIX">Mezcla</option>
+                        <option value="FUTBOL">Fútbol</option>
+                        <option value="ANIMALES">Animales</option>
+                        <option value="COMIDA">Comida</option>
+                        <option value="ESTUDIOS">Estudios</option>
+                        <option value="AMOR">Amor</option>
+                    </select>
+                </div>
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0 0 0; justify-content:space-between;">
+                    <span>Modo Silencioso:</span>
+                    <input type="checkbox" id="torresSilent" style="width:20px; height:20px;">
+                </div>
+                <div class="control-row" style="background:transparent; padding:2px; margin:5px 0 0 0; justify-content:space-between;">
+                    <span>Chuletas (Ver palabras):</span>
+                    <input type="checkbox" id="torresChuletas" style="width:20px; height:20px;">
+                </div>
+            </div>
+            <button class="start-btn" onclick="app.torres.startGame()">▶️ EMPEZAR PARTIDA</button>
+        </div>
+
+        <p id="torresWaitMsg" style="color:#aaa; font-style:italic;">Esperando al administrador...</p>
+        <h3>Jugadores (<span id="torresPlayerCount">0</span>)</h3>
+        <ul id="torresPlayerList"></ul>
+    </div>
+
+<div id="torresGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>    
+        
+        <h2 style="margin:0 0 10px 0; color:#00cec9;">🗼 Partida en Curso</h2>
+
+        <div class="card" style="background: #2f3542; padding: 20px; border-radius: 10px; border: 2px dashed #00cec9; margin-bottom: 20px;">
+            <h3 style="margin:0; color:#aaa;">TU PALABRA:</h3>
+            <p id="torresMyWord" style="font-size: 2.5em; font-weight: 900; color: #fff; margin: 10px 0;">???</p>
+            <p style="font-size: 0.8em; color: #7f8fa6;">Adivina qué eres haciendo preguntas.</p>
+            <div id="torresChuletasArea" class="hidden card" style="background: #2f3542; padding: 15px; border-radius: 10px; border: 2px dashed #f1c40f; margin-bottom: 20px;">
+                <h4 style="color:#f1c40f; margin-top:0; text-align:left; display:flex; justify-content:space-between;">
+                    📝 Posibles Palabras
+                    <button onclick="document.getElementById('torresChuletasList').classList.toggle('hidden')" class="kick-btn" style="padding:2px 8px; width:auto; margin:0; background:#444;">👁️ Ver / Ocultar</button>
+                </h4>
+                <div id="torresChuletasList" class="hidden" style="max-height:150px; overflow-y:auto; text-align:left; color:#ccc; font-size:0.85em; margin-top:10px;"></div>
+            </div>
+        </div>
+
+        <div id="torresSilentArea" class="hidden" style="width:100%; margin-bottom:20px;">
+            <h4 style="color:#00cec9; margin-top:0; text-align:left;">💬 Chat del Juego</h4>
+            <div id="torresChatLog" style="background:#222; height:150px; overflow-y:auto; padding:10px; border-radius:5px; border:1px solid #444; margin-bottom:5px; text-align:left;"></div>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="torresInput" placeholder="Escribe aquí..." style="flex:1; padding:10px; border-radius:5px; border:none;" autocomplete="off">
+                <button onclick="app.torres.sendChat()" class="main-btn" style="width:auto; padding:0 15px; background:#00cec9; margin:0;">Enviar</button>
+            </div>
+        </div>
+
+        <h3 style="color:#aaa; text-align:left; border-bottom:1px solid #444; padding-bottom:5px;">Los demás son:</h3>
+        <div id="torresPlayersGrid" style="width:100%; text-align:left; margin-bottom:20px;"></div>
+
+        <div style="display:flex; gap: 10px;">
+            <button id="torresBtnRes" class="kick-btn hidden" style="flex:1; background:#ffa502; color:#222; font-weight:bold;" onclick="app.torres.revealResults()">👁️ Resultados</button>
+            <button id="torresBtnEnd" class="kick-btn hidden" style="flex:1;" onclick="app.torres.resetGame()">⏹️ Finalizar</button>
+        </div>
+
+        <div id="torresSummaryModal" class="hidden modal-overlay">
+            <h1 style="color:#f1c40f; font-size:2.5em;">RESULTADOS</h1>
+            
+            <div style="background:#222; padding:15px; width:90%; border-radius:10px; margin:20px 0; border-left:4px solid #2ed573; text-align:left;">
+                <h3 style="margin-top:0; color:#2ed573;">Adivinaron:</h3>
+                <div id="torresWinnersList" style="font-size:1.2em;"></div>
+            </div>
+
+            <div style="background:#222; padding:15px; width:90%; border-radius:10px; margin-bottom:20px; border-left:4px solid #ff4757; text-align:left;">
+                <h3 style="margin-top:0; color:#ff4757;">Cayeron:</h3>
+                <div id="torresLosersList" style="font-size:1.2em;"></div>
+            </div>
+
+            <button onclick="document.getElementById('torresSummaryModal').classList.add('hidden')" class="main-btn">Cerrar</button>
+        </div>
+    </div>
+

@@ -1177,310 +1177,315 @@ app.mus = {
     },
 
     renderRachas: (container) => {
-        const matches = app.mus.getFilteredMatches();
-        const ascMatches = [...matches].sort((a,b) => a.id - b.id);
-        
-        let pStreaks = {}; 
-        let pairStreaks = {};
-        let allWinStreaks = [];
-        let allLossStreaks = [];
-        let pDiffHistory = {}; 
-        let pairDiffHistory = {};
-
-        ascMatches.forEach(m => {
-            if (m.s1 + m.s2 <= 1) return;
-            let t1Won = null;
-            if (m.s1 > m.s2) t1Won = true;
-            else if (m.s1 < m.s2) t1Won = false;
-
-            const d = new Date(m.date);
-            const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-
-            const processEntity = (entity, won, myScore, oppScore, oppNames, isPair) => {
-                let dict = isPair ? pairStreaks : pStreaks;
-                let hist = isPair ? pairDiffHistory : pDiffHistory;
-                
-                if (!hist[entity]) hist[entity] = [];
-                hist[entity].push(myScore - oppScore);
-
-                if (won === null) return; 
-
-                if (!dict[entity]) dict[entity] = { type: null, val: 0, start: dateStr };
-                
-                if (won) {
-                    if (dict[entity].type === 'loss') {
-                        allLossStreaks.push({ n: entity, val: dict[entity].val, endedBy: oppNames });
-                        dict[entity] = { type: 'win', val: myScore };
-                    } else {
-                        dict[entity].type = 'win';
-                        dict[entity].val += myScore;
-                    }
-                } else {
-                    if (dict[entity].type === 'win') {
-                        allWinStreaks.push({ n: entity, val: dict[entity].val, endedBy: oppNames });
-                        dict[entity] = { type: 'loss', val: oppScore };
-                    } else {
-                        dict[entity].type = 'loss';
-                        dict[entity].val += oppScore;
-                    }
-                }
-            };
-
-            const t1Names = `${m.p1} & ${m.p2}`;
-            const t2Names = `${m.p3} & ${m.p4}`;
-
-            const t1 = [m.p1, m.p2].sort().join(' y ');
-            const t2 = [m.p3, m.p4].sort().join(' y ');
+        try {
+            const matches = app.mus.getFilteredMatches();
+            const ascMatches = [...matches].sort((a,b) => a.id - b.id);
             
-            [m.p1, m.p2].forEach(p => processEntity(p, t1Won, m.s1, m.s2, t2Names, false));
-            [m.p3, m.p4].forEach(p => processEntity(p, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names, false));
+            let pStreaks = {}; 
+            let pairStreaks = {};
+            let allWinStreaks = [];
+            let allLossStreaks = [];
+            let pDiffHistory = {}; 
+            let pairDiffHistory = {};
 
-            processEntity(t1, t1Won, m.s1, m.s2, t2Names, true);
-            processEntity(t2, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names, true);
-        });
-
-        let maxWinP = {n: '-', val: 0}, maxLossP = {n: '-', val: 0};
-        let maxWinPair = {n: '-', val: 0}, maxLossPair = {n: '-', val: 0};
-
-        Object.entries(pStreaks).forEach(([n, data]) => {
-            if (data.type === 'win' && data.val > maxWinP.val) maxWinP = {n, val: data.val};
-            if (data.type === 'loss' && data.val > maxLossP.val) maxLossP = {n, val: data.val}; 
-        });
-        Object.entries(pairStreaks).forEach(([n, data]) => {
-            if (data.type === 'win' && data.val > maxWinPair.val) maxWinPair = {n, val: data.val};
-            if (data.type === 'loss' && data.val > maxLossPair.val) maxLossPair = {n, val: data.val}; 
-        });
-
-        Object.entries(pStreaks).forEach(([n, data]) => {
-            if (data.type === 'win') allWinStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
-            if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
-        });
-        Object.entries(pairStreaks).forEach(([n, data]) => {
-            if (data.type === 'win') allWinStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
-            if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
-        });
-
-        allWinStreaks.sort((a,b) => b.val - a.val);
-        allLossStreaks.sort((a,b) => b.val - a.val);
-
-        const getStdDev = (arr) => {
-            if(arr.length < 5) return 0;
-            const mean = arr.reduce((a, b) => a + b) / arr.length;
-            return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
-        };
-        
-        let mostIrregularP = {n: '-', dev: 0};
-        Object.keys(pDiffHistory).forEach(p => {
-            const dev = getStdDev(pDiffHistory[p]);
-            if (dev > mostIrregularP.dev) mostIrregularP = {n: p, dev};
-        });
-        let mostIrregularPair = {n: '-', dev: 0};
-        Object.keys(pairDiffHistory).forEach(pair => {
-            const dev = getStdDev(pairDiffHistory[pair]);
-            if (dev > mostIrregularPair.dev) mostIrregularPair = {n: pair, dev};
-        });
-
-        const limit7 = Date.now() - (7 * 24 * 3600 * 1000);
-        const recentMatches7 = ascMatches.filter(m => new Date(m.date).getTime() > limit7);
-        
-        let pRoundsCount = {};
-        recentMatches7.forEach(m => {
-            const totalRounds = m.s1 + m.s2;
-            [m.p1, m.p2, m.p3, m.p4].forEach(p => pRoundsCount[p] = (pRoundsCount[p] || 0) + totalRounds);
-        });
-        let pRoundsArray = Object.entries(pRoundsCount).map(([n, c]) => ({n, c})).sort((a,b) => b.c - a.c);
-        const top3Viciados = pRoundsArray.slice(0, 3);
-        
-        let viciadosHtml = "";
-        const medals = ['🥇', '🥈', '🥉'];
-        top3Viciados.forEach((v, i) => {
-            viciadosHtml += `<div style="font-size:1.2em; font-weight:bold; color:#fff; margin-bottom:5px;">
-                ${medals[i]} ${v.n} <span style="color:#74b9ff; font-weight:900; font-size:0.9em;">(${v.c} Rondas)</span>
-            </div>`;
-        });
-        if(top3Viciados.length === 0) viciadosHtml = "<span style='color:#aaa;'>Nadie ha jugado esta semana.</span>";
-
-        let histPairRounds = {};
-        ascMatches.forEach(m => {
-            const t1 = [m.p1, m.p2].sort().join(' y ');
-            const t2 = [m.p3, m.p4].sort().join(' y ');
-            const total = m.s1 + m.s2;
-            histPairRounds[t1] = (histPairRounds[t1] || 0) + total;
-            histPairRounds[t2] = (histPairRounds[t2] || 0) + total;
-        });
-        const top3Pairs = Object.entries(histPairRounds).sort((a,b) => b[1] - a[1]).slice(0, 3);
-
-        let stomps = [];
-        ascMatches.forEach(m => {
-            const diff = Math.abs(m.s1 - m.s2);
-            const t1 = [m.p1, m.p2].sort().join(' y ');
-            const t2 = [m.p3, m.p4].sort().join(' y ');
-            const d = new Date(m.date);
-            const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-            
-            if (m.s1 > m.s2) {
-                stomps.push({ winner: t1, loser: t2, wScore: m.s1, lScore: m.s2, diff, date: dateStr });
-            } else if (m.s2 > m.s1) {
-                stomps.push({ winner: t2, loser: t1, wScore: m.s2, lScore: m.s1, diff, date: dateStr });
-            }
-        });
-        stomps.sort((a,b) => b.diff - a.diff);
-        const top15Stomps = stomps.slice(0, 15);
-
-        let stompsTableHtml = `<div class="mus-table-wrapper"><table class="mus-table" style="font-size:0.9em;">
-            <tr><th>#</th><th>Fecha</th><th>Ganadores</th><th>Perdedores</th><th>Dif</th></tr>`;
-        top15Stomps.forEach((s, i) => {
-            stompsTableHtml += `<tr>
-                <td style="font-weight:bold;">${i+1}</td>
-                <td style="color:#aaa;">${s.date}</td>
-                <td style="color:#2ed573; font-weight:bold;">${s.winner} <span style="color:#fff">(${s.wScore})</span></td>
-                <td style="color:#ff4757;">${s.loser} <span style="color:#fff">(${s.lScore})</span></td>
-                <td style="color:#f1c40f; font-weight:900;">+${s.diff}</td>
-            </tr>`;
-        });
-        stompsTableHtml += `</table></div>`;
-
-        let playersList = [...new Set(ascMatches.flatMap(m => [m.p1, m.p2, m.p3, m.p4]))].sort();
-        let playerSelectHtml = `<select id="rachasPlayerSelect" onchange="app.mus.updateRachasPlayer(this.value)" style="padding:5px; background:#fff; color:#000; border-radius:5px;">
-            <option value="">-- Selecciona jugador --</option>
-            ${playersList.map(p => `<option value="${p}" ${p===app.mus.rachasPlayerSelected?'selected':''}>${p}</option>`).join('')}
-        </select>`;
-
-        let playerVictoriesHtml = "";
-        if (app.mus.rachasPlayerSelected) {
-            let pWins = [];
             ascMatches.forEach(m => {
-                let p12 = [m.p1, m.p2];
-                let p34 = [m.p3, m.p4];
-                let isT1 = p12.includes(app.mus.rachasPlayerSelected);
-                let isT2 = p34.includes(app.mus.rachasPlayerSelected);
+                if (m.s1 + m.s2 <= 1) return;
+                let t1Won = null;
+                if (m.s1 > m.s2) t1Won = true;
+                else if (m.s1 < m.s2) t1Won = false;
+
+                const d = new Date(m.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+
+                const processEntity = (entity, won, myScore, oppScore, oppNames, isPair) => {
+                    let dict = isPair ? pairStreaks : pStreaks;
+                    let hist = isPair ? pairDiffHistory : pDiffHistory;
+                    
+                    if (!hist[entity]) hist[entity] = [];
+                    hist[entity].push(myScore - oppScore);
+
+                    if (won === null) return; 
+
+                    if (!dict[entity]) dict[entity] = { type: null, val: 0, start: dateStr };
+                    
+                    if (won) {
+                        if (dict[entity].type === 'loss') {
+                            allLossStreaks.push({ n: entity, val: dict[entity].val, endedBy: oppNames });
+                            dict[entity] = { type: 'win', val: myScore };
+                        } else {
+                            dict[entity].type = 'win';
+                            dict[entity].val += myScore;
+                        }
+                    } else {
+                        if (dict[entity].type === 'win') {
+                            allWinStreaks.push({ n: entity, val: dict[entity].val, endedBy: oppNames });
+                            dict[entity] = { type: 'loss', val: oppScore };
+                        } else {
+                            dict[entity].type = 'loss';
+                            dict[entity].val += oppScore;
+                        }
+                    }
+                };
+
+                const t1Names = `${m.p1} & ${m.p2}`;
+                const t2Names = `${m.p3} & ${m.p4}`;
+
+                const t1 = [m.p1, m.p2].sort().join(' y ');
+                const t2 = [m.p3, m.p4].sort().join(' y ');
                 
-                if (isT1 && m.s1 > m.s2) {
-                    pWins.push({ partner: p12.find(x => x !== app.mus.rachasPlayerSelected), rivals: p34.join(' y '), sW: m.s1, sL: m.s2, diff: m.s1 - m.s2, date: m.date });
-                } else if (isT2 && m.s2 > m.s1) {
-                    pWins.push({ partner: p34.find(x => x !== app.mus.rachasPlayerSelected), rivals: p12.join(' y '), sW: m.s2, sL: m.s1, diff: m.s2 - m.s1, date: m.date });
+                [m.p1, m.p2].forEach(p => processEntity(p, t1Won, m.s1, m.s2, t2Names, false));
+                [m.p3, m.p4].forEach(p => processEntity(p, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names, false));
+
+                processEntity(t1, t1Won, m.s1, m.s2, t2Names, true);
+                processEntity(t2, t1Won === null ? null : !t1Won, m.s2, m.s1, t1Names, true);
+            });
+
+            let maxWinP = {n: '-', val: 0}, maxLossP = {n: '-', val: 0};
+            let maxWinPair = {n: '-', val: 0}, maxLossPair = {n: '-', val: 0};
+
+            Object.entries(pStreaks).forEach(([n, data]) => {
+                if (data.type === 'win' && data.val > maxWinP.val) maxWinP = {n, val: data.val};
+                if (data.type === 'loss' && data.val > maxLossP.val) maxLossP = {n, val: data.val}; 
+            });
+            Object.entries(pairStreaks).forEach(([n, data]) => {
+                if (data.type === 'win' && data.val > maxWinPair.val) maxWinPair = {n, val: data.val};
+                if (data.type === 'loss' && data.val > maxLossPair.val) maxLossPair = {n, val: data.val}; 
+            });
+
+            Object.entries(pStreaks).forEach(([n, data]) => {
+                if (data.type === 'win') allWinStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
+                if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
+            });
+            Object.entries(pairStreaks).forEach(([n, data]) => {
+                if (data.type === 'win') allWinStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
+                if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, end: 'AÚN ACTIVA', endedBy: '-' });
+            });
+
+            allWinStreaks.sort((a,b) => b.val - a.val);
+            allLossStreaks.sort((a,b) => b.val - a.val);
+
+            const getStdDev = (arr) => {
+                if(!arr || arr.length < 5) return 0;
+                const mean = arr.reduce((a, b) => a + b) / arr.length;
+                return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
+            };
+            
+            let mostIrregularP = {n: '-', dev: 0};
+            Object.keys(pDiffHistory).forEach(p => {
+                const dev = getStdDev(pDiffHistory[p]);
+                if (dev > mostIrregularP.dev) mostIrregularP = {n: p, dev};
+            });
+            let mostIrregularPair = {n: '-', dev: 0};
+            Object.keys(pairDiffHistory).forEach(pair => {
+                const dev = getStdDev(pairDiffHistory[pair]);
+                if (dev > mostIrregularPair.dev) mostIrregularPair = {n: pair, dev};
+            });
+
+            const limit7 = Date.now() - (7 * 24 * 3600 * 1000);
+            const recentMatches7 = ascMatches.filter(m => new Date(m.date).getTime() > limit7);
+            
+            let pRoundsCount = {};
+            recentMatches7.forEach(m => {
+                const totalRounds = m.s1 + m.s2;
+                [m.p1, m.p2, m.p3, m.p4].forEach(p => pRoundsCount[p] = (pRoundsCount[p] || 0) + totalRounds);
+            });
+            let pRoundsArray = Object.entries(pRoundsCount).map(([n, c]) => ({n, c})).sort((a,b) => b.c - a.c);
+            const top3Viciados = pRoundsArray.slice(0, 3);
+            
+            let viciadosHtml = "";
+            const medals = ['🥇', '🥈', '🥉'];
+            top3Viciados.forEach((v, i) => {
+                viciadosHtml += `<div style="font-size:1.2em; font-weight:bold; color:#fff; margin-bottom:5px;">
+                    ${medals[i] || '🎖️'} ${v.n} <span style="color:#74b9ff; font-weight:900; font-size:0.9em;">(${v.c} Rondas)</span>
+                </div>`;
+            });
+            if(top3Viciados.length === 0) viciadosHtml = "<span style='color:#aaa;'>Nadie ha jugado esta semana.</span>";
+
+            let histPairRounds = {};
+            ascMatches.forEach(m => {
+                const t1 = [m.p1, m.p2].sort().join(' y ');
+                const t2 = [m.p3, m.p4].sort().join(' y ');
+                const total = m.s1 + m.s2;
+                histPairRounds[t1] = (histPairRounds[t1] || 0) + total;
+                histPairRounds[t2] = (histPairRounds[t2] || 0) + total;
+            });
+            const top3Pairs = Object.entries(histPairRounds).sort((a,b) => b[1] - a[1]).slice(0, 3);
+
+            let stomps = [];
+            ascMatches.forEach(m => {
+                const diff = Math.abs(m.s1 - m.s2);
+                const t1 = [m.p1, m.p2].sort().join(' y ');
+                const t2 = [m.p3, m.p4].sort().join(' y ');
+                const d = new Date(m.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                
+                if (m.s1 > m.s2) {
+                    stomps.push({ winner: t1, loser: t2, wScore: m.s1, lScore: m.s2, diff, date: dateStr });
+                } else if (m.s2 > m.s1) {
+                    stomps.push({ winner: t2, loser: t1, wScore: m.s2, lScore: m.s1, diff, date: dateStr });
                 }
             });
-            pWins.sort((a,b) => b.diff - a.diff);
-            
-            playerVictoriesHtml = `<div class="mus-table-wrapper" style="margin-top:10px;"><table class="mus-table" style="font-size:0.9em;">
-                <tr><th>#</th><th>Fecha</th><th>Pareja</th><th>Contra</th><th>Res.</th><th>Dif</th></tr>`;
-            pWins.slice(0, 10).forEach((w, i) => {
-                const d = new Date(w.date);
-                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                playerVictoriesHtml += `<tr>
+            stomps.sort((a,b) => b.diff - a.diff);
+            const top15Stomps = stomps.slice(0, 15);
+
+            let stompsTableHtml = `<div class="mus-table-wrapper"><table class="mus-table" style="font-size:0.9em;">
+                <tr><th>#</th><th>Fecha</th><th>Ganadores</th><th>Perdedores</th><th>Dif</th></tr>`;
+            top15Stomps.forEach((s, i) => {
+                stompsTableHtml += `<tr>
                     <td style="font-weight:bold;">${i+1}</td>
-                    <td style="color:#aaa;">${dateStr}</td>
-                    <td style="color:#74b9ff;">${w.partner}</td>
-                    <td style="color:#ff7675;">${w.rivals}</td>
-                    <td><span style="color:#2ed573; font-weight:bold">${w.sW}</span> - <span style="color:#ff4757; font-weight:bold">${w.sL}</span></td>
-                    <td style="color:#f1c40f; font-weight:900;">+${w.diff}</td>
+                    <td style="color:#aaa;">${s.date}</td>
+                    <td style="color:#2ed573; font-weight:bold;">${s.winner} <span style="color:#fff">(${s.wScore})</span></td>
+                    <td style="color:#ff4757;">${s.loser} <span style="color:#fff">(${s.lScore})</span></td>
+                    <td style="color:#f1c40f; font-weight:900;">+${s.diff}</td>
                 </tr>`;
             });
-            if(pWins.length === 0) playerVictoriesHtml += `<tr><td colspan="6">No tiene victorias registradas.</td></tr>`;
-            playerVictoriesHtml += `</table></div>`;
-        }
+            stompsTableHtml += `</table></div>`;
 
-        let rHTML = `
-            <h3 style="color:#0984e3; margin-bottom:5px;">📅 Más Viciados (Últimos 7 Días)</h3>
-            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #74b9ff;">
-                    ${viciadosHtml}
-                </div>
-            </div>
+            let playersList = [...new Set(ascMatches.flatMap(m => [m.p1, m.p2, m.p3, m.p4]))].sort();
+            let playerSelectHtml = `<select id="rachasPlayerSelect" onchange="app.mus.updateRachasPlayer(this.value)" style="padding:5px; background:#fff; color:#000; border-radius:5px;">
+                <option value="">-- Selecciona jugador --</option>
+                ${playersList.map(p => `<option value="${p}" ${p===app.mus.rachasPlayerSelected?'selected':''}>${p}</option>`).join('')}
+            </select>`;
 
-            <h3 style="color:#ffa502; margin-bottom:5px;">🔥 Rachas Actuales (Activas)</h3>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
-                    <div style="font-size:0.8em; color:#aaa;">👤 Rondas Ganadas Seguidas</div>
-                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxWinP.n}</div>
-                    <div style="color:#2ed573; font-weight:900; font-size:1.3em;">+${maxWinP.val}</div>
-                </div>
-                <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
-                    <div style="font-size:0.8em; color:#aaa;">👤 Rondas Perdidas Seguidas</div>
-                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxLossP.n}</div>
-                    <div style="color:#ff4757; font-weight:900; font-size:1.3em;">-${maxLossP.val}</div>
-                </div>
-                <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
-                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja Ganadora Seguidas</div>
-                    <div style="font-size:1em; font-weight:bold; color:#fff;">${maxWinPair.n}</div>
-                    <div style="color:#2ed573; font-weight:900; font-size:1.3em;">+${maxWinPair.val}</div>
-                </div>
-                <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
-                    <div style="font-size:0.8em; color:#aaa;">👥 Pareja Perdedora Seguidas</div>
-                    <div style="font-size:1em; font-weight:bold; color:#fff;">${maxLossPair.n}</div>
-                    <div style="color:#ff4757; font-weight:900; font-size:1.3em;">-${maxLossPair.val}</div>
-                </div>
-            </div>
+            let playerVictoriesHtml = "";
+            if (app.mus.rachasPlayerSelected) {
+                let pWins = [];
+                ascMatches.forEach(m => {
+                    let p12 = [m.p1, m.p2];
+                    let p34 = [m.p3, m.p4];
+                    let isT1 = p12.includes(app.mus.rachasPlayerSelected);
+                    let isT2 = p34.includes(app.mus.rachasPlayerSelected);
+                    
+                    if (isT1 && m.s1 > m.s2) {
+                        pWins.push({ partner: p12.find(x => x !== app.mus.rachasPlayerSelected), rivals: p34.join(' y '), sW: m.s1, sL: m.s2, diff: m.s1 - m.s2, date: m.date });
+                    } else if (isT2 && m.s2 > m.s1) {
+                        pWins.push({ partner: p34.find(x => x !== app.mus.rachasPlayerSelected), rivals: p12.join(' y '), sW: m.s2, sL: m.s1, diff: m.s2 - m.s1, date: m.date });
+                    }
+                });
+                pWins.sort((a,b) => b.diff - a.diff);
+                
+                playerVictoriesHtml = `<div class="mus-table-wrapper" style="margin-top:10px;"><table class="mus-table" style="font-size:0.9em;">
+                    <tr><th>#</th><th>Fecha</th><th>Pareja</th><th>Contra</th><th>Res.</th><th>Dif</th></tr>`;
+                pWins.slice(0, 10).forEach((w, i) => {
+                    const d = new Date(w.date);
+                    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                    playerVictoriesHtml += `<tr>
+                        <td style="font-weight:bold;">${i+1}</td>
+                        <td style="color:#aaa;">${dateStr}</td>
+                        <td style="color:#74b9ff;">${w.partner}</td>
+                        <td style="color:#ff7675;">${w.rivals}</td>
+                        <td><span style="color:#2ed573; font-weight:bold">${w.sW}</span> - <span style="color:#ff4757; font-weight:bold">${w.sL}</span></td>
+                        <td style="color:#f1c40f; font-weight:900;">+${w.diff}</td>
+                    </tr>`;
+                });
+                if(pWins.length === 0) playerVictoriesHtml += `<tr><td colspan="6">No tiene victorias registradas.</td></tr>`;
+                playerVictoriesHtml += `</table></div>`;
+            }
 
-            <h3 style="color:#e1b12c; margin-bottom:5px;">📜 Salón de la Fama: Top 20 Rachas Históricas</h3>
-            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:300px; overflow-y:auto;">
-                    <div style="font-size:1em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Mayores Rachas de Victoria</div>
-                    ${allWinStreaks.slice(0,20).map((s, i) => `
-                        <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span><b>${i+1}. ${s.n}</b></span>
-                                <span style="color:#2ed573; font-weight:bold;">+${s.val} rondas</span>
+            let rHTML = `
+                <h3 style="color:#0984e3; margin-bottom:5px;">📅 Más Viciados (Últimos 7 Días)</h3>
+                <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
+                    <div class="card" style="background:#222; border-left: 4px solid #74b9ff;">
+                        ${viciadosHtml}
+                    </div>
+                </div>
+
+                <h3 style="color:#ffa502; margin-bottom:5px;">🔥 Rachas Actuales (Activas)</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; text-align:left; margin-bottom:20px;">
+                    <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
+                        <div style="font-size:0.8em; color:#aaa;">👤 Rondas Ganadas Seguidas</div>
+                        <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxWinP.n}</div>
+                        <div style="color:#2ed573; font-weight:900; font-size:1.3em;">+${maxWinP.val}</div>
+                    </div>
+                    <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
+                        <div style="font-size:0.8em; color:#aaa;">👤 Rondas Perdidas Seguidas</div>
+                        <div style="font-size:1.2em; font-weight:bold; color:#fff;">${maxLossP.n}</div>
+                        <div style="color:#ff4757; font-weight:900; font-size:1.3em;">-${maxLossP.val}</div>
+                    </div>
+                    <div class="card" style="background:#222; border-left: 4px solid #2ed573;">
+                        <div style="font-size:0.8em; color:#aaa;">👥 Pareja Ganadora Seguidas</div>
+                        <div style="font-size:1em; font-weight:bold; color:#fff;">${maxWinPair.n}</div>
+                        <div style="color:#2ed573; font-weight:900; font-size:1.3em;">+${maxWinPair.val}</div>
+                    </div>
+                    <div class="card" style="background:#222; border-left: 4px solid #ff4757;">
+                        <div style="font-size:0.8em; color:#aaa;">👥 Pareja Perdedora Seguidas</div>
+                        <div style="font-size:1em; font-weight:bold; color:#fff;">${maxLossPair.n}</div>
+                        <div style="color:#ff4757; font-weight:900; font-size:1.3em;">-${maxLossPair.val}</div>
+                    </div>
+                </div>
+
+                <h3 style="color:#e1b12c; margin-bottom:5px;">📜 Salón de la Fama: Top 20 Rachas Históricas</h3>
+                <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
+                    <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:300px; overflow-y:auto;">
+                        <div style="font-size:1em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Mayores Rachas de Victoria</div>
+                        ${allWinStreaks.slice(0,20).map((s, i) => `
+                            <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span><b>${i+1}. ${s.n}</b></span>
+                                    <span style="color:#2ed573; font-weight:bold;">+${s.val} rondas</span>
+                                </div>
+                                <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
+                                    ${s.end === 'AÚN ACTIVA' ? '<span style="color:#2ed573">🟢 AÚN ACTIVA</span>' : ``}
+                                </div>
                             </div>
-                            <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
-                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#2ed573">🟢 AÚN ACTIVA</span>' : ``}
+                        `).join('')}
+                    </div>
+                    
+                    <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:300px; overflow-y:auto;">
+                        <div style="font-size:1em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Mayores Rachas de Derrota</div>
+                        ${allLossStreaks.slice(0,20).map((s, i) => `
+                            <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span><b>${i+1}. ${s.n}</b></span>
+                                    <span style="color:#ff4757; font-weight:bold;">-${s.val} rondas</span>
+                                </div>
+                                <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
+                                    ${s.end === 'AÚN ACTIVA' ? '<span style="color:#ff4757">🔴 AÚN ACTIVA</span>' : ``}
+                                </div>
                             </div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
+                </div>
+
+                <h3 style="color:#f1c40f; margin-bottom:5px;">🥊 Top 15 Mayores Palizas (Stomps)</h3>
+                <div style="margin-bottom:20px;">
+                    ${stompsTableHtml}
                 </div>
                 
-                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:300px; overflow-y:auto;">
-                    <div style="font-size:1em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Mayores Rachas de Derrota</div>
-                    ${allLossStreaks.slice(0,20).map((s, i) => `
-                        <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span><b>${i+1}. ${s.n}</b></span>
-                                <span style="color:#ff4757; font-weight:bold;">-${s.val} rondas</span>
-                            </div>
-                            <div style="font-size:0.85em; color:#aaa; margin-top:2px;">
-                                ${s.end === 'AÚN ACTIVA' ? '<span style="color:#ff4757">🔴 AÚN ACTIVA</span>' : ``}
-                            </div>
-                        </div>
-                    `).join('')}
+                <h3 style="color:#3498db; margin-bottom:5px;">🎖️ Mejores Victorias Individuales</h3>
+                <div class="card" style="background:#222; border-left: 4px solid #3498db; text-align:left; margin-bottom:20px;">
+                    <label style="color:#aaa; font-size:0.9em; margin-right:10px;">Elige a un jugador:</label>
+                    ${playerSelectHtml}
+                    ${playerVictoriesHtml}
                 </div>
-            </div>
 
-            <h3 style="color:#f1c40f; margin-bottom:5px;">🥊 Top 15 Mayores Palizas (Stomps)</h3>
-            <div style="margin-bottom:20px;">
-                ${stompsTableHtml}
-            </div>
-            
-            <h3 style="color:#3498db; margin-bottom:5px;">🎖️ Mejores Victorias Individuales</h3>
-            <div class="card" style="background:#222; border-left: 4px solid #3498db; text-align:left; margin-bottom:20px;">
-                <label style="color:#aaa; font-size:0.9em; margin-right:10px;">Elige a un jugador:</label>
-                ${playerSelectHtml}
-                ${playerVictoriesHtml}
-            </div>
-
-            <h3 style="color:#a55eea; margin-bottom:5px;">⚖️ Curiosidades Históricas</h3>
-            <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #a55eea;">
-                    <div style="font-size:0.9em; font-weight:bold; color:#a55eea; margin-bottom:10px;">🤝 Top 3 Parejas Históricas (Total Rondas)</div>
-                    ${top3Pairs.map((p, i) => `
-                        <div style="margin-bottom:5px; font-size:0.9em;">
-                            <b>${i+1}. ${p[0]}</b> <span style="color:#aaa;">(${p[1]} rondas juntos)</span>
-                        </div>
-                    `).join('')}
+                <h3 style="color:#a55eea; margin-bottom:5px;">⚖️ Curiosidades Históricas</h3>
+                <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
+                    <div class="card" style="background:#222; border-left: 4px solid #a55eea;">
+                        <div style="font-size:0.9em; font-weight:bold; color:#a55eea; margin-bottom:10px;">🤝 Top 3 Parejas Históricas (Total Rondas)</div>
+                        ${top3Pairs.map((p, i) => `
+                            <div style="margin-bottom:5px; font-size:0.9em;">
+                                <b>${i+1}. ${p[0]}</b> <span style="color:#aaa;">(${p[1]} rondas juntos)</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="card" style="background:#222; border-left: 4px solid #e056fd;">
+                        <div style="font-size:0.8em; color:#aaa;">🎢 Jugador más irregular (Desv. Est.)</div>
+                        <div style="font-size:1.2em; font-weight:bold; color:#fff;">${mostIrregularP.n}</div>
+                        <div style="color:#e056fd; font-weight:900; font-size:0.9em;">${mostIrregularP.dev.toFixed(2)}</div>
+                    </div>
+                    <div class="card" style="background:#222; border-left: 4px solid #e056fd;">
+                        <div style="font-size:0.8em; color:#aaa;">🎢 Pareja más irregular (Desv. Est.)</div>
+                        <div style="font-size:1.2em; font-weight:bold; color:#fff;">${mostIrregularPair.n}</div>
+                        <div style="color:#e056fd; font-weight:900; font-size:0.9em;">${mostIrregularPair.dev.toFixed(2)}</div>
+                    </div>
                 </div>
-                <div class="card" style="background:#222; border-left: 4px solid #e056fd;">
-                    <div style="font-size:0.8em; color:#aaa;">🎢 Jugador más irregular (Desv. Est.)</div>
-                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${mostIrregularP.n}</div>
-                    <div style="color:#e056fd; font-weight:900; font-size:0.9em;">${mostIrregularP.dev.toFixed(2)}</div>
-                </div>
-                <div class="card" style="background:#222; border-left: 4px solid #e056fd;">
-                    <div style="font-size:0.8em; color:#aaa;">🎢 Pareja más irregular (Desv. Est.)</div>
-                    <div style="font-size:1.2em; font-weight:bold; color:#fff;">${mostIrregularPair.n}</div>
-                    <div style="color:#e056fd; font-weight:900; font-size:0.9em;">${mostIrregularPair.dev.toFixed(2)}</div>
-                </div>
-            </div>
-        `;
-        container.innerHTML = rHTML;
+            `;
+            container.innerHTML = rHTML;
+        } catch(e) {
+            console.error(e);
+            container.innerHTML = `<div style="padding:20px; color:#ff4757; background:#222; border-radius:10px;">Hubo un error cargando las estadísticas: ${e.message}</div>`;
+        }
     },
 
     updatePredictorOpponents: () => {

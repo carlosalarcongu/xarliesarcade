@@ -1,0 +1,74 @@
+<div id="tabuLobby" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <h2 style="color:#00b894">🚫 Sala Tabú</h2>
+        <div style="display:flex; gap:10px; margin-bottom:20px; width:100%">
+            <div style="flex:1">
+                <button id="btnTeamBLUE" class="team-btn team-blue" onclick="app.tabu.joinTeam('BLUE')" style="width:100%">AZUL 🔵</button>
+                <ul id="listBlue" style="margin-top:5px; min-height:50px; background:rgba(9, 132, 227, 0.2)"></ul>
+            </div>
+            <div style="flex:1">
+                <button id="btnTeamRED" class="team-btn team-red" onclick="app.tabu.joinTeam('RED')" style="width:100%">ROJO 🔴</button>
+                <ul id="listRed" style="margin-top:5px; min-height:50px; background:rgba(214, 48, 49, 0.2)"></ul>
+            </div>
+        </div>
+        <h4 style="color:#aaa">Espectadores:</h4>
+        <ul id="listSpectators"></ul>
+        <div id="tabuAdminPanel" class="admin-panel hidden" style="margin-top:20px">
+            <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px; border: 1px solid #444;">
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
+                    <span>Rondas:</span>
+                    <input type="number" id="tabuRounds" value="3" min="1" style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
+                </div>
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
+                    <span>Tiempo (s):</span>
+                    <input type="number" id="tabuDuration" value="60" step="10" min="10" style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
+                </div>
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
+                    <span>Saltos:</span>
+                    <input type="number" id="tabuSkips" value="3" min="0" style="width:80px; padding:5px; text-align:center; color:#2d3436; background:#fff; border-radius:5px; border:none; font-weight:bold;">
+                </div>
+                <div class="control-row" style="background:transparent; box-shadow:none; margin:0; padding:5px; justify-content:space-between;">
+                    <span>Pausa/Ronda:</span>
+                    <input type="checkbox" id="tabuPause" style="width:20px; height:20px;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button id="btnRandomTeams" onclick="app.tabu.randomize()" class="kick-btn" style="background:#a55eea; font-size:0.9em; width:auto; padding:15px;">🎲 Random</button>
+                <button id="btnStartTabu" class="start-btn" onclick="app.tabu.start()" style="flex:1;">▶️ EMPEZAR</button>
+            </div>
+        </div>
+        <p id="tabuWaitMsg" style="color:#aaa">Esperando al admin...</p>
+    </div>
+
+<div id="tabuGame" class="hidden">
+        <div class="back-nav" style="display:flex; gap:5px;">
+            <button onclick="app.showRules()" style="flex:0.3; background:#ffa502; color:#2f3542; font-weight:900; font-size:1.2em;">❓</button>
+            <button onclick="app.goBackToHub(true)" style="flex:1; background:#eb4d4b;">❌ Salir</button>
+        </div>        
+        <div style="display:flex; justify-content:space-between; background:#2f3542; padding:10px; border-radius:10px; border:2px solid #57606f; margin-bottom:20px;">
+            <div style="color:#0984e3; font-weight:bold; font-size:1.5em">🔵 <span id="scoreBlue">0</span></div>
+            <div style="text-align:center">
+                <div id="timerDisp" style="font-size:2em; font-weight:bold; font-family:monospace">60</div>
+                <div id="roundDisp" style="font-size:0.8em; color:#aaa">Ronda 1</div>
+            </div>
+            <div style="color:#d63031; font-weight:bold; font-size:1.5em"><span id="scoreRed">0</span> 🔴</div>
+        </div>
+        <div id="tabuCardArea" style="width:100%"></div>
+        <div id="tabuActionButtons" class="hidden" style="position:fixed; bottom:20px; left:0; width:100%; padding:20px; display:flex; gap:10px;">
+            <button onclick="app.tabu.taboo()" style="background:#ff4757; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #c0392b">🚫 MAL</button>
+            <button id="btnSkip" onclick="app.tabu.skip()" style="background:#ffa502; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #e67e22; color:#000;">⏭️ SALTAR</button>
+            <button onclick="app.tabu.correct()" style="background:#2ed573; flex:1; height:70px; font-size:1.2em; box-shadow:0 4px 0 #218c74">✅ BIEN</button>
+        </div>
+        <div id="tabuGameOverModal" class="hidden modal-overlay">
+            <h1 id="winnerText" style="color:#a55eea; font-size:3em">...</h1>
+            <h2 id="finalScoreText" style="color:#fff">0 - 0</h2>
+            <h3 style="margin-top:20px; color:#aaa">Estadísticas (Aciertos)</h3>
+            <ul id="mvpList" style="max-height:300px; overflow-y:auto; text-align:left;"></ul>
+            <button id="tabuAdminResetBtn" onclick="app.tabu.reset()" class="main-btn hidden" style="margin-top:20px">Volver al Lobby (Admin)</button>
+            <p id="tabuWaitingMsg" class="waiting-text hidden">Esperando al admin...</p>
+        </div>
+    </div>
+

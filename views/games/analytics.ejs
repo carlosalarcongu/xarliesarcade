@@ -1,0 +1,16 @@
+<div id="analyticsScreen" class="hidden">
+        <div class="back-nav">
+            <button onclick="app.goBackToHub()">⬅ Salir</button>
+        </div>
+        
+        <h2 style="color:#3498db; margin-bottom:10px;">📈 Analytics</h2>
+        
+        <div style="margin-bottom:20px;">
+            <select id="analyticsWeekSelect" onchange="app.analytics.changeWeek()" style="width:100%; padding:10px; border-radius:5px; background:#222; color:#fff; border:1px solid #444;">
+                <option value="">Cargando datos...</option>
+            </select>
+        </div>
+
+        <div id="analyticsDataContainer" style="width:100%; text-align:center;"></div>
+    </div>
+
