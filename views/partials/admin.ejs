@@ -1,9 +1,34 @@
 <div id="authAdminScreen" class="hidden">
-        <div class="back-nav">
-            <button onclick="app.goBackToHub()">⬅ Volver</button>
+    <div class="back-nav">
+        <button onclick="app.goBackToHub()">⬅ Volver</button>
+    </div>
+    
+    <div class="card" style="background:#222; border:2px solid #a55eea; margin-bottom: 25px;">
+        <h3 style="color:#a55eea; margin-top:0;">📢 Publicar Novedad</h3>
+        <p style="color:#aaa; font-size:0.8em; margin-bottom:15px; text-align:left;">Esto hará saltar el banner emergente en el Hub a todos los usuarios.</p>
+        
+        <div class="control-row" style="background:transparent; padding:2px; margin:5px 0 10px 0; justify-content:space-between;">
+            <span style="color:#aaa; font-size:0.9em;">Juego enlazado:</span>
+            <select id="adminNewsRoom" style="width:140px; border-radius:5px; background:#fff; color:#000; padding:5px;">
+                <option value="impostor">El Impostor</option>
+                <option value="tabu">Tabú</option>
+                <option value="elmas">El MÁS...</option>
+                <option value="orden">Orden</option>
+                <option value="anecdotas">Anécdotas</option>
+                <option value="cifrasyletras">Cifras y Letras</option>
+                <option value="pinturilloImp">El Falso Artista</option>
+                <option value="torres">Torres</option>
+                <option value="mus">Mus</option>
+                <option value="fifa">FIFA</option>
+                <option value="torneos" selected>Torneos</option>
+                <option value="feedback">Feedback</option>
+            </select>
         </div>
-        <h2 style="color:#ff4757;">🛡️ Panel de Registros</h2>
-        <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">Aprueba los nuevos nicks y reseteos de clave.</p>
-        <div id="authAdminList" style="width:100%;"></div>
+        <textarea id="adminNewsText" rows="2" placeholder="Escribe aquí la novedad..." style="width:100%; margin-bottom:10px; padding:10px; border-radius:5px; resize:none;"></textarea>
+        <button class="main-btn" style="background:#a55eea; box-shadow:0 4px 0 #8e44ad;" onclick="app.auth.updateNews()">🚀 ENVIAR A TODOS</button>
     </div>
 
+    <h2 style="color:#ff4757;">🛡️ Panel de Registros</h2>
+    <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">Aprueba los nuevos nicks y reseteos de clave.</p>
+    <div id="authAdminList" style="width:100%;"></div>
+</div>

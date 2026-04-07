@@ -66,6 +66,12 @@ Object.keys(gamesModules).forEach(key => {
     }
 });
 
+let globalNews = { 
+    id: 'news_' + Date.now(), 
+    room: 'torneos', 
+    text: '¡Bienvenidos al Arcade! Atentos a las nuevas actualizaciones.' 
+};
+
 io.on('connection', (socket) => {
     socket.setMaxListeners(30); 
 
@@ -76,6 +82,24 @@ io.on('connection', (socket) => {
             callback({ success: true, session });
         } else {
             callback({ success: false });
+        }
+    });
+
+    // --- NOVEDADES DEL HUB ---
+    socket.emit('updateHubNews', globalNews);
+
+    socket.on('adminUpdateNews', (data) => {
+        const safeUser = (data.user || "").toLowerCase();
+        // Verificar si es un administrador autorizado
+        const isAdmin = ['administrador m', 'administrador g', 'administrador de mus', 'xarlie', 'musero', 'japa'].includes(safeUser);
+        
+        if (isAdmin) {
+            globalNews = {
+                id: 'news_' + Date.now(), // Al cambiar el ID, volverá a aparecerle a todos
+                room: data.room,
+                text: data.text
+            };
+            io.emit('updateHubNews', globalNews); // Avisar a todos los conectados
         }
     });
 

@@ -148,32 +148,15 @@
         <a href="javascript:void(0)" onclick="app.showLegalModal()" style="color:#666; font-size:0.7em; text-decoration:underline;">Política de Privacidad y Términos de Uso</a>
     </div>
 
-    <div id="hubNewsWidget" class="card" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border: 2px solid #a55eea; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1000; display: none; background: var(--bg-card);">
-        <button onclick="dismissNews(event)" style="position: absolute; top: 5px; right: 10px; background: transparent; border: none; color: var(--text-muted); font-size: 1.2em; box-shadow: none; padding: 0;">✖</button>
-        <div onclick="app.selectRoom('torneos')" style="cursor: pointer; display: flex; align-items: center; gap: 15px;">
+    <div id="hubNewsWidget" class="card hidden" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border: 2px solid #a55eea; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1000; background: var(--bg-card);">
+        <button onclick="app.dismissNews(event)" style="position: absolute; top: 5px; right: 10px; background: transparent; border: none; color: var(--text-muted); font-size: 1.2em; box-shadow: none; padding: 0;">✖</button>
+        <div id="hubNewsContent" style="cursor: pointer; display: flex; align-items: center; gap: 15px;">
             <div style="font-size: 2.5em; animation: pulse 2s infinite;">🆕</div>
             <div style="text-align: left;">
                 <h4 style="margin: 0; color: #a55eea; font-size: 1.1em;">¡Novedades en el Arcade!</h4>
-                <p style="margin: 5px 0 0 0; font-size: 0.85em; color: var(--text-main);">Ya puedes crear <b>Torneos</b> y jugar a <b>Torres</b> con Chuletas.</p>
+                <p id="hubNewsText" style="margin: 5px 0 0 0; font-size: 0.85em; color: var(--text-main);">...</p>
             </div>
         </div>
     </div>
-
-    <script>
-        const currentNewsId = "news_v1_torneos";
-        function checkNewsWidget() {
-            const dismissedId = localStorage.getItem('arcade_news_dismissed');
-            const widget = document.getElementById('hubNewsWidget');
-            if (widget && dismissedId !== currentNewsId) {
-                widget.style.display = 'block';
-            }
-        }
-        function dismissNews(e) {
-            e.stopPropagation();
-            localStorage.setItem('arcade_news_dismissed', currentNewsId);
-            const widget = document.getElementById('hubNewsWidget');
-            if (widget) widget.style.display = 'none';
-        }
-        document.addEventListener('DOMContentLoaded', checkNewsWidget);
-    </script>
+    
 </div>

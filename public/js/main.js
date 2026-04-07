@@ -49,6 +49,18 @@ window.app = {
         }
     },
 
+    currentNews: null,
+
+    dismissNews: (e) => {
+        if (e) e.stopPropagation();
+        if (app.currentNews) {
+            // Guardar en el navegador que ya hemos visto ESTA noticia específica
+            localStorage.setItem('arcade_news_dismissed', app.currentNews.id);
+        }
+        const widget = document.getElementById('hubNewsWidget');
+        if (widget) widget.classList.add('hidden');
+    },
+
     auth: {
         pendingCallback: null,
         pendingName: null,
@@ -132,7 +144,18 @@ window.app = {
             if (confirm(`¿Estás seguro de ${action === 'approve' ? 'APROBAR' : 'RECHAZAR'} esta solicitud?`)) {
                 socket.emit('resolveAuthRequest', { adminName: app.myPlayerName, reqId, action });
             }
-        }
+        },
+
+        updateNews: () => {
+            const room = document.getElementById('adminNewsRoom').value;
+            const text = document.getElementById('adminNewsText').value.trim();
+            
+            if (!text) return alert("Debes escribir un texto para la novedad.");
+            
+            socket.emit('adminUpdateNews', { user: app.myPlayerName, room: room, text: text });
+            alert("✅ Novedad publicada. Todos los usuarios la verán en su menú principal.");
+            document.getElementById('adminNewsText').value = ""; // Limpiar textarea
+        },
     },
 
     showPasswordModal: (name, callback) => {
@@ -799,6 +822,30 @@ socket.on('updateMusWhitelist', (list) => {
     app.musWhitelist = list;
     if (app.currentScreenId === 'hubScreen' || app.currentScreenId === 'statsSelectionScreen') {
         app.showScreen(app.currentScreenId, true); 
+    }
+});
+
+socket.on('updateHubNews', (news) => {
+    app.currentNews = news;
+    const widget = document.getElementById('hubNewsWidget');
+    const textEl = document.getElementById('hubNewsText');
+    const contentEl = document.getElementById('hubNewsContent');
+    
+    if (widget && textEl && contentEl) {
+        // 1. Rellenar los datos
+        textEl.innerText = news.text;
+        contentEl.onclick = () => app.selectRoom(news.room);
+        
+        // 2. Comprobar si el usuario ya ha cerrado ESTA noticia
+        const dismissedId = localStorage.getItem('arcade_news_dismissed');
+        
+        if (dismissedId !== news.id) {
+            // Es una noticia nueva (o nunca ha cerrado ninguna), mostrar
+            widget.classList.remove('hidden');
+        } else {
+            // Ya la había cerrado, mantener oculta
+            widget.classList.add('hidden');
+        }
     }
 });
 
