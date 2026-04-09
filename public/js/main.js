@@ -316,7 +316,7 @@ window.app = {
         
         if (id === 'hubScreen') {
             const lowerName = (app.myPlayerName || '').toLowerCase();
-            const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
+            const isAdm = ['musero', 'administrador m', 'xarlie', 'japa'].includes(lowerName);
             
             const btnHubStats = document.getElementById('btnHubStats');
 
@@ -333,39 +333,68 @@ window.app = {
             }
         }
 
-        if (id === 'loginScreen' && !app.myPlayerName) {
-            widget.classList.add('hidden');
-        } else {
+        // --- LÓGICA DEL WIDGET FLOTANTE (SIEMPRE VISIBLE) ---
+        if (widget) {
             widget.classList.remove('hidden');
-            const name = app.myPlayerName || "Sin Nombre";
-            const roomName = app.currentRoom ? app.currentRoom.toUpperCase() : "HUB";
-            const roomId = app.currentRoomId ? ` - ${app.currentRoomId}` : "";
+            const playerName = app.myPlayerName || "Anónimo";
             
-            const lowerName = name.toLowerCase();
-            let userEmoji = "👤"; 
+            // 1. Pantallas de Menú / Perfil
+            const profileScreens = ['hubScreen', 'loginScreen', 'statsSelectionScreen', 'authAdminScreen'];
             
-            if (['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
-                userEmoji = "👑";
+            // 2. Pantallas Globales (Juegos sin sala del servidor)
+            const globalScreens = [
+                'analyticsScreen', 'musScreen', 'fifaScreen', 'beberScreen', 'beberStatsScreen', 
+                'contextoScreen', 'consejoScreen', 'fiestaScreen', 'darkstoriesScreen', 
+                'torneosLobby', 'torneosViewScreen', 'giveScreen', 'feedbackScreen'
+            ];
+            
+            if (profileScreens.includes(id)) {
+                // Estado 1: Hub y Perfil
+                if (widgetText) {
+                    widgetText.innerHTML = `
+                        <div style="font-size:0.8em; opacity:0.8; text-transform:uppercase;">Tu Perfil</div>
+                        <div style="font-weight:bold; font-size:1.1em; color:var(--accent-green);">👤 ${playerName}</div>
+                    `;
+                }
+            } else if (globalScreens.includes(id) || !app.currentRoom) {
+                // Estado 2: Juegos Globales (Solo muestra el nombre)
+                if (widgetText) {
+                    widgetText.innerHTML = `
+                        <div style="font-weight:bold; font-size:1.1em; color:var(--accent-green);">👤 ${playerName}</div>
+                    `;
+                }
             } else {
-                if (app.isAuthenticatedUser) userEmoji = "🛡️"; 
-                else if (name !== "Sin Nombre") userEmoji = "🛡️❌"; 
-            }
-
-            const roomEmoji = (app.currentRoom && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🏠";
-            widgetText.innerHTML = `<span style="opacity:0.7">${roomEmoji} ${roomName}${roomId}</span><br><strong>${userEmoji} ${name}</strong>`;
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        if (id === 'statsSelectionScreen') {
-            const musCard = document.getElementById('cardMusStats');
-            if (musCard) {
-                const lowerName = (app.myPlayerName || '').toLowerCase();
-                const isAdm = ['musero', 'administrador m', 'xarlie'].includes(lowerName);
-                if (isAdm || app.musWhitelist.includes(lowerName)) {
-                    musCard.classList.remove('hidden');
+                // Estado 3: En una sala de juego
+                const roomDisplayNames = {
+                    'impostor': 'El Impostor', 'tabu': 'Tabú', 'elmas': 'El MÁS...',
+                    'orden': 'Orden', 'anecdotas': 'Anécdotas', 'cifrasyletras': 'Cifras y Letras',
+                    'pinturilloImp': 'El Falso Artista', 'torres': 'Torres', 'trivial': 'Trivial'
+                };
+                
+                const roomName = roomDisplayNames[app.currentRoom] || app.currentRoom;
+                const roomEmoji = (typeof ROOM_EMOJIS !== 'undefined' && ROOM_EMOJIS[app.currentRoom]) ? ROOM_EMOJIS[app.currentRoom] : "🎮";
+                
+                if (widgetText) {
+                    widgetText.innerHTML = `
+                        <div style="font-size:0.8em; opacity:0.8; text-transform:uppercase;">${roomEmoji} ${roomName}</div>
+                        <div style="font-weight:bold; font-size:1.1em; color:var(--accent-blue);">${playerName} - ${app.currentRoomId || '-'}</div>
+                    `;
                 }
             }
         }
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // if (id === 'statsSelectionScreen') {
+        //     const musCard = document.getElementById('cardMusStats');
+        //     if (musCard) {
+        //         const lowerName = (app.myPlayerName || '').toLowerCase();
+        //         const isAdm = ['musero', 'administrador m', 'xarlie', 'japa'].includes(lowerName);
+        //         if (isAdm || (app.musWhitelist && app.musWhitelist.includes(lowerName))) {
+        //             musCard.classList.remove('hidden');
+        //         }
+        //     }
+        // }
     },
 
     findActiveSession: () => {
@@ -831,21 +860,20 @@ socket.on('updateHubNews', (news) => {
     const textEl = document.getElementById('hubNewsText');
     const contentEl = document.getElementById('hubNewsContent');
     
-    if (widget && textEl && contentEl) {
-        // 1. Rellenar los datos
+    // Solo mostrar el globo de noticias si estamos en la pantalla principal (Hub)
+    if (widget && textEl && contentEl && app.currentScreenId === 'hubScreen') {
         textEl.innerText = news.text;
         contentEl.onclick = () => app.selectRoom(news.room);
         
-        // 2. Comprobar si el usuario ya ha cerrado ESTA noticia
         const dismissedId = localStorage.getItem('arcade_news_dismissed');
         
         if (dismissedId !== news.id) {
-            // Es una noticia nueva (o nunca ha cerrado ninguna), mostrar
             widget.classList.remove('hidden');
         } else {
-            // Ya la había cerrado, mantener oculta
             widget.classList.add('hidden');
         }
+    } else if (widget) {
+        widget.classList.add('hidden');
     }
 });
 
@@ -902,6 +930,8 @@ window.onload = function() {
 
     socket.emit('requestHubRooms');
     socket.emit('requestMusWhitelist'); 
+    socket.emit('requestHubNews'); // Solicitamos la noticia actual al cargar
+    
     setInterval(() => {
         if (!document.getElementById('hubScreen').classList.contains('hidden') || 
             !document.getElementById('loginScreen').classList.contains('hidden')) {
@@ -916,3 +946,4 @@ window.onload = function() {
         app.showScreen('hubScreen');
     }
 };
+
