@@ -1,5 +1,6 @@
-// games/impostor.js
-const database = require('./database');
+const path = require('path');
+const Database = require('better-sqlite3');
+const db = new Database(path.join(__dirname, '../arcade.db'));
 const Utils = require('./utils');
 
 const rooms = {};
@@ -84,8 +85,16 @@ function broadcastRoom(io, roomId) {
     });
 }
 
+// --- NUEVA FUNCIÓN PARA LEER CATEGORÍAS DESDE LA BBDD ---
 function getPublicCategories() {
-    return Object.keys(database).map(k => ({ id: k, label: database[k].label || k }));
+    const rows = db.prepare(`SELECT DISTINCT categoria, aux1 FROM impostor_data`).all();
+    const categories = [{ id: 'MIX', label: '🎲 Aleatorio (Mix)' }];
+    
+    rows.forEach(r => {
+        categories.push({ id: r.categoria, label: r.aux1 || r.categoria });
+    });
+    
+    return categories;
 }
 
 function notifyElimination(room, eliminatedPlayer) {
@@ -188,14 +197,23 @@ const handleSocket = (io, socket) => {
 
             io.to('impostor_' + roomId).emit('preGameCountdown', 3);
 
+            // --- EXTRACCIÓN DE PALABRAS DESDE LA BBDD ---
             let wordPool = [];
             if (room.settings.category === 'MIX') {
-                Object.keys(database).forEach(k => { if(k!=='MIX') wordPool = wordPool.concat(database[k].words); });
-            } else if (database[room.settings.category]) {
-                wordPool = database[room.settings.category].words || [];
+                wordPool = db.prepare(`SELECT palabra as word, pista as hint FROM impostor_data`).all();
+            } else {
+                wordPool = db.prepare(`SELECT palabra as word, pista as hint FROM impostor_data WHERE categoria = ?`).all(room.settings.category);
             }
-            if(!wordPool.length) wordPool = [{word: "Error", hint: "..."}];
+            
+            if(!wordPool.length) wordPool = [{word: "Error", hint: "Base de datos vacía"}];
             const sel = wordPool[Math.floor(Math.random() * wordPool.length)];
+
+            // Extraer el nombre de la categoría para mostrarlo a los jugadores civiles
+            let catLabel = "Mezcla";
+            if (room.settings.category !== 'MIX') {
+                const catInfo = db.prepare(`SELECT aux1 FROM impostor_data WHERE categoria = ? LIMIT 1`).get(room.settings.category);
+                if (catInfo && catInfo.aux1) catLabel = catInfo.aux1;
+            }
 
             const indices = room.players.map((_,i)=>i).sort(()=>Math.random()-0.5);
             const numImpostors = Math.min(room.settings.impostors, Math.floor(room.players.length / 2)); 
@@ -236,7 +254,7 @@ const handleSocket = (io, socket) => {
                     word: isImp ? 'Impostor' : sel.word,
                     hint: (room.settings.hints && isImp) ? sel.hint : null,
                     starter: starterName, 
-                    categoriesPlayed: database[room.settings.category] ? database[room.settings.category].label : "Mezcla"
+                    categoriesPlayed: catLabel
                 };
             });
 
