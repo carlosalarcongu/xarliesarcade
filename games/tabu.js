@@ -1,5 +1,8 @@
+// games/tabu.js
+const path = require('path');
+const Database = require('better-sqlite3');
+const db = new Database(path.join(__dirname, '../arcade.db'));
 const Utils = require('./utils');
-const questionsDB = require('./tabu_words'); 
 
 const rooms = {};
 
@@ -188,14 +191,27 @@ function startPlayingPhase(io, roomId) {
 }
 
 function pickNewCard(room) {
-    const fallbackDB = [
-        { word: "MANZANA", forbidden: ["FRUTA", "ROJA", "COMER", "BLANCANIEVES"] },
-        { word: "COCHE", forbidden: ["RUEDAS", "VOLANTE", "MOTOR", "CONDUCIR"] },
-        { word: "FUTBOL", forbidden: ["PELOTA", "GOL", "PORTERIA", "DEPORTE"] }
-    ];
-    const db = (questionsDB && questionsDB.length > 0) ? questionsDB : fallbackDB;
-    const random = db[Math.floor(Math.random() * db.length)];
-    room.turnData.currentCard = random;
+    let row;
+    try {
+        row = db.prepare(`SELECT * FROM tabu_data ORDER BY RANDOM() LIMIT 1`).get();
+    } catch(err) {
+        console.error("Error al obtener carta de Tabú:", err);
+    }
+    
+    if (!row) {
+        room.turnData.currentCard = { word: "ERROR DB", forbidden: ["FALTA", "BASE", "DE", "DATOS"] };
+    } else {
+        const f = [];
+        if (row.prohibida1) f.push(row.prohibida1);
+        if (row.prohibida2) f.push(row.prohibida2);
+        if (row.prohibida3) f.push(row.prohibida3);
+        if (row.prohibida4) f.push(row.prohibida4);
+        
+        room.turnData.currentCard = {
+            word: row.palabra,
+            forbidden: f.length > 0 ? f : ["SIN", "PALABRAS", "TABÚ"]
+        };
+    }
 }
 
 function endGame(io, roomId) {
