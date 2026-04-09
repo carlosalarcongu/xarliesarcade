@@ -3,6 +3,42 @@
         <button onclick="app.goBackToHub()">⬅ Volver</button>
     </div>
     
+    <div class="card" style="background:#222; border:2px solid #f1c40f; margin-bottom: 25px;">
+        <h3 style="color:#f1c40f; margin-top:0;">🗄️ Gestión de Base de Datos</h3>
+        <p style="color:#aaa; font-size:0.8em; margin-bottom:15px; text-align:left;">Acceso total a <b>arcade.db</b>. ⚠️ Los cambios son irreversibles.</p>
+        
+        <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+            <select id="dbTableSelect" style="flex:1; min-width:150px; padding:10px; border-radius:5px; background:#fff; color:#000;">
+                <option value="">Cargando tablas...</option>
+            </select>
+            <button class="main-btn" style="width:auto; margin:0; background:#f1c40f; color:#000;" onclick="app.dbAdmin.loadTable()">Listar Todo</button>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+            <button class="kick-btn" style="flex:1; background:#2ed573; padding:10px; font-size:0.85em;" onclick="app.dbAdmin.showInsertForm()">➕ Añadir Fila</button>
+            <button class="kick-btn" style="flex:1; background:#e74c3c; padding:10px; font-size:0.85em;" onclick="app.dbAdmin.dropTable()">💣 Borrar Tabla</button>
+            <button class="kick-btn" style="flex:1; background:#3498db; padding:10px; font-size:0.85em;" onclick="app.dbAdmin.toggleCustomQuery()">📝 Libre (SQL)</button>
+        </div>
+
+        <div id="dbCustomQueryArea" class="hidden" style="margin-bottom:15px; background:#1e272e; padding:10px; border-radius:5px;">
+            <p style="font-size:0.8em; color:#3498db; margin:0 0 5px 0; text-align:left;">Escribe comandos SELECT, INSERT, CREATE TABLE...</p>
+            <textarea id="dbCustomQuery" rows="3" placeholder="SELECT * FROM table WHERE..." style="width:100%; padding:10px; border-radius:5px; border:1px solid #3498db; background:#fff; color:#000; margin-bottom:5px;"></textarea>
+            <button class="main-btn" style="background:#3498db; margin:0; padding:8px;" onclick="app.dbAdmin.runCustomQuery()">Ejecutar Comando</button>
+        </div>
+
+        <div id="dbInsertArea" class="hidden" style="background:#1e272e; border:1px solid #2ed573; padding:15px; border-radius:5px; margin-bottom:15px;">
+            <h4 style="color:#2ed573; margin-top:0; text-align:left;">Insertar en: <span id="dbInsertTableName" style="color:#fff;"></span></h4>
+            <div id="dbInsertFields" style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;"></div>
+            <button class="main-btn" style="background:#2ed573; padding:10px;" onclick="app.dbAdmin.executeInsert()">Guardar Fila</button>
+        </div>
+
+        <div style="width:100%; overflow-x:auto; background:#111; padding:10px; border-radius:5px; max-height:400px;">
+            <table id="dbResultTable" style="width:100%; color:#fff; font-size:0.8em; text-align:left; border-collapse: collapse;">
+                <tr><td style="color:#666; text-align:center; padding:20px;">Esperando consultas...</td></tr>
+            </table>
+        </div>
+    </div>
+
     <div class="card" style="background:#222; border:2px solid #a55eea; margin-bottom: 25px;">
         <h3 style="color:#a55eea; margin-top:0;">📢 Publicar Novedad</h3>
         <p style="color:#aaa; font-size:0.8em; margin-bottom:15px; text-align:left;">Esto hará saltar el banner emergente en el Hub a todos los usuarios.</p>
@@ -21,6 +57,7 @@
                 <option value="mus">Mus</option>
                 <option value="fifa">FIFA</option>
                 <option value="torneos" selected>Torneos</option>
+                <option value="darkstories">Dark Stories</option>
                 <option value="feedback">Feedback</option>
             </select>
         </div>
@@ -32,3 +69,10 @@
     <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">Aprueba los nuevos nicks y reseteos de clave.</p>
     <div id="authAdminList" style="width:100%;"></div>
 </div>
+
+<style>
+    /* Estilos específicos para la tabla dinámica de BBDD */
+    #dbResultTable th { background: #333; padding: 8px; border-bottom: 2px solid #555; position: sticky; top: 0; }
+    #dbResultTable td { padding: 6px 8px; border-bottom: 1px solid #222; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #dbResultTable tr:hover { background: #1a1a1a; }
+</style>

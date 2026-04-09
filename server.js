@@ -73,6 +73,80 @@ let globalNews = {
 };
 
 io.on('connection', (socket) => {
+
+    // =========================================================================
+    // ================= GESTIÓN AVANZADA DE BASE DE DATOS =====================
+    // =========================================================================
+    socket.on('db_admin_action', (data) => {
+        const safeUser = (data.user || "").toLowerCase();
+        // Control de seguridad súper estricto: Solo estos usuarios pueden alterar la base de datos
+        const isAdmin = ['administrador m', 'administrador g', 'administrador de mus', 'xarlie', 'musero', 'japa'].includes(safeUser);
+        
+        if (!isAdmin) {
+            return socket.emit('db_admin_result', { error: 'Acceso denegado. No tienes privilegios de Super Administrador.' });
+        }
+
+        try {
+            if (data.action === 'get_tables') {
+                const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();
+                socket.emit('db_admin_tables', tables.map(t => t.name));
+            }
+            else if (data.action === 'select_all') {
+                const table = data.table.replace(/[^a-zA-Z0-9_]/g, ''); // Filtro Anti-Inyección
+                const rows = db.prepare(`SELECT * FROM ${table} LIMIT 250`).all();
+                socket.emit('db_admin_result', { table: table, data: rows });
+            }
+            else if (data.action === 'delete_row') {
+                const table = data.table.replace(/[^a-zA-Z0-9_]/g, '');
+                const col = data.pkColumn.replace(/[^a-zA-Z0-9_]/g, '');
+                db.prepare(`DELETE FROM ${table} WHERE ${col} = ?`).run(data.pkValue);
+                socket.emit('db_admin_result', { message: `Fila eliminada correctamente de '${table}'.`, refresh: true, table: table });
+            }
+            else if (data.action === 'drop_table') {
+                const table = data.table.replace(/[^a-zA-Z0-9_]/g, '');
+                db.prepare(`DROP TABLE IF EXISTS ${table}`).run();
+                socket.emit('db_admin_result', { message: `Tabla '${table}' eliminada por completo.`, refresh: false });
+                
+                // Refrescar desplegable de tablas
+                const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();
+                socket.emit('db_admin_tables', tables.map(t => t.name));
+            }
+            else if (data.action === 'get_columns') {
+                const table = data.table.replace(/[^a-zA-Z0-9_]/g, '');
+                const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+                socket.emit('db_admin_columns', { table: table, columns: cols.map(c => c.name) });
+            }
+            else if (data.action === 'insert_row') {
+                const table = data.table.replace(/[^a-zA-Z0-9_]/g, '');
+                const keys = Object.keys(data.data).map(k => k.replace(/[^a-zA-Z0-9_]/g, ''));
+                const values = Object.values(data.data);
+                const placeholders = keys.map(() => '?').join(', ');
+                
+                const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`;
+                db.prepare(sql).run(...values);
+                socket.emit('db_admin_result', { message: `Registro insertado con éxito en '${table}'.`, refresh: true, table: table });
+            }
+            else if (data.action === 'custom_query') {
+                const sql = data.sql.trim();
+                const isSelect = sql.toUpperCase().startsWith('SELECT') || sql.toUpperCase().startsWith('PRAGMA');
+                
+                if (isSelect) {
+                    const rows = db.prepare(sql).all();
+                    socket.emit('db_admin_result', { table: 'CONSULTA LIBRE', data: rows });
+                } else {
+                    const info = db.prepare(sql).run();
+                    socket.emit('db_admin_result', { message: `Comando ejecutado con éxito. Cambios afectados: ${info.changes}` });
+                    // Refrescar tablas por si se hizo un CREATE TABLE
+                    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();
+                    socket.emit('db_admin_tables', tables.map(t => t.name));
+                }
+            }
+        } catch (err) {
+            console.error("[DB Admin Error]:", err);
+            socket.emit('db_admin_result', { error: err.message });
+        }
+    });
+
     socket.setMaxListeners(30); 
 
     socket.on('initSession', (token, callback) => {

@@ -138,6 +138,7 @@ window.app = {
         openAdminPanel: () => {
             app.showScreen('authAdminScreen');
             socket.emit('getAuthRequests', app.myPlayerName);
+            app.dbAdmin.init();
         },
 
         resolveRequest: (reqId, action) => {
@@ -156,6 +157,70 @@ window.app = {
             alert("✅ Novedad publicada. Todos los usuarios la verán en su menú principal.");
             document.getElementById('adminNewsText').value = ""; // Limpiar textarea
         },
+    },
+    
+    dbAdmin: {
+        currentTable: '',
+        
+        init: () => {
+            socket.emit('db_admin_action', { action: 'get_tables', user: app.myPlayerName });
+        },
+        
+        loadTable: () => {
+            const table = document.getElementById('dbTableSelect').value;
+            if (!table) return alert('Selecciona una tabla.');
+            app.dbAdmin.currentTable = table;
+            document.getElementById('dbInsertArea').classList.add('hidden');
+            document.getElementById('dbCustomQueryArea').classList.add('hidden');
+            socket.emit('db_admin_action', { action: 'select_all', table: table, user: app.myPlayerName });
+        },
+        
+        deleteRow: (table, pkColumn, pkValue) => {
+            if (confirm(`¿Estás 100% seguro de borrar este registro?\n${pkColumn} = ${pkValue}`)) {
+                socket.emit('db_admin_action', { action: 'delete_row', table, pkColumn, pkValue, user: app.myPlayerName });
+            }
+        },
+        
+        dropTable: () => {
+            const table = document.getElementById('dbTableSelect').value;
+            if (!table) return alert('Selecciona una tabla.');
+            if (confirm(`🚨 PELIGRO 🚨\n\nEstás a punto de borrar la tabla entera '${table}' y todos los datos que contiene.\n¿Continuar?`)) {
+                if (prompt('Escribe "BORRAR" en mayúsculas para confirmar:') === 'BORRAR') {
+                    socket.emit('db_admin_action', { action: 'drop_table', table, user: app.myPlayerName });
+                } else {
+                    alert("Operación cancelada.");
+                }
+            }
+        },
+        
+        toggleCustomQuery: () => {
+            document.getElementById('dbCustomQueryArea').classList.toggle('hidden');
+        },
+        
+        runCustomQuery: () => {
+            const sql = document.getElementById('dbCustomQuery').value.trim();
+            if (!sql) return;
+            socket.emit('db_admin_action', { action: 'custom_query', sql, user: app.myPlayerName });
+        },
+        
+        showInsertForm: () => {
+            const table = document.getElementById('dbTableSelect').value;
+            if (!table) return alert('Selecciona una tabla primero para cargar sus columnas.');
+            socket.emit('db_admin_action', { action: 'get_columns', table, user: app.myPlayerName });
+        },
+        
+        executeInsert: () => {
+            const inputs = document.querySelectorAll('.db-insert-input');
+            const data = {};
+            inputs.forEach(inp => {
+                if (inp.value.trim() !== '') data[inp.dataset.col] = inp.value;
+            });
+            
+            if(Object.keys(data).length === 0) return alert("Rellena algún campo.");
+            
+            socket.emit('db_admin_action', { action: 'insert_row', table: app.dbAdmin.currentTable, data, user: app.myPlayerName });
+            document.getElementById('dbInsertArea').classList.add('hidden');
+        }
     },
 
     showPasswordModal: (name, callback) => {
@@ -875,6 +940,70 @@ socket.on('updateHubNews', (news) => {
     } else if (widget) {
         widget.classList.add('hidden');
     }
+});
+
+// --- LISTENERS DE LA BASE DE DATOS ADMIN ---
+socket.on('db_admin_tables', (tables) => {
+    const select = document.getElementById('dbTableSelect');
+    if(!select) return;
+    select.innerHTML = '<option value="">-- Seleccionar Tabla --</option>' + tables.map(t => `<option value="${t}">${t}</option>`).join('');
+});
+
+socket.on('db_admin_result', (res) => {
+    const tableEl = document.getElementById('dbResultTable');
+    if(!tableEl) return;
+    
+    if (res.error) {
+        tableEl.innerHTML = `<tr><td style="color:#ff4757; padding:15px;">❌ Error: ${res.error}</td></tr>`;
+        return;
+    }
+    if (res.message) {
+        tableEl.innerHTML = `<tr><td style="color:#2ed573; padding:15px; font-weight:bold;">✅ ${res.message}</td></tr>`;
+        if (res.refresh && res.table) {
+            setTimeout(() => {
+                document.getElementById('dbTableSelect').value = res.table;
+                app.dbAdmin.loadTable();
+            }, 1500);
+        }
+        return;
+    }
+    
+    const rows = res.data;
+    if (!rows || rows.length === 0) {
+        tableEl.innerHTML = `<tr><td style="color:#aaa; padding:15px; text-align:center;">La tabla está vacía o no hay resultados.</td></tr>`;
+        return;
+    }
+    
+    const cols = Object.keys(rows[0]);
+    // Intenta buscar una columna clave para el botón borrar. Preferencia: id, id_unitario, name, o la primera.
+    let pk = cols.find(c => ['id', 'id_unitario', 'name'].includes(c.toLowerCase())) || cols[0];
+    
+    let html = `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}<th>Acciones</th></tr></thead><tbody>`;
+    rows.forEach(r => {
+        const pkValue = r[pk] ? r[pk].toString().replace(/'/g, "\\'") : '';
+        html += `<tr>${cols.map(c => `<td title="${r[c]}">${r[c] !== null ? r[c] : '<i>NULL</i>'}</td>`).join('')}
+        <td><button onclick="app.dbAdmin.deleteRow('${res.table}', '${pk}', '${pkValue}')" style="background:#e74c3c; padding:4px 8px; font-size:0.9em; border:none; border-radius:3px; color:white; cursor:pointer;" title="Borrar Fila">❌</button></td>
+        </tr>`;
+    });
+    html += `</tbody>`;
+    tableEl.innerHTML = html;
+});
+
+socket.on('db_admin_columns', (res) => {
+    if(res.error) return alert(res.error);
+    const area = document.getElementById('dbInsertArea');
+    const fields = document.getElementById('dbInsertFields');
+    document.getElementById('dbInsertTableName').innerText = res.table;
+    
+    fields.innerHTML = res.columns.map(c => `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="color:#aaa; font-size:0.85em; width:120px; text-align:left; overflow:hidden; text-overflow:ellipsis;">${c}</label>
+            <input type="text" class="db-insert-input" data-col="${c}" placeholder="Valor..." style="flex:1; padding:8px; border-radius:3px; border:none; outline:none; background:#fff; color:#000;">
+        </div>
+    `).join('');
+    
+    document.getElementById('dbCustomQueryArea').classList.add('hidden');
+    area.classList.remove('hidden');
 });
 
 window.onload = function() {

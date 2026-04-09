@@ -1,33 +1,59 @@
-<div id="darkstoriesScreen" class="hidden">
-        <div class="back-nav" style="display:flex; justify-content:space-between; margin-bottom:20px;">
-            <button onclick="app.goBackToHub(false)" style="background:#eb4d4b; padding:10px 20px; border-radius:10px; border:none; color:white; font-weight:bold; cursor:pointer;">❌ Salir</button>
-            <h2 style="margin:0; color:#8c7ae6; line-height:1.5;">📖 Dark Stories</h2>
-        </div>
+<div id="darkstoriesScreen" class="hidden" style="width:100%;">
+    <div class="back-nav" style="display:flex; justify-content:center; align-items:center; position:relative; margin-bottom:20px;">
+        <span onclick="app.goBackToHub(false)" style="position:absolute; left:10px; top:10px; color:#eb4d4b; font-size:24px; cursor:pointer;">❌</span>
+        <h2 style="margin:0; color:#8c7ae6; line-height:1.5;">📖 Dark Stories</h2>
+    </div>
 
+    <div id="dsLobbyView">
         <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:20px;">
             <div style="color:#aaa; font-size:0.9em; margin-bottom:10px;">Dificultad:</div>
             <div style="display:flex; gap:10px;">
-                <button id="dsBtn_facil" onclick="app.darkstories.setCategory('facil')" style="flex:1; background:#2ed573; color:#000; font-weight:bold; padding:10px; border-radius:5px; border:none;">Fácil</button>
-                <button id="dsBtn_medio" onclick="app.darkstories.setCategory('medio')" style="flex:1; background:#ffa502; color:#000; font-weight:bold; padding:10px; border-radius:5px; border:none;">Medio</button>
-                <button id="dsBtn_dificil" onclick="app.darkstories.setCategory('dificil')" style="flex:1; background:#ff4757; color:#fff; font-weight:bold; padding:10px; border-radius:5px; border:none;">Difícil</button>
+                <button id="dsDiff_all" onclick="app.darkstories.setDifficulty('ALL')" style="flex:1; background:#3498db; color:#fff; font-weight:bold; padding:10px; border-radius:5px; border:none;">Todas</button>
+                <button id="dsDiff_easy" onclick="app.darkstories.setDifficulty('EASY')" style="flex:1; background:#2ed573; color:#000; font-weight:bold; padding:10px; border-radius:5px; border:none;">Fácil</button>
+                <button id="dsDiff_medium" onclick="app.darkstories.setDifficulty('MEDIUM')" style="flex:1; background:#ffa502; color:#000; font-weight:bold; padding:10px; border-radius:5px; border:none;">Medio</button>
+                <button id="dsDiff_hard" onclick="app.darkstories.setDifficulty('HARD')" style="flex:1; background:#ff4757; color:#fff; font-weight:bold; padding:10px; border-radius:5px; border:none;">Difícil</button>
             </div>
-            <div id="dsStats" style="margin-top:15px; font-size:0.8em; color:#aaa;">Cargando historias...</div>
+            <button class="main-btn" onclick="app.darkstories.drawRandomCard()" style="background:#8c7ae6; border:2px solid #8c7ae6; color:#fff; margin-top:15px;">🎲 Sacar Historia Aleatoria</button>
+            <button class="main-btn" onclick="app.darkstories.showCompletedView()" style="background:#2f3542; border:2px solid #8c7ae6; color:#8c7ae6; margin-top:15px; box-shadow:0 3px 0 #8c7ae6;">📜 Mis Historias Completadas</button>
         </div>
 
+        <h3 style="color:#aaa; text-align:left; border-bottom:1px solid #444; padding-bottom:5px;">Categorías</h3>
+        <div id="dsCategoryGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:15px;">
+            <div style="color:#aaa; font-style:italic;">Cargando historias...</div>
+        </div>
+    </div>
+
+    <div id="dsGameView" class="hidden">
+        <div style="display:flex; justify-content:flex-start; margin-bottom:15px;">
+            <button onclick="app.darkstories.showLobbyView()" style="background:#555; border:none; color:white; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">⬅ Categorías</button>
+        </div>
+
+        <div style="text-align:center; margin-bottom:10px; color:#8c7ae6; font-weight:bold; font-size:1.2em;" id="dsCurrentCategoryTitle">Categoría</div>
+
         <div class="card" style="background:#1e272e; border:2px solid #8c7ae6; padding:20px; text-align:left; border-radius:10px; min-height: 200px;">
-            <div id="dsCardContent">
-                </div>
+            <div id="dsCardContent"></div>
         </div>
 
         <div id="dsCardControls" class="hidden" style="margin-top:20px;">
             <button id="dsBtnFlip" class="main-btn" onclick="app.darkstories.toggleFlip()" style="background:#8c7ae6; margin-bottom:15px;">👁️ Revelar Solución</button>
             
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button id="dsBtnAcertada" onclick="app.darkstories.toggleAcertada()" style="flex:1; padding:12px; border-radius:5px; border:none; cursor:pointer;">✔️ Marcar Acertada</button>
-                <button id="dsBtnAburrida" onclick="app.darkstories.toggleAburrida()" style="flex:1; padding:12px; border-radius:5px; border:none; cursor:pointer;">🥱 Marcar Aburrida</button>
+                <button id="dsBtnAcertada" onclick="app.darkstories.toggleProgress('acertadas')" style="flex:1; padding:12px; border-radius:5px; border:none; cursor:pointer; font-weight:bold;">✔️ Acertada</button>
+                <button id="dsBtnAburrida" onclick="app.darkstories.toggleProgress('aburridas')" style="flex:1; padding:12px; border-radius:5px; border:none; cursor:pointer; font-weight:bold;">🥱 Aburrida</button>
             </div>
 
-            <button class="main-btn" onclick="app.darkstories.drawCard()" style="background:#2f3542; color:#00cec9; border: 2px solid #00cec9;">⏭️ Sacar Nueva Tarjeta</button>
+            <button class="main-btn" onclick="app.darkstories.drawNextCard()" style="background:#2f3542; color:#00cec9; border: 2px solid #00cec9;">⏭️ Sacar Nueva Tarjeta</button>
         </div>
     </div>
 
+    <div id="dsCompletedView" class="hidden">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+            <button onclick="app.darkstories.showLobbyView()" style="background:#555; border:none; color:white; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">⬅ Volver</button>
+            <button onclick="app.darkstories.clearAllCompleted()" style="background:#e74c3c; border:none; color:white; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">🗑️ Borrar Todas</button>
+        </div>
+        <h3 style="color:#2ed573;">Historias Completadas</h3>
+        <p style="color:#aaa; font-size:0.8em; margin-bottom:15px;">Aquí aparecen las historias que has marcado como acertadas o aburridas.</p>
+        
+        <div id="dsCompletedList" style="display:flex; flex-direction:column; gap:10px; text-align:left;"></div>
+    </div>
+</div>
