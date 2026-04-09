@@ -1,10 +1,17 @@
-const database = require('./database');
+const path = require('path');
+const Database = require('better-sqlite3');
+const db = new Database(path.join(__dirname, '../arcade.db'));
 const Utils = require('./utils');
 
 const rooms = {}; 
 
 const getPublicCategories = () => {
-    return Object.keys(database).map(k => ({ id: k, label: database[k].label || k }));
+    const rows = db.prepare(`SELECT DISTINCT categoria, aux1 FROM impostor_data`).all();
+    const categories = [{ id: 'MIX', label: '🎲 Aleatorio (Mix)' }];
+    rows.forEach(r => {
+        categories.push({ id: r.categoria, label: r.aux1 || r.categoria });
+    });
+    return categories;
 };
 
 function ensureRoom(roomId) {
@@ -83,31 +90,25 @@ const handleSocket = (io, socket) => {
         const me = room.players.find(p => p.socketId === socket.id);
         if (!me) return;
 
-        // --- ACTUALIZACIÓN DE AJUSTES EN TIEMPO REAL ---
         if (action.type === 'update_settings' && me.isAdmin) {
             if (action.value.rounds) room.settings.rounds = parseInt(action.value.rounds);
             if (action.value.category) room.settings.category = action.value.category;
-            // hasOwnProperty es necesario porque false es un valor válido
             if (action.value.hasOwnProperty('hints')) room.settings.hints = !!action.value.hints;
             broadcast(io, roomId);
         }
 
-        // --- START ---
         if (action.type === 'start' && me.isAdmin) {
             if (room.players.length < 2) return;
 
-            // Guardamos configuración final
             room.settings.rounds = parseInt(action.value.rounds) || room.settings.rounds || 1;
             room.settings.category = action.value.category || room.settings.category || 'MIX';
             room.settings.hints = !!action.value.hints;
 
             let wordPool = [];
             if (room.settings.category === 'MIX') {
-                Object.keys(database).forEach(k => { 
-                    if(k!=='MIX' && database[k].words) wordPool = wordPool.concat(database[k].words); 
-                });
-            } else if (database[room.settings.category]) {
-                wordPool = database[room.settings.category].words || [];
+                wordPool = db.prepare(`SELECT palabra as word, pista as hint FROM impostor_data`).all();
+            } else {
+                wordPool = db.prepare(`SELECT palabra as word, pista as hint FROM impostor_data WHERE categoria = ?`).all(room.settings.category);
             }
             if(!wordPool || wordPool.length === 0) wordPool = [{word: "CASA", hint: "Vivienda"}];
             const sel = wordPool[Math.floor(Math.random() * wordPool.length)];
@@ -131,9 +132,6 @@ const handleSocket = (io, socket) => {
                 p.isDead = false;
                 p.votedFor = null;
                 const isImp = impostorIds.includes(p.id);
-                
-                // --- LÓGICA DE PISTAS CORREGIDA ---
-                // Si hints activado: Solo el Impostor ve la pista.
                 const showHint = (room.settings.hints && isImp); 
                 
                 room.turnData[p.id] = { 
@@ -157,7 +155,6 @@ const handleSocket = (io, socket) => {
             io.to('pintu_' + roomId).emit('pintuImpCanvasHistory', room.canvasHistory);
         }
 
-        // --- DRAWING ---
         const isMyTurn = (room.phase === 'DRAW' && room.turn.currentDrawer === me.id);
 
         if (action.type === 'draw_start' && isMyTurn) {
@@ -189,7 +186,6 @@ const handleSocket = (io, socket) => {
             broadcast(io, roomId);
         }
 
-        // --- CHAT (10 segundos) ---
         if (action.type === 'chat') {
             const msg = action.value.trim().substring(0, 50); 
             if(msg) {
@@ -206,7 +202,6 @@ const handleSocket = (io, socket) => {
             }
         }
 
-        // --- VOTING & ADMIN ---
         if (action.type === 'vote' && !me.isDead) {
             me.votedFor = (me.votedFor === action.value) ? null : action.value;
             broadcast(io, roomId);
@@ -328,16 +323,26 @@ const handleRejoin = (socket, savedId, savedRoomId, data = {}) => {
     }
 };
 
-const handleLeave = (playerId, roomId, io) => {
+const handleLeave = (playerId, roomId, io, forced = false) => {
     const room = rooms[roomId];
     if(!room) return;
 
+    if (forced) {
+        const p = room.players.find(x => x.id === playerId);
+        if(p && p.socketId) io.to(p.socketId).emit('sessionExpired');
+    }
+
     if (room.gameInProgress && room.turn.currentDrawer === playerId) nextTurn(room);
+    
+    const wasAdmin = room.players.find(p => p.id === playerId)?.isAdmin;
     room.players = room.players.filter(p => p.id !== playerId);
     room.turn.order = room.turn.order.filter(id => id !== playerId);
     
     if(room.players.length === 0) delete rooms[roomId];
-    else { if(!room.players.some(p => p.isAdmin)) room.players[0].isAdmin = true; broadcast(io, roomId); }
+    else { 
+        if(wasAdmin && room.players.length > 0) room.players[0].isAdmin = true; 
+        broadcast(io, roomId); 
+    }
 };
 
 const getRooms = () => Object.values(rooms).map(r => ({ id: r.id, players: r.players.length, state: r.gameInProgress ? 'GAME' : 'LOBBY' }));

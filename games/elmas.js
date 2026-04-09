@@ -1,6 +1,8 @@
+// games/elmas.js
 const fs = require('fs');
 const path = require('path');
-const questionsDB = require('./preguntas_elmas'); 
+const Database = require('better-sqlite3');
+const db = new Database(path.join(__dirname, '../arcade.db'));
 const Utils = require('./utils');
 
 const FEEDBACK_FILE = path.join(__dirname, '../feedback_log.txt');
@@ -118,7 +120,7 @@ const handleSocket = (io, socket) => {
         const room = rooms[roomId];
         if (!room) return socket.emit('error', 'Sala no encontrada.');
 
-        const me = room.players.find(p => p.socketId === socket.id);
+        const me = room.players.find(p => p.uuid === socket.data.uuid);
         if (!me) return;
 
         // FEEDBACK
@@ -145,12 +147,22 @@ const handleSocket = (io, socket) => {
             }
 
             if (action.type === 'start') {
-                let qData = ["¿Quién sobreviviría a un apocalipsis?", "¿Quién liga más?"];
+                // --- EXTRACCIÓN DE PREGUNTAS DESDE LA BBDD ---
+                let dbQuestions = [];
+                try {
+                    // Obtenemos X preguntas aleatorias (X = maxRounds)
+                    const rows = db.prepare(`SELECT pregunta FROM elmas_data ORDER BY RANDOM() LIMIT ?`).all(room.settings.maxRounds);
+                    dbQuestions = rows.map(r => r.pregunta);
+                } catch (err) {
+                    console.error("Error al leer de elmas_data:", err);
+                }
+
+                // Fallback por si la base de datos está vacía
+                if (dbQuestions.length === 0) {
+                    dbQuestions = ["¿Quién sobreviviría a un apocalipsis?", "¿Quién liga más?"];
+                }
                 
-                if(questionsDB && Array.isArray(questionsDB)) qData = questionsDB;
-                else if(questionsDB && questionsDB.questions) qData = questionsDB.questions;
-                
-                room.questionsQueue = [...qData].sort(() => Math.random() - 0.5).slice(0, room.settings.maxRounds);
+                room.questionsQueue = dbQuestions;
                 
                 room.currentRoundIndex = 0;
                 room.gameInProgress = true;
@@ -259,7 +271,7 @@ const handleJoin = (socket, nameRaw, targetRoomId, data = {}) => {
         p.uuid = uuid;
         
         const lowerName = cleanName.toLowerCase();
-        if (room.players.length === 0 || ['administrador m', 'xarlie', 'musero'].includes(lowerName)) {
+        if (room.players.length === 0 || ['administrador m', 'xarlie', 'musero', 'japa'].includes(lowerName)) {
             p.isAdmin = true;
         }
 
