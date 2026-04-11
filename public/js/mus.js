@@ -533,10 +533,15 @@ app.mus = {
         });
     },
 
-    // --- FUNCIONES COMUNES DE PARTIDAS ---
     getRoomMatches: () => {
         if (!app.mus.data) return [];
-        if (app.mus.currentRoom === 'ABSOLUTA') return app.mus.data.matches;
+        
+        if (app.mus.currentRoom === 'ABSOLUTA') {
+            // Retorna todas las partidas EXCEPTO las de la sala "mofas" (ignorando mayúsculas/minúsculas)
+            return app.mus.data.matches.filter(m => m.roomId && m.roomId.toLowerCase() !== 'mofas');
+        }
+        
+        // Si estás en una sala específica (incluida "mofas"), muestra solo las de esa sala
         return app.mus.data.matches.filter(m => m.roomId === app.mus.currentRoom);
     },
 
@@ -556,6 +561,17 @@ app.mus = {
 
     showAddMatchModal: (tourneyMatchId = null) => {
         if(!app.myPlayerName) return alert("Identifícate primero.");
+
+        // --- VERIFICACIÓN DE PERMISOS (ADMIN O WHITELIST) ---
+        const lowerName = app.myPlayerName.toLowerCase();
+        const isAdm = app.mus.isAdmin();
+        const isInWhitelist = app.musWhitelist && app.musWhitelist.includes(lowerName);
+        
+        if (!isAdm && !isInWhitelist) {
+            return alert("🚫 No tienes permisos para registrar partidas. Pide a un administrador que te añada a la lista blanca.");
+        }
+        // ----------------------------------------------------
+
         if(app.mus.currentRoom === 'ABSOLUTA') return alert("Selecciona una sala específica.");
         
         document.getElementById('musAddMatchModal').classList.remove('hidden');
@@ -573,14 +589,18 @@ app.mus = {
             modal.dataset.tourneyMatchId = tourneyMatchId;
             const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
             if(roomData) {
-                const state = JSON.parse(roomData.tournamentState);
+                const state = JSON.parse(roomData.tournamentState || "{}");
                 let match = null;
-                if (state.phase === 'GROUPS') Object.values(state.groups).forEach(g => { const m = g.matches.find(x=>x.id===tourneyMatchId); if(m) match=m; });
-                else if (state.phase === 'BRACKET') state.bracket.rounds.forEach(r => { const m = r.matches.find(x=>x.id===tourneyMatchId); if(m) match=m; });
+                if (state.phase === 'GROUPS' && state.groups) {
+                    Object.values(state.groups).forEach(g => { const m = g.matches.find(x=>x.id===tourneyMatchId); if(m) match=m; });
+                }
+                else if (state.phase === 'BRACKET' && state.bracket && state.bracket.rounds) {
+                    state.bracket.rounds.forEach(r => { const m = r.matches.find(x=>x.id===tourneyMatchId); if(m) match=m; });
+                }
 
                 if (match) {
-                    const [p1A, p1B] = match.p1.split(' y ');
-                    const [p2A, p2B] = match.p2.split(' y ');
+                    const [p1A, p1B] = (match.p1 || '').split(' y ');
+                    const [p2A, p2B] = (match.p2 || '').split(' y ');
                     setTimeout(() => {
                         app.mus.forceSelectValue('musP1', p1A); app.mus.forceSelectValue('musP2', p1B);
                         app.mus.forceSelectValue('musP3', p2A); app.mus.forceSelectValue('musP4', p2B);
@@ -840,8 +860,8 @@ app.mus = {
                             <span style="color:#ff7675">${m.p3} y ${m.p4}</span> (<span style="color:#fff; font-weight:bold">${m.s2}</span>)
                         </div>
                         <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
-                            <button onclick="app.mus.adminEditMatchPlayers(${m.id})" style="background:#9b59b6; padding:4px 8px; font-size:0.8em; width:auto;">👥 Jugadores</button>
-                            <button onclick="app.mus.adminEditMatchScore(${m.id})" style="background:#e67e22; padding:4px 8px; font-size:0.8em; width:auto;">🔢 Resultado</button>
+                            <button onclick="app.mus.adminEditMatchPlayers('${m.id}')" style="background:#9b59b6; padding:4px 8px; font-size:0.8em; width:auto;">👥 Jugadores</button>
+                            <button onclick="app.mus.adminEditMatchScore('${m.id}')" style="background:#e67e22; padding:4px 8px; font-size:0.8em; width:auto;">🔢 Resultado</button>
                         </div>
                     </div>
                 </div>`;
@@ -865,8 +885,10 @@ app.mus = {
     },
     
     adminEditMatchPlayers: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
+        // Aseguramos que la comparación sea entre Textos para evitar fallos
+        const m = app.mus.data.matches.find(x => String(x.id) === String(id));
+        if(!m) return alert("Error: Partida no encontrada en los datos locales.");
+        
         const p1 = prompt("Jugador 1 (Equipo 1):", m.p1) || m.p1;
         const p2 = prompt("Jugador 2 (Equipo 1):", m.p2) || m.p2;
         const p3 = prompt("Jugador 3 (Equipo 2):", m.p3) || m.p3;
@@ -878,8 +900,10 @@ app.mus = {
     },
     
     adminEditMatchScore: (id) => {
-        const m = app.mus.data.matches.find(x => x.id === id);
-        if(!m) return;
+        // Aseguramos que la comparación sea entre Textos
+        const m = app.mus.data.matches.find(x => String(x.id) === String(id));
+        if(!m) return alert("Error: Partida no encontrada en los datos locales.");
+        
         const s1 = prompt(`Puntuación Equipo Azul (${m.p1} y ${m.p2}):`, m.s1);
         const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
         
