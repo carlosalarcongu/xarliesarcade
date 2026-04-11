@@ -76,8 +76,10 @@
     --mus-input-text: #003300;
     --mus-input-border: #1b5e20; 
 
-    --mus-stat-stroke: 0.5px rgba(0,0,0,0.4); /* Borde negro suave */
-    --mus-stat-shadow: 2px 2px 0px rgba(0,0,0,0.25); /* Sombra dura para dar volumen */
+    /* Variables Mus (Tapete Claro) */
+    --mus-stat-stroke: 0.8px #000000; /* Borde negro sólido e intenso */
+    --mus-stat-shadow: 1px 1px 2px rgba(0,0,0,0.4); /* Sombra muy ligera para despegar el texto */
+    --mus-color-filter: brightness(0.7) saturate(1.3); /* Oscurece e intensifica los colores vivos */
     
     /* Variables Trivial */
     --triv-bg-1: #f0f2f5;
@@ -163,6 +165,7 @@
 
         --mus-stat-stroke: 0px transparent; /* Sin borde en modo oscuro */
         --mus-stat-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Sombra suave original */
+        --mus-color-filter: none; /* En modo oscuro dejamos los colores puros */
         
         /* Variables Trivial */
         --triv-bg-1: #2f3640;
@@ -928,6 +931,7 @@ canvas { display: block; cursor: crosshair; }
 #musScreen [style*="#74b9ff"] {
     -webkit-text-stroke: var(--mus-stat-stroke);
     text-shadow: var(--mus-stat-shadow) !important;
+    filter: var(--mus-color-filter); 
 }
 
 /* =========================================

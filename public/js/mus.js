@@ -1198,7 +1198,7 @@ app.mus = {
             let secHtml = '';
 
             if (top5Active.length > 0) {
-                secHtml += `<div style="font-size:0.85em; color:#aaa; margin-bottom:10px; background:#111; padding:4px 8px; border-radius:3px;">🔥 ACTIVAS</div>`;
+                secHtml += `<div style="font-size:0.85em; color:var(--text-main); margin-bottom:10px; background:var(--mus-badge-bg); padding:4px 8px; border-radius:5px; border:1px solid var(--mus-input-border); box-shadow:0 2px 4px rgba(0,0,0,0.1);">🔥 ACTIVAS</div>`;
                 top5Active.forEach((s, i) => {
                     let pBestEnded = bestEnded.find(x => x.n === s.n);
                     let historicalText = '';
@@ -1219,7 +1219,7 @@ app.mus = {
             }
 
             if (top5Ended.length > 0) {
-                secHtml += `<div style="font-size:0.85em; color:#aaa; margin-top:20px; margin-bottom:10px; background:#111; padding:4px 8px; border-radius:3px;">🛑 TERMINADAS (Peores Históricas)</div>`;
+                secHtml += `<div style="font-size:0.85em; color:var(--text-main); margin-top:20px; margin-bottom:10px; background:var(--mus-badge-bg); padding:4px 8px; border-radius:5px; border:1px solid var(--mus-input-border); box-shadow:0 2px 4px rgba(0,0,0,0.1);">🛑 TERMINADAS (Mejores Históricas)</div>`;
                 top5Ended.forEach((s, i) => {
                     secHtml += `
                     <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
