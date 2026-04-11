@@ -420,6 +420,17 @@ app.mus = {
         app.mus.changeView();
     },
 
+    addPlayer: () => {
+        const name = prompt("Nombre del nuevo jugador:");
+        if (name && name.trim() !== "") {
+            socket.emit('mus_action', { 
+                type: 'addPlayerToRoom', 
+                room: app.mus.currentRoom, 
+                value: name.trim() 
+            });
+        }
+    },
+
     savePairsAndContinue: () => {
         const finalPairs = [];
         for (let p of app.mus.tempPairs) {
@@ -617,28 +628,30 @@ app.mus = {
     renderMatchPlayerSelects: () => {
         if (!app.mus.data) return;
         
-        const roomMatches = app.mus.getRoomMatches();
-        let roomPlayers = new Set();
-        roomMatches.forEach(m => {
-            roomPlayers.add(m.p1); roomPlayers.add(m.p2);
-            roomPlayers.add(m.p3); roomPlayers.add(m.p4);
-        });
-
-        const allMatches = app.mus.data.matches;
-        let playersWithMatches = new Set();
-        allMatches.forEach(m => {
-            playersWithMatches.add(m.p1); playersWithMatches.add(m.p2);
-            playersWithMatches.add(m.p3); playersWithMatches.add(m.p4);
-        });
-
-        let playersToList = app.mus.data.players.filter(p => roomPlayers.has(p) || !playersWithMatches.has(p));
-        if (roomMatches.length === 0) playersToList = [...app.mus.data.players];
+        let playersToList = [];
         
-        // Si estamos en un torneo, añadimos a la lista a los inscritos
-        const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
-        if (roomData && roomData.isTournament) {
-            const state = JSON.parse(roomData.tournamentState || "{}");
-            if(state.players) state.players.forEach(p => { if(!playersToList.includes(p)) playersToList.push(p); });
+        if (app.mus.currentRoom === 'ABSOLUTA') {
+            // Si estamos en ABSOLUTA, mostramos todos los jugadores históricos
+            playersToList = [...app.mus.data.players];
+        } else {
+            // Si estamos en una sala específica, obtenemos SOLO los jugadores inscritos en esa sala
+            const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
+            if (roomData && roomData.state && roomData.state.players) {
+                playersToList = [...roomData.state.players];
+            } else {
+                // Si la sala está vacía de players (no debería, pero por seguridad)
+                playersToList = [];
+            }
+            
+            // Siempre añadimos al array temporal a los que ya han jugado alguna partida en esta sala,
+            // por si acaso jugaron pero se borraron de la lista de inscritos.
+            const roomMatches = app.mus.getRoomMatches();
+            roomMatches.forEach(m => {
+                if(!playersToList.includes(m.p1)) playersToList.push(m.p1);
+                if(!playersToList.includes(m.p2)) playersToList.push(m.p2);
+                if(!playersToList.includes(m.p3)) playersToList.push(m.p3);
+                if(!playersToList.includes(m.p4)) playersToList.push(m.p4);
+            });
         }
         
         playersToList.sort();
@@ -1081,7 +1094,7 @@ app.mus = {
             ` : ''}
         </div>`;
 
-        // --- HISTORIAL TOP 20 RACHAS ---
+        // --- HISTORIAL DE RACHAS (ACTIVAS Y TERMINADAS) ---
         const ascMatches = [...matchesToProcess].sort((a,b) => a.id - b.id);
         let streaks = {}; 
         let allWinStreaks = [];
@@ -1131,45 +1144,95 @@ app.mus = {
             }
         });
 
-        // Al terminar de iterar, guardamos las rachas actuales (que nunca se cortaron) y las marcamos como ACTIVAS
+        // Al terminar de iterar, guardamos las rachas actuales y las marcamos como ACTIVAS
         Object.entries(streaks).forEach(([n, data]) => {
             if (data.type === 'win') allWinStreaks.push({ n, val: data.val, active: true });
             if (data.type === 'loss') allLossStreaks.push({ n, val: data.val, active: true });
         });
 
-        // Ordenar de mayor racha a menor
-        allWinStreaks.sort((a,b) => b.val - a.val);
-        allLossStreaks.sort((a,b) => b.val - a.val);
+        // Función constructora del HTML separando Activas y Terminadas
+        const formatStreakSection = (allStreaks, color, isWin) => {
+            let actives = allStreaks.filter(s => s.active).sort((a,b) => b.val - a.val);
+            let ended = allStreaks.filter(s => !s.active).sort((a,b) => b.val - a.val);
 
-        const formatStreak = (s, i, color, isWin) => `
-            <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
-                <div style="display:flex; justify-content:space-between;">
-                    <span><b>${i+1}. ${s.n}</b></span>
-                    <span style="color:${color}; font-weight:bold;">${isWin ? '+' : '-'}${s.val} rondas</span>
-                </div>
-                ${s.active ? `<div style="font-size:0.85em; color:${color}; margin-top:2px; font-weight:bold;">🔥 AÚN ACTIVA</div>` : ''}
-            </div>
-        `;
+            // Obtener solo la MEJOR racha terminada por jugador/pareja para no repetirlos
+            let bestEnded = [];
+            let seen = new Set();
+            for (let s of ended) {
+                if (!seen.has(s.n)) {
+                    bestEnded.push(s);
+                    seen.add(s.n);
+                }
+            }
+
+            let top5Ended = bestEnded.slice(0, 5);
+            // Referencia para saber el valor mínimo de entrada al Top 5 histórico
+            let threshold = top5Ended.length === 5 ? top5Ended[4].val : 0; 
+            
+            let top5Active = actives.slice(0, 5);
+
+            let secHtml = '';
+
+            if (top5Active.length > 0) {
+                secHtml += `<div style="font-size:0.85em; color:#aaa; margin-bottom:10px; background:#111; padding:4px 8px; border-radius:3px;">🔥 ACTIVAS</div>`;
+                top5Active.forEach((s, i) => {
+                    let pBestEnded = bestEnded.find(x => x.n === s.n);
+                    let historicalText = '';
+                    
+                    // Si su mejor racha histórica es suficiente para el top 5 histórico Y es mayor que su actual
+                    if (pBestEnded && pBestEnded.val >= threshold && pBestEnded.val > s.val) {
+                        historicalText = ` <span style="font-size:0.8em; color:#aaa; font-weight:normal;">(Máx: ${isWin?'+':'-'}${pBestEnded.val})</span>`;
+                    }
+                    
+                    secHtml += `
+                    <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span><b>${i+1}. ${s.n}</b>${historicalText}</span>
+                            <span style="color:${color}; font-weight:bold;">${isWin ? '+' : '-'}${s.val} rondas</span>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            if (top5Ended.length > 0) {
+                secHtml += `<div style="font-size:0.85em; color:#aaa; margin-top:20px; margin-bottom:10px; background:#111; padding:4px 8px; border-radius:3px;">🛑 TERMINADAS (Peores Históricas)</div>`;
+                top5Ended.forEach((s, i) => {
+                    secHtml += `
+                    <div style="margin-bottom:8px; font-size:0.95em; border-bottom:1px solid #333; padding-bottom:5px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span><b>${i+1}. ${s.n}</b></span>
+                            <span style="color:${color}; font-weight:bold;">${isWin ? '+' : '-'}${s.val} rondas</span>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            if (top5Active.length === 0 && top5Ended.length === 0) {
+                secHtml += `<div style="color:#aaa; font-size:0.9em;">Sin rachas registradas.</div>`;
+            }
+
+            return secHtml;
+        };
 
         const titleText = mode === 'ranking_pair' ? 'Parejas' : 'Individual';
 
         html += `
-            <h3 style="color:#e1b12c; margin-top:20px; margin-bottom:5px;">📜 Salón de la Fama: Top 20 Rachas (${titleText})</h3>
+            <h3 style="color:#e1b12c; margin-top:20px; margin-bottom:5px;">🔥 Rachas Actuales e Históricas (${titleText})</h3>
             <div style="display:grid; grid-template-columns: 1fr; gap:10px; text-align:left; margin-bottom:20px;">
-                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:300px; overflow-y:auto;">
-                    <div style="font-size:1em; font-weight:bold; color:#2ed573; margin-bottom:10px;">🏆 Mayores Rachas de Victoria</div>
-                    ${allWinStreaks.slice(0,20).map((s, i) => formatStreak(s, i, '#2ed573', true)).join('')}
+                <div class="card" style="background:#222; border-left: 4px solid #2ed573; max-height:450px; overflow-y:auto;">
+                    <div style="font-size:1.1em; font-weight:bold; color:#2ed573; margin-bottom:15px;">🏆 Rachas de Victoria</div>
+                    ${formatStreakSection(allWinStreaks, '#2ed573', true)}
                 </div>
                 
-                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:300px; overflow-y:auto;">
-                    <div style="font-size:1em; font-weight:bold; color:#ff4757; margin-bottom:10px;">💀 Mayores Rachas de Derrota</div>
-                    ${allLossStreaks.slice(0,20).map((s, i) => formatStreak(s, i, '#ff4757', false)).join('')}
+                <div class="card" style="background:#222; border-left: 4px solid #ff4757; max-height:450px; overflow-y:auto;">
+                    <div style="font-size:1.1em; font-weight:bold; color:#ff4757; margin-bottom:15px;">💀 Rachas de Derrota</div>
+                    ${formatStreakSection(allLossStreaks, '#ff4757', false)}
                 </div>
             </div>
         `;
 
         container.innerHTML = html;
-    },
+    }, // <-- Aquí termina la función renderRanking original
 
     updateRachasPlayer: (playerName) => {
         app.mus.rachasPlayerSelected = playerName;

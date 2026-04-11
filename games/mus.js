@@ -1,3 +1,4 @@
+// games/mus.js
 const path = require('path');
 const Database = require('better-sqlite3');
 const db = new Database(path.join(__dirname, '../arcade.db'));
@@ -10,8 +11,16 @@ try {
 } catch (e) {}
 
 const getFullMusData = () => {
+    const rooms = db.prepare('SELECT name, isTournament, tournamentState FROM mus_rooms').all();
+    // Parseamos el JSON para que el Frontend lo reciba como un objeto y pueda leer la lista de "players"
+    const parsedRooms = rooms.map(r => ({
+        name: r.name,
+        isTournament: r.isTournament,
+        state: r.tournamentState ? JSON.parse(r.tournamentState) : { players: [] } 
+    }));
+
     return {
-        rooms: db.prepare('SELECT name, isTournament, tournamentState FROM mus_rooms').all(),
+        rooms: parsedRooms,
         players: db.prepare('SELECT name FROM mus_players ORDER BY name').all().map(p => p.name),
         matches: db.prepare('SELECT * FROM mus_matches').all()
     };
@@ -151,17 +160,37 @@ module.exports = {
                 const r = action.value.trim();
                 if (r) {
                     const isT = action.isTournament ? 1 : 0;
-                    const state = isT ? JSON.stringify({
-                        config: action.config,
+                    // Al crear, inicializamos la sala con un array vacío de 'players' para que pueda albergar usuarios
+                    const state = JSON.stringify({
+                        config: action.config || {},
                         description: action.description || '',
                         players: [], pairs: [],
                         phase: 'REGISTRATION',
                         groups: {}, bracket: {},
                         groupAssignments: {}
-                    }) : null;
+                    });
 
                     db.prepare('INSERT OR IGNORE INTO mus_rooms (name, isTournament, tournamentState) VALUES (?, ?, ?)').run(r, isT, state);
                     io.emit('mus_data', getFullMusData());
+                }
+            }
+
+            if (action.type === 'addPlayerToRoom') {
+                // Función global (no solo para torneos) para inscribir un usuario en una sala
+                const roomName = action.room;
+                const playerName = action.value;
+                const roomData = db.prepare('SELECT tournamentState FROM mus_rooms WHERE name = ?').get(roomName);
+                
+                if (roomData) {
+                    let state = roomData.tournamentState ? JSON.parse(roomData.tournamentState) : { players: [] };
+                    if (!state.players) state.players = [];
+                    if (!state.players.includes(playerName)) {
+                        state.players.push(playerName);
+                        db.prepare('UPDATE mus_rooms SET tournamentState = ? WHERE name = ?').run(JSON.stringify(state), roomName);
+                        // También lo guardamos en la tabla global histórica
+                        db.prepare('INSERT OR IGNORE INTO mus_players (name) VALUES (?)').run(playerName);
+                        io.emit('mus_data', getFullMusData());
+                    }
                 }
             }
 
@@ -326,7 +355,6 @@ module.exports = {
                                 const tMatch = r.matches.find(x => x.id === m.tourneyMatchId);
                                 if (tMatch && !tMatch.winner) {
                                     tMatch.winner = winnerPair;
-                                    // AÑADIDO: Guardar s1 y s2 para que el PDF sepa el resultado exacto
                                     tMatch.s1 = m.s1; 
                                     tMatch.s2 = m.s2;
                                     
@@ -348,8 +376,20 @@ module.exports = {
                     }
                 }
 
-                // Guardar a los jugadores en la lista global
-                [m.p1, m.p2, m.p3, m.p4].forEach(p => db.prepare('INSERT OR IGNORE INTO mus_players (name) VALUES (?)').run(p));
+                // Guardar a los jugadores en la lista global histórica, y también en la sala actual
+                [m.p1, m.p2, m.p3, m.p4].forEach(p => {
+                    db.prepare('INSERT OR IGNORE INTO mus_players (name) VALUES (?)').run(p);
+                    
+                    const roomData = db.prepare('SELECT tournamentState FROM mus_rooms WHERE name = ?').get(m.roomId);
+                    if (roomData) {
+                        let state = roomData.tournamentState ? JSON.parse(roomData.tournamentState) : { players: [] };
+                        if (!state.players) state.players = [];
+                        if (!state.players.includes(p)) {
+                            state.players.push(p);
+                            db.prepare('UPDATE mus_rooms SET tournamentState = ? WHERE name = ?').run(JSON.stringify(state), m.roomId);
+                        }
+                    }
+                });
 
                 io.emit('mus_data', getFullMusData());
             }
@@ -396,10 +436,6 @@ module.exports = {
 
         // =========================================================================
         // ================== GENERADOR DE PDF EXTREMO COMPACTO ====================
-        // =========================================================================
-        // =========================================================================
-        // ================== GENERADOR DE PDF EXTREMO COMPACTO ====================
-        // =========================================================================
         socket.on('mus_deleteTournamentPDF', (data, callback) => {
             const reqUser = (data.user || "").toLowerCase();
             const isAdmin = ['administrador m', 'xarlie', 'musero', 'japa', 'administrador g'].includes(reqUser);
@@ -422,7 +458,6 @@ module.exports = {
             const fileName = `torneo_${roomName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
             const filePath = path.join(downloadsDir, fileName);
             
-            // Necesitamos los scores reales para dibujarlos en el bracket
             const dbMatches = db.prepare('SELECT * FROM mus_matches WHERE roomId = ?').all(roomName);
             
             const generatePDF = () => {
@@ -431,7 +466,6 @@ module.exports = {
                     const writeStream = fs.createWriteStream(filePath);
                     const imagePath = path.join(__dirname, '../public/css/image.png');
                     
-                    // REGISTRAR LA FUENTE POPPINS SI EXISTE (Si no, fallback a Helvetica)
                     if (fs.existsSync(fontRegular) && fs.existsSync(fontBold)) {
                         doc.registerFont('MainFont', fontRegular);
                         doc.registerFont('MainFont-Bold', fontBold);
@@ -442,7 +476,6 @@ module.exports = {
 
                     doc.pipe(writeStream);
 
-                    // Función para pintar el fondo (Imagen blur + Capa verde-blanca)
                     const drawBackground = () => {
                         try {
                             if (fs.existsSync(imagePath)) {
@@ -455,12 +488,8 @@ module.exports = {
                     };
 
                     doc.on('pageAdded', drawBackground);
-                    // FORZAR UNA SÓLO PÁGINA: evitar que locatePage agregue páginas automáticas
                     const originalAddPage = doc.addPage.bind(doc);
-                    doc.addPage = (...args) => {
-                        // no-op para bloquear páginas extra
-                        return doc;
-                    };
+                    doc.addPage = (...args) => { return doc; };
                     drawBackground();
 
                     // === CABECERA ===
@@ -553,9 +582,6 @@ module.exports = {
                         }));
 
                         let coords = {};
-
-                        const maxMatchesInRound = Math.max(...rounds.map(r => r.matches.length));
-                        // Mantener en una sola página (no agregar páginas nuevas)
 
                         rounds.forEach((r, rIdx) => {
                             doc.font('MainFont-Bold').fontSize(10).fillColor('#2e7d32').text(`Ronda ${rIdx+1}`, 40 + rIdx * colWidth, baseY - 15);
@@ -661,7 +687,6 @@ module.exports = {
         });
 
     },
-    
     
     getRooms: () => []
 };
