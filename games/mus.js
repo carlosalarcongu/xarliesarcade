@@ -734,6 +734,8 @@ module.exports = {
                     const doc = new PDFDocument({ margin: 40, size: 'A4' });
                     const writeStream = fs.createWriteStream(filePath);
                     const imagePath = path.join(__dirname, '../public/css/image.png');
+                    const fontRegular = path.join(__dirname, '../public/fonts/Poppins-Regular.ttf');
+                    const fontBold = path.join(__dirname, '../public/fonts/Poppins-Bold.ttf');
                     
                     if (fs.existsSync(fontRegular) && fs.existsSync(fontBold)) {
                         doc.registerFont('MainFont', fontRegular);
@@ -931,20 +933,29 @@ module.exports = {
                     // === PIE DE PÁGINA ===
                     doc.fontSize(7).font('MainFont').fillColor('#777777').text(`Generado: ${new Date().toLocaleDateString('es-ES')} - Xarlie's Arcade`, 20, 810, { align: 'center', width: 555 });
 
-                doc.end();
-
-                writeStream.on('finish', () => {
-                    // Solo devolvemos el nombre del archivo para que el front lo descargue
-                    callback({ success: true, fileName });
+                    doc.end();
+                    
+                    writeStream.on('finish', () => {
+                        resolve(fileName);
+                    });
+                    
+                    writeStream.on('error', reject);
+                    doc.on('error', reject);
                 });
+            };
 
-            } catch (err) {
-                console.error('Error generando PDF:', err);
-                callback({ success: false, error: err.message });
-            }
+            generatePDF()
+                .then(fileName => {
+                    db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
+                    io.emit('mus_data', getFullMusData());
+                    socket.emit('tournament_deleted', { room: roomName });
+                    callback({ success: true, fileName });
+                })
+                .catch(err => {
+                    console.error('Error generando PDF:', err);
+                    callback({ success: false, error: err.message });
+                });
         });
-
-        
 
     },
     
