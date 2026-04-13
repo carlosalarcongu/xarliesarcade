@@ -139,6 +139,7 @@ window.app = {
             app.showScreen('authAdminScreen');
             socket.emit('getAuthRequests', app.myPlayerName);
             app.dbAdmin.init();
+            app.auth.loadAnnouncements();
         },
 
         resolveRequest: (reqId, action) => {
@@ -156,6 +157,36 @@ window.app = {
             socket.emit('adminUpdateNews', { user: app.myPlayerName, room: room, text: text });
             alert("✅ Novedad publicada. Todos los usuarios la verán en su menú principal.");
             document.getElementById('adminNewsText').value = ""; // Limpiar textarea
+        },
+
+        loadAnnouncements: () => {
+            socket.emit('adminManageAnnouncements', { action: 'get', user: app.myPlayerName });
+        },
+
+        showAddAnnouncementForm: () => {
+            document.getElementById('addAnnouncementForm').classList.remove('hidden');
+        },
+
+        hideAddAnnouncementForm: () => {
+            document.getElementById('addAnnouncementForm').classList.add('hidden');
+            document.getElementById('newAnnText').value = '';
+        },
+
+        addAnnouncement: () => {
+            const room = document.getElementById('newAnnRoom').value;
+            const text = document.getElementById('newAnnText').value.trim();
+            if (!text) return alert("Debes escribir un texto para el anuncio.");
+            socket.emit('adminManageAnnouncements', { action: 'add', user: app.myPlayerName, room, text, active: false });
+        },
+
+        toggleAnnouncement: (id) => {
+            socket.emit('adminManageAnnouncements', { action: 'toggle', user: app.myPlayerName, id });
+        },
+
+        deleteAnnouncement: (id) => {
+            if (confirm("¿Eliminar este anuncio?")) {
+                socket.emit('adminManageAnnouncements', { action: 'delete', user: app.myPlayerName, id });
+            }
         },
     },
     
@@ -942,6 +973,12 @@ socket.on('updateHubNews', (news) => {
     }
 });
 
+socket.on('hideHubNews', () => {
+    app.currentNews = null;
+    const widget = document.getElementById('hubNewsWidget');
+    if (widget) widget.classList.add('hidden');
+});
+
 // --- LISTENERS DE LA BASE DE DATOS ADMIN ---
 socket.on('db_admin_tables', (tables) => {
     const select = document.getElementById('dbTableSelect');
@@ -1004,6 +1041,44 @@ socket.on('db_admin_columns', (res) => {
     
     document.getElementById('dbCustomQueryArea').classList.add('hidden');
     area.classList.remove('hidden');
+});
+
+socket.on('adminAnnouncementList', (announcements) => {
+    const listEl = document.getElementById('announcementsList');
+    if (!listEl) return;
+    let html = '<div style="max-height:300px; overflow-y:auto; background:#1e272e; padding:10px; border-radius:5px;">';
+    if (announcements.length === 0) {
+        html += '<p style="color:#aaa; text-align:center;">No hay anuncios.</p>';
+    } else {
+        announcements.forEach(ann => {
+            const isActive = ann.active;
+            const isExpired = Date.now() - ann.createdAt > 2 * 24 * 60 * 60 * 1000;
+            const status = isExpired ? 'Expirado' : (isActive ? 'Activo' : 'Inactivo');
+            const statusColor = isExpired ? '#ff4757' : (isActive ? '#2ed573' : '#ffa502');
+            html += `
+                <div style="background:#333; padding:10px; margin-bottom:10px; border-radius:5px; border-left:4px solid ${statusColor};">
+                    <p style="margin:0 0 5px 0; color:#fff; font-size:0.9em;">${ann.text}</p>
+                    <p style="margin:0; color:#aaa; font-size:0.8em;">Sala: ${ann.room} | Estado: <span style="color:${statusColor};">${status}</span></p>
+                    <div style="display:flex; gap:5px; margin-top:5px;">
+                        <button onclick="app.auth.toggleAnnouncement('${ann.id}')" style="background:${isActive ? '#ffa502' : '#2ed573'}; padding:4px 8px; font-size:0.8em; border:none; border-radius:3px; color:white; cursor:pointer;">${isActive ? 'Desactivar' : 'Activar'}</button>
+                        <button onclick="app.auth.deleteAnnouncement('${ann.id}')" style="background:#e74c3c; padding:4px 8px; font-size:0.8em; border:none; border-radius:3px; color:white; cursor:pointer;">Eliminar</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    html += '</div>';
+    listEl.innerHTML = html;
+});
+
+socket.on('adminAnnouncementResult', (res) => {
+    if (res.error) {
+        alert('Error: ' + res.error);
+    } else {
+        alert(res.message);
+        app.auth.loadAnnouncements();
+        app.auth.hideAddAnnouncementForm();
+    }
 });
 
 window.onload = function() {

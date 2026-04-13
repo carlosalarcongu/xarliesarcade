@@ -36,6 +36,22 @@ if (!fs.existsSync(REQ_FILE)) {
 const getRequests = () => JSON.parse(fs.readFileSync(REQ_FILE));
 const saveRequests = (reqs) => fs.writeFileSync(REQ_FILE, JSON.stringify(reqs, null, 2));
 
+const ANNOUNCEMENTS_FILE = path.join(__dirname, 'announcements.json');
+if (!fs.existsSync(ANNOUNCEMENTS_FILE)) {
+    fs.writeFileSync(ANNOUNCEMENTS_FILE, JSON.stringify([]));
+}
+
+const getAnnouncements = () => JSON.parse(fs.readFileSync(ANNOUNCEMENTS_FILE));
+const saveAnnouncements = (ann) => fs.writeFileSync(ANNOUNCEMENTS_FILE, JSON.stringify(ann, null, 2));
+
+const getActiveAnnouncement = () => {
+    const announcements = getAnnouncements();
+    const now = Date.now();
+    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+    const active = announcements.filter(a => a.active && (now - a.createdAt) < twoDaysMs);
+    return active.length > 0 ? active[active.length - 1] : null; // Most recent active
+};
+
 const gamesModules = {
     impostor: require('./games/impostor'),
     lobo: require('./games/lobo'),
@@ -65,12 +81,6 @@ Object.keys(gamesModules).forEach(key => {
         gamesModules[key].init(io);
     }
 });
-
-let globalNews = { 
-    id: 'news_' + Date.now(), 
-    room: 'torneos', 
-    text: '¡Bienvenidos al Arcade! Atentos a las nuevas actualizaciones.' 
-};
 
 io.on('connection', (socket) => {
 
@@ -160,20 +170,71 @@ io.on('connection', (socket) => {
     });
 
     // --- NOVEDADES DEL HUB ---
-    socket.emit('updateHubNews', globalNews);
+    const activeAnnouncement = getActiveAnnouncement();
+    if (activeAnnouncement) {
+        socket.emit('updateHubNews', activeAnnouncement);
+    }
 
-    socket.on('adminUpdateNews', (data) => {
+    socket.on('adminManageAnnouncements', (data) => {
         const safeUser = (data.user || "").toLowerCase();
-        // Verificar si es un administrador autorizado
         const isAdmin = ['administrador m', 'administrador g', 'administrador de mus', 'xarlie', 'musero', 'japa'].includes(safeUser);
         
-        if (isAdmin) {
-            globalNews = {
-                id: 'news_' + Date.now(), // Al cambiar el ID, volverá a aparecerle a todos
+        if (!isAdmin) {
+            socket.emit('adminAnnouncementResult', { error: 'Acceso denegado.' });
+            return;
+        }
+
+        const announcements = getAnnouncements();
+        if (data.action === 'get') {
+            socket.emit('adminAnnouncementList', announcements);
+        } else if (data.action === 'add') {
+            const newAnn = {
+                id: 'ann_' + Date.now(),
+                text: data.text,
                 room: data.room,
-                text: data.text
+                active: data.active || false,
+                createdAt: Date.now()
             };
-            io.emit('updateHubNews', globalNews); // Avisar a todos los conectados
+            announcements.push(newAnn);
+            saveAnnouncements(announcements);
+            socket.emit('adminAnnouncementResult', { message: 'Anuncio agregado correctamente.' });
+            // Emitir el nuevo activo si es activo
+            const active = getActiveAnnouncement();
+            if (active) {
+                io.emit('updateHubNews', active);
+            } else {
+                io.emit('hideHubNews');
+            }
+        } else if (data.action === 'toggle') {
+            const ann = announcements.find(a => a.id === data.id);
+            if (ann) {
+                ann.active = !ann.active;
+                saveAnnouncements(announcements);
+                socket.emit('adminAnnouncementResult', { message: `Anuncio ${ann.active ? 'activado' : 'desactivado'}.` });
+                const active = getActiveAnnouncement();
+                if (active) {
+                    io.emit('updateHubNews', active);
+                } else {
+                    io.emit('hideHubNews');
+                }
+            } else {
+                socket.emit('adminAnnouncementResult', { error: 'Anuncio no encontrado.' });
+            }
+        } else if (data.action === 'delete') {
+            const index = announcements.findIndex(a => a.id === data.id);
+            if (index !== -1) {
+                announcements.splice(index, 1);
+                saveAnnouncements(announcements);
+                socket.emit('adminAnnouncementResult', { message: 'Anuncio eliminado.' });
+                const active = getActiveAnnouncement();
+                if (active) {
+                    io.emit('updateHubNews', active);
+                } else {
+                    io.emit('hideHubNews');
+                }
+            } else {
+                socket.emit('adminAnnouncementResult', { error: 'Anuncio no encontrado.' });
+            }
         }
     });
 

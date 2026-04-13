@@ -40,29 +40,39 @@
     </div>
 
     <div class="card" style="background:#222; border:2px solid #a55eea; margin-bottom: 25px;">
-        <h3 style="color:#a55eea; margin-top:0;">📢 Publicar Novedad</h3>
-        <p style="color:#aaa; font-size:0.8em; margin-bottom:15px; text-align:left;">Esto hará saltar el banner emergente en el Hub a todos los usuarios.</p>
+        <h3 style="color:#a55eea; margin-top:0;">📢 Gestión de Novedades</h3>
+        <p style="color:#aaa; font-size:0.8em; margin-bottom:15px; text-align:left;">Crea y gestiona anuncios para los visitantes. Cada anuncio dura máximo 2 días.</p>
         
-        <div class="control-row" style="background:transparent; padding:2px; margin:5px 0 10px 0; justify-content:space-between;">
-            <span style="color:#aaa; font-size:0.9em;">Juego enlazado:</span>
-            <select id="adminNewsRoom" style="width:140px; border-radius:5px; background:#fff; color:#000; padding:5px;">
-                <option value="impostor">El Impostor</option>
-                <option value="tabu">Tabú</option>
-                <option value="elmas">El MÁS...</option>
-                <option value="orden">Orden</option>
-                <option value="anecdotas">Anécdotas</option>
-                <option value="cifrasyletras">Cifras y Letras</option>
-                <option value="pinturilloImp">El Falso Artista</option>
-                <option value="torres">Torres</option>
-                <option value="mus">Mus</option>
-                <option value="fifa">FIFA</option>
-                <option value="torneos" selected>Torneos</option>
-                <option value="darkstories">Dark Stories</option>
-                <option value="feedback">Feedback</option>
-            </select>
+        <div id="announcementsList" style="margin-bottom:15px;"></div>
+        
+        <button class="main-btn" style="background:#a55eea; box-shadow:0 4px 0 #8e44ad; margin-bottom:10px;" onclick="app.auth.showAddAnnouncementForm()">➕ Agregar Anuncio</button>
+        
+        <div id="addAnnouncementForm" class="hidden" style="background:#1e272e; padding:15px; border-radius:5px; margin-bottom:15px;">
+            <h4 style="color:#a55eea; margin-top:0;">Nuevo Anuncio</h4>
+            <div class="control-row" style="background:transparent; padding:2px; margin:5px 0 10px 0; justify-content:space-between;">
+                <span style="color:#aaa; font-size:0.9em;">Juego enlazado:</span>
+                <select id="newAnnRoom" style="width:140px; border-radius:5px; background:#fff; color:#000; padding:5px;">
+                    <option value="impostor">El Impostor</option>
+                    <option value="tabu">Tabú</option>
+                    <option value="elmas">El MÁS...</option>
+                    <option value="orden">Orden</option>
+                    <option value="anecdotas">Anécdotas</option>
+                    <option value="cifrasyletras">Cifras y Letras</option>
+                    <option value="pinturilloImp">El Falso Artista</option>
+                    <option value="torres">Torres</option>
+                    <option value="mus">Mus</option>
+                    <option value="fifa">FIFA</option>
+                    <option value="torneos" selected>Torneos</option>
+                    <option value="darkstories">Dark Stories</option>
+                    <option value="feedback">Feedback</option>
+                </select>
+            </div>
+            <textarea id="newAnnText" rows="2" placeholder="Escribe aquí la novedad..." style="width:100%; margin-bottom:10px; padding:10px; border-radius:5px; resize:none;"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button class="main-btn" style="background:#2ed573;" onclick="app.auth.addAnnouncement()">Guardar</button>
+                <button class="kick-btn" onclick="app.auth.hideAddAnnouncementForm()">Cancelar</button>
+            </div>
         </div>
-        <textarea id="adminNewsText" rows="2" placeholder="Escribe aquí la novedad..." style="width:100%; margin-bottom:10px; padding:10px; border-radius:5px; resize:none;"></textarea>
-        <button class="main-btn" style="background:#a55eea; box-shadow:0 4px 0 #8e44ad;" onclick="app.auth.updateNews()">🚀 ENVIAR A TODOS</button>
     </div>
 
     <h2 style="color:#ff4757;">🛡️ Panel de Registros</h2>
