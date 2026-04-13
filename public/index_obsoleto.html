@@ -13,6 +13,8 @@
     <audio id="countSound" src="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3"></audio>
     <audio id="revealSound" src="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3"></audio>
     <audio id="dieSound" src="https://www.myinstants.com/media/sounds/sad-trombone.mp3"></audio>
+
+    <div id="app-vue-anchor" style="display:none;"></div>
     <audio id="youDiedSound" src="https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3"></audio>
 
     <div id="hubScreen">
@@ -732,14 +734,84 @@
     </div>
 
     <div id="musScreen" class="hidden" style="width: 100%;">
-        
-        <div class="back-nav" style="display: flex; justify-content: flex-start; width: 100%; margin-bottom: 15px;">
-            <button onclick="app.goBackToHub()" class="mus-glass-btn">⬅ Volver</button>
-        </div>
-        
-        <h2 style="margin-bottom: 10px; text-align: center;">🐄 Registro de Mus</h2>
+        <div id="mus-vue-app" style="width: 100%; min-height: 600px;">
+            <div v-if="loading" style="padding:30px; text-align:center; color:#fff;">Cargando Mus...</div>
+            <div v-else style="color:#fff; padding:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <button @click="app.goBackToHub()" class="mus-glass-btn">⬅ Volver</button>
+                    <h2 style="margin:0;">🐄 {{ currentRoom || 'Mus' }}</h2>
+                    <span v-if="isTournament" style="font-weight:bold; background:#27ae60; padding:4px 8px; border-radius:4px;">TORNEO</span>
+                </div>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <select v-model="currentRoom" @change="changeRoom" style="flex:1; padding:8px; background:#1e272e; color:#fff; border:1px solid #555; border-radius:6px;">
+                        <option v-for="room in roomOptions" :value="room">{{ room }}</option>
+                    </select>
+                    <button @click="addPlayer" class="main-btn" style="width:auto;">+ Jugador</button>
+                    <button @click="startTournament" class="main-btn" style="width:auto;">▶️ Iniciar</button>
+                    <button @click="advanceToBracket" class="main-btn" style="width:auto;">🛼 Avanzar</button>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                    <div style="background:#222; border:1px solid #555; border-radius:10px; padding:10px;">
+                        <label>Nombre Pareja / Jugador</label>
+                        <input type="text" v-model="nameInput" style="width:100%; margin-top:6px; padding:8px; border-radius:6px; border:1px solid #444; background:#111; color:#fff;" />
+                    </div>
+                    <div style="background:#222; border:1px solid #555; border-radius:10px; padding:10px;">
+                        <label>Filtro periodo</label>
+                        <select v-model="period" style="width:100%; margin-top:6px; padding:8px; border-radius:6px; background:#111; color:#fff; border:1px solid #444;" >
+                            <option value="all">Siempre</option>
+                            <option value="7days">Últimos 7 días</option>
+                            <option value="30days">Últimos 30 días</option>
+                            <option value="year">Último año</option>
+                        </select>
+                    </div>
+                </div>
 
-        <div class="mus-room-header" style="margin-bottom: 15px; width: 100%;">
+                <div style="display:flex; gap:10px; margin-bottom:12px;">
+                    <button @click="activeTab='groups'" :class="['main-btn', activeTab==='groups' ? 'kick-btn' : '']" style="flex:1;">Grupos</button>
+                    <button @click="activeTab='bracket'" :class="['main-btn', activeTab==='bracket' ? 'kick-btn' : '']" style="flex:1;">Bracket</button>
+                    <button @click="activeTab='matches'" :class="['main-btn', activeTab==='matches' ? 'kick-btn' : '']" style="flex:1;">Partidos</button>
+                </div>
+
+                <div v-if="activeTab==='groups'" style="background:#222; border:1px solid #555; border-radius:10px; padding:12px;">
+                    <h3 style="margin-top:0;">Fase de grupos</h3>
+                    <div v-if="!tournamentState.groups || Object.keys(tournamentState.groups).length===0" style="color:#aaa;">No hay grupos configurados.</div>
+                    <div v-else style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div v-for="(group, name) in tournamentState.groups" :key="name" style="background:#141d24; border:1px solid #1a2530; border-radius:8px; padding:10px;">
+                            <h4 style="margin:0 0 8px 0; color:#2ecc71;">Grupo {{ name }}</h4>
+                            <table style="width:100%; color:#fff; font-size:0.85em;"><tr><th style="text-align:left;">Pareja</th><th>Pts</th><th>G</th><th>P</th><th>Dif</th></tr>
+                            <tr v-for="s in group.standings" :key="s.pair">
+                                <td>{{ s.pair }}</td><td>{{ s.pts }}</td><td>{{ s.w }}</td><td>{{ s.l }}</td><td>{{ s.diff }}</td>
+                            </tr></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab==='bracket'" style="background:#222; border:1px solid #555; border-radius:10px; padding:12px;">
+                    <h3 style="margin-top:0;">Cuadro final</h3>
+                    <div v-if="!tournamentState.bracket || !tournamentState.bracket.rounds" style="color:#aaa;">No hay bracket.</div>
+                    <div v-else>
+                        <div v-for="(round, index) in tournamentState.bracket.rounds" :key="index" style="margin-bottom:10px;">
+                            <strong style="color:#74b9ff;">Ronda {{ index+1 }}</strong>
+                            <ul style="list-style:none; padding-left:0; margin-top:5px;">
+                                <li v-for="match in round.matches" :key="match.id" style="color:#fff; margin-bottom:4px;">{{ match.p1 || '???' }} vs {{ match.p2 || '???' }} - {{ match.s1 ?? 0 }}:{{ match.s2 ?? 0 }} <span style="color:#f1c40f;">{{ match.winner ? ('(' + match.winner + ')') : '' }}</span></li>
+                            </ul>
+                        </div>
+                        <div style="background:#f1c40f; color:#000; border-radius:8px; padding:8px; font-weight:bold;">Campeón: {{ tournamentState.bracket?.champion || 'SIN DEFINIR' }}</div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab==='matches'" style="background:#222; border:1px solid #555; border-radius:10px; padding:12px;">
+                    <h3 style="margin-top:0;">Partidos</h3>
+                    <ul style="list-style:none; padding-left:0;">
+                        <li v-for="m in getFilteredMatches()" :key="m.id" style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #333;">
+                            <span>{{ m.p1 }} vs {{ m.p2 }} ({{ m.s1 }} - {{ m.s2 }})</span>
+                            <button class="main-btn" @click="updateMatchResult(m.id, Number(prompt('S1', m.s1)), Number(prompt('S2', m.s2)))">Editar resultado</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
             <div class="room-controls" style="display: flex; gap: 10px; width: 100%; align-items: center;">
                 <select id="musRoomSelect" onchange="app.mus.changeRoom()" style="flex: 1; font-size: 1em; margin: 0;"></select>
                 <button onclick="app.mus.createRoom()" style="background: #27ae60; color: white; width: auto; padding: 10px 15px; font-weight: bold; border-radius: var(--btn-radius);">+</button>
@@ -2098,7 +2170,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="js/main.js?v=2"></script>
+    <script src="js/app-vue.js"></script>
+    <script src="js/mus-vue.js"></script>
     <script src="js/impostor.js"></script>
     <script src="js/lobo.js"></script>
     <script src="js/anecdotas.js"></script>
