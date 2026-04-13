@@ -252,7 +252,7 @@ button {
     font-size: 1rem; transition: transform 0.1s, filter 0.2s, border-radius 0.3s; 
     font-family: 'Poppins', sans-serif;
 }
-button:active { transform: scale(0.96); }
+button:active { transform: scale(0.98); }
 
 .main-btn, .start-btn, .kick-btn {
     background: var(--btn-main-bg);
@@ -311,7 +311,7 @@ button:active { transform: scale(0.96); }
     box-shadow: 0 2px 0 var(--border-input);
 }
 .control-row button:hover { border-color: var(--accent-green); color: var(--accent-green); transform: translateY(-2px); box-shadow: 0 4px 0 var(--accent-green); }
-.control-row button:active { transform: translateY(2px); box-shadow: 0 0 0 var(--accent-green); }
+.control-row button:active { transform: translateY(1px); box-shadow: 0 0 0 var(--accent-green); }
 .control-row span { font-size: 1.1em; color: var(--accent-green); font-weight: var(--font-bold); margin: 0 5px; text-shadow: none; }
 
 .admin-panel input[type="number"] {
@@ -801,7 +801,8 @@ canvas { display: block; cursor: crosshair; }
 .selected, .selected-vote { border-color: var(--accent-green) !important; background-color: var(--bg-green-tint) !important; box-shadow: 0 3px 0 var(--accent-green), 0 0 15px rgba(46, 213, 115, 0.4) !important; transform: translateY(1px); }
 
 /* Modales */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-bg); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; backdrop-filter: blur(5px);}
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-bg); z-index: 100000 !important; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; backdrop-filter: blur(5px);}
+.modal-overlay .card { z-index: 100001; }
 #globalRulesText { white-space: pre-wrap; font-family: 'Poppins', sans-serif; font-size: 0.95em; color: var(--text-main); line-height: 1.6; font-weight: var(--font-base);}
 #globalRulesModal .card { max-width: 600px; width: 95%; background: var(--modal-card); box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-width: 2px;}
 

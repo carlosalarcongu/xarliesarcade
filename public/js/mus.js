@@ -118,7 +118,7 @@ app.mus = {
         const config = {
             format: document.getElementById('mcFormat').value,
             numGroups: parseInt(document.getElementById('mcNumGroups').value),
-            matchesPerRival: parseInt(document.getElementById('mcMatchesRival').value),
+            advanceMethod: document.getElementById('mcAdvanceMethod').value,
             randomizePairs: document.getElementById('mcRandPairs').checked,
             randomizeBracket: document.getElementById('mcRandBracket').checked
         };
@@ -139,6 +139,8 @@ app.mus = {
         const divExamPlayer = document.getElementById('divExamPlayer');
         const divExamPair = document.getElementById('divExamPair');
 
+        console.log('changeView called, currentRoom:', app.mus.currentRoom, 'roomData:', roomData, 'isAdmin:', app.mus.isAdmin());
+
         if (chart) chart.classList.add('hidden');
         if (divExamPlayer) divExamPlayer.classList.add('hidden');
         if (divExamPair) divExamPair.classList.add('hidden');
@@ -149,6 +151,7 @@ app.mus = {
             if(viewFilters) viewFilters.classList.add('hidden');
             container.innerHTML = "";
             tArea.classList.remove('hidden');
+            console.log('musTournamentArea classList after remove hidden:', tArea.classList);
             app.mus.renderTournamentDashboard(roomData);
         } else {
             // ES UNA SALA NORMAL
@@ -175,13 +178,19 @@ app.mus = {
         document.getElementById('musTName').innerText = room.name;
         
         const safeUser = (app.myPlayerName || "").toLowerCase();
-        const isAdmin = ['administrador m', 'xarlie', 'musero', 'japa', 'administrador g'].includes(safeUser);
+        const isAdmin = app.mus.adminUsers.includes(safeUser);
+        //Logear en pm2 si es admin o no para verificar que la función de admin se ejecute correctamente
+        console.log("Nombre: " + safeUser + ", es admin: " + isAdmin);
+        
         
         const cAdmin = document.getElementById('musTAdminControls');
-        cAdmin.classList.toggle('hidden', !isAdmin);
-        const btnStart = cAdmin.querySelector('.start-btn');
+        cAdmin.classList.remove('hidden');
+        const btnStart = document.getElementById('musTStartBtn');
         const btnAdvance = document.getElementById('musTAdvanceBtn');
         const cArea = document.getElementById('musTContent');
+
+        let html = `<div id="musTStatusMsg" style="color: #f1c40f; font-size: 0.8em; margin-bottom: 10px; min-height: 1.2em;"></div>`;
+        html += `<div style="display:flex; flex-direction:column; gap:20px;">`; // Esta línea ya la tienes, asegúrate de que el mensaje quede arriba.
 
         if (state.phase === 'REGISTRATION') {
             document.getElementById('musTInfo').innerText = "Fase: Inscripción Abierta";
@@ -367,14 +376,20 @@ app.mus = {
 
             let html = `<div style="display:flex; overflow-x:auto; gap:30px; padding:20px; min-height:300px; align-items:center;">`;
             state.bracket.rounds.forEach((round, rIndex) => {
+                const firstMatch = (round.matches && round.matches[0]) || {};
+                let roundTitle = 'RONDA ' + (rIndex + 1);
+                if (firstMatch.isFinal) roundTitle = 'GRAN FINAL';
+                else if (firstMatch.isSemi) roundTitle = 'SEMIFINAL';
+
                 html += `<div style="display:flex; flex-direction:column; justify-content:space-around; min-width:180px; gap:20px;">`;
-                html += `<h4 style="text-align:center; color:#aaa; margin:0;">${round.matches[0].isFinal ? 'GRAN FINAL' : (round.matches[0].isSemi ? 'SEMIFINAL' : 'RONDA '+(rIndex+1))}</h4>`;
+                html += `<h4 style="text-align:center; color:#aaa; margin:0;">${roundTitle}</h4>`;
                 
-                round.matches.forEach(m => {
+                (round.matches || []).forEach(m => {
                     const border = m.winner ? 'border-color:#555;' : 'border-color:#e1b12c; box-shadow:0 0 10px rgba(225,177,44,0.3);';
                     html += `<div class="card" style="padding:10px; background:#222; border:2px solid; ${border} margin:0;">
                         <div style="font-size:0.9em; ${m.winner===m.p1?'color:#2ed573; font-weight:bold;':(m.winner?'color:#555; text-decoration:line-through;':'color:#fff;')} border-bottom:1px solid #444; padding-bottom:5px; margin-bottom:5px;">${m.p1 || '???'}</div>
                         <div style="font-size:0.9em; ${m.winner===m.p2?'color:#2ed573; font-weight:bold;':(m.winner?'color:#555; text-decoration:line-through;':'color:#fff;')}">${m.p2 || '???'}</div>
+                        <div style="margin-top:8px; font-size:0.9em; color:#f1c40f; font-weight:700;">${(m.s1 || m.s2 || m.winner) ? `${m.s1} - ${m.s2}` : 'sin resultado'}</div>
                         ${!m.winner && m.p1 && m.p2 && m.p1!=='???' && m.p2!=='???' && !m.p1.includes('BYE') && !m.p2.includes('BYE') ? `<button class="main-btn" style="width:100%; padding:5px; margin-top:10px; font-size:0.8em; background:#2ed573;" onclick="app.mus.showAddMatchModal('${m.id}')">JUGAR</button>` : ''}
                     </div>`;
                 });
@@ -394,7 +409,7 @@ app.mus = {
 
     // --- NUEVA FUNCIÓN: CARGAR PLANTILLA ---
     loadPredefinedPlayers: () => {
-        const players = ['xarlie', 'japa', 'luis', 'marcos', 'acebo', 'nacho', 'lucas', 'mario', 'javimali', 'dani', 'clau', 'maria'];
+        const players = ['Xarlie', 'Japa', 'Luis', 'Marcos', 'Acebo', 'Nacho', 'Lucas', 'Mario', 'Javimali', 'Dani', 'Clau', 'Maria'];
         if (confirm("¿Añadir a los 12 jugadores predefinidos de golpe?")) {
             app.mus.tourneyAction('addPlayers', players);
         }
@@ -501,36 +516,289 @@ app.mus = {
         if (action === 'addPlayer' && document.getElementById('tAddPlayerName')) {
             document.getElementById('tAddPlayerName').value = "";
         }
+
+        // Función auxiliar para usar en todo el Mus
+        app.mus.helperNormalize = (str) => {
+            if (!str) return str;
+            const clean = str.trim();
+            return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+        };
     },
 
     startTournament: () => { if(confirm("¿Cerrar inscripciones e iniciar el torneo?")) app.mus.tourneyAction('start', null); },
     advanceToBracket: () => { if(confirm("¿Finalizar fase de grupos y crear eliminatorias?")) app.mus.tourneyAction('advanceToBracket', null); },
-    deleteTournament: () => {
-        if(!confirm("⚠️ ¿Seguro que quieres ELIMINAR este torneo?\n\nSe generará un PDF con el resumen que se descargará automáticamente.")) return;
-        
-        // Mostrar estado
-        alert("⏳ Generando PDF del torneo... Por favor espera.");
-        
+    downloadPDF: () => {
+        const msgEl = document.getElementById('musTStatusMsg');
+        if(msgEl) msgEl.innerText = "⏳ Generando PDF...";
+
         socket.emit('mus_deleteTournamentPDF', { room: app.mus.currentRoom, user: app.myPlayerName }, (result) => {
             if (result.success) {
-                setTimeout(() => {
-                    // Descargar el PDF
-                    const a = document.createElement('a');
-                    a.href = `/downloads/${result.fileName}`;
-                    a.download = result.fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }, 300);
-                
-                // Eliminar el torneo después de un tiempo
-                setTimeout(() => {
-                    socket.emit('mus_action', { type: 'deleteTournament', room: app.mus.currentRoom, user: app.myPlayerName });
-                }, 2000);
+                const a = document.createElement('a');
+                a.href = `/downloads/${result.fileName}`;
+                a.download = result.fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                if(msgEl) msgEl.innerText = "✅ PDF descargado con éxito.";
             } else {
-                alert('❌ Error al generar PDF: ' + (result.error || 'Desconocido'));
+                if(msgEl) msgEl.innerText = "❌ Error al generar PDF.";
+            }
+            // Limpiar mensaje a los 3 segundos
+            setTimeout(() => { if(msgEl) msgEl.innerText = ""; }, 3000);
+        });
+    },
+
+    deleteTournament: () => {
+        if(confirm("⚠️ ¿Seguro que quieres ELIMINAR este torneo? (Esta acción no generará PDF)")) {
+            socket.emit('mus_action', { type: 'deleteTournament', room: app.mus.currentRoom, user: app.myPlayerName });
+        }
+    },
+
+    toggleAdminControls: () => {
+        const panel = document.getElementById('musAdminPanel');
+        if (panel) panel.classList.toggle('hidden');
+    },
+
+    modifyPairs: () => {
+        console.log('modifyPairs called');
+        if (!app.mus.isAdmin()) return;
+        const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
+        if (!roomData || !roomData.isTournament) return;
+
+        const state = JSON.parse(roomData.tournamentState || "{}");
+        console.log('state:', state);
+
+        const modal = document.getElementById('musModifyPairsModal');
+        const list = document.getElementById('musPairsList');
+        list.innerHTML = '';
+        console.log('list cleared');
+
+        if (!Array.isArray(state.pairs)) state.pairs = [];
+        
+
+        state.pairs.forEach((pair, idx) => {
+            const parts = pair.split(' y ');
+            const div = document.createElement('div');
+            div.style.cssText = 'background:#222; padding:10px; border-radius:5px; margin-bottom:10px;';
+            div.innerHTML = `
+                <strong>Pareja ${idx+1}:</strong><br>
+                <input type="text" value="${parts[0] || ''}" placeholder="Jugador 1" style="width:45%; margin-right:5%; padding:5px;">
+                <input type="text" value="${parts[1] || ''}" placeholder="Jugador 2" style="width:45%; padding:5px;">
+            `;
+            list.appendChild(div);
+        });
+
+        modal.classList.remove('hidden');
+        console.log('pairs modal opened');
+    },
+
+    submitModifyPairs: () => {
+        const list = document.getElementById('musPairsList');
+        const inputs = list.querySelectorAll('input');
+        const newPairs = [];
+        for (let i = 0; i < inputs.length; i += 2) {
+            const p1 = inputs[i].value.trim();
+            const p2 = inputs[i+1].value.trim();
+            if (p1 && p2) {
+                newPairs.push([p1, p2].sort().join(' y '));
+            }
+        }
+        app.mus.tourneyAction('updatePairs', { pairs: newPairs });
+        document.getElementById('musModifyPairsModal').classList.add('hidden');
+    },
+
+    modifyResults: () => {
+        console.log('modifyResults called');
+        if (!app.mus.isAdmin()) return;
+        const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
+        if (!roomData || !roomData.isTournament) return;
+
+        const state = JSON.parse(roomData.tournamentState || "{}");
+        console.log('state for results:', state);
+        const modal = document.getElementById('musModifyResultsModal');
+        const list = document.getElementById('musResultsList');
+        list.innerHTML = '';
+        console.log('results list cleared');
+
+        // Obtener partidos jugados (o partidos del estado de grupos/ bracket si todavía no hay resultados en DB)
+        let matches = app.mus.data.matches.filter(m => m.roomId === app.mus.currentRoom);
+        if (matches.length === 0) {
+            if (state.groups) {
+                Object.values(state.groups).forEach(group => {
+                    (group.matches || []).forEach(m => {
+                        if (m.p1 && m.p2 && m.p1 !== 'BYE' && m.p2 !== 'BYE') {
+                            matches.push({ id: m.id || `G_${m.p1}_${m.p2}`, p1: m.p1, p2: m.p2, p3: '', p4: '', s1: m.s1 || 0, s2: m.s2 || 0, fromState: true });
+                        }
+                    });
+                });
+            }
+            if (state.phase === 'BRACKET' && state.bracket && state.bracket.rounds) {
+                state.bracket.rounds.forEach(round => {
+                    (round.matches || []).forEach(m => {
+                        if (m.p1 && m.p2 && m.p1 !== 'BYE' && m.p2 !== 'BYE') {
+                            matches.push({ id: m.id, p1: m.p1, p2: m.p2, p3: '', p4: '', s1: m.s1 || 0, s2: m.s2 || 0, fromState: true });
+                        }
+                    });
+                });
+            }
+        }
+
+        if (matches.length === 0) {
+            list.innerHTML = '<p style="color:#ccc;">No hay partidos para editar todavía. Añade partidos jugados o avanza fases.</p>';
+        } else {
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background:#222; padding:10px; border-radius:5px; margin-bottom:10px;';
+                const title = m.fromState ? `${m.p1} vs ${m.p2}` : `${m.p1} y ${m.p2} vs ${m.p3} y ${m.p4}`;
+                div.innerHTML = `
+                    <strong>${title}</strong><br>
+                    Resultado: <input type="number" value="${m.s1 || 0}" min="0" style="width:40px;"> - <input type="number" value="${m.s2 || 0}" min="0" style="width:40px;">
+                    <input type="hidden" value="${m.id}">
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        modal.classList.remove('hidden');
+        console.log('results modal opened');
+    },
+
+    submitModifyResults: () => {
+        const list = document.getElementById('musResultsList');
+        const divs = list.querySelectorAll('div');
+        divs.forEach(div => {
+            const inputs = div.querySelectorAll('input');
+            const id = inputs[2].value;
+            const s1 = parseInt(inputs[0].value);
+            const s2 = parseInt(inputs[1].value);
+            console.log('[submitModifyResults] matchId', id, 's1', s1, 's2', s2);
+            if (!isNaN(s1) && !isNaN(s2)) {
+                app.mus.tourneyAction('updateMatchResult', { matchId: id, s1, s2 });
             }
         });
+        document.getElementById('musModifyResultsModal').classList.add('hidden');
+        // Re-render de inmediato en cliente para asegurar efecto sin depender de delay de socket
+        app.mus.changeView();
+    },
+
+    modifyMatchups: () => {
+        console.log('modifyMatchups called');
+        if (!app.mus.isAdmin()) return;
+        const roomData = app.mus.data.rooms.find(r => r.name === app.mus.currentRoom);
+        if (!roomData || !roomData.isTournament) return;
+
+        const state = JSON.parse(roomData.tournamentState || "{}");
+        console.log('state for matchups:', state);
+        const modal = document.getElementById('musModifyMatchupsModal');
+        const list = document.getElementById('musMatchupsList');
+        list.innerHTML = '';
+        console.log('matchups list cleared');
+
+        let assignments = {...(state.groupAssignments || {})};
+        if (!Object.keys(assignments).length && state.groups) {
+            Object.entries(state.groups).forEach(([gName, group]) => {
+                (group.pairs || []).forEach(pair => { assignments[pair] = gName; });
+            });
+        }
+
+        if (!Object.keys(assignments).length) {
+            list.innerHTML = '<p style="color:#ccc;">No hay asignaciones de grupos. Avanza o crea una configuración de grupos primero.</p>';
+        } else {
+            Object.keys(assignments).forEach(pair => {
+                const currentGroup = assignments[pair];
+                const div = document.createElement('div');
+                div.style.cssText = 'background:#222; padding:10px; border-radius:5px; margin-bottom:10px;';
+                div.innerHTML = `
+                    <strong>${pair}:</strong>
+                    <select style="margin-left:10px; padding:5px;">
+                        <option value="">Sin asignar</option>
+                        ${Object.keys(state.groups || {}).map(g => `<option value="${g}" ${g === currentGroup ? 'selected' : ''}>Grupo ${g}</option>`).join('')}
+                    </select>
+                    <input type="hidden" value="${pair}">
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        if (state.phase === 'BRACKET' && state.bracket && state.bracket.rounds) {
+            // tambien permitir editar bracket directamente
+            list.innerHTML = '';
+
+            const pairCandidates = Array.from(new Set(state.pairs || []));
+            state.bracket.rounds.forEach((round, ri) => {
+                const header = document.createElement('div');
+                header.innerHTML = `<h3 style="color:#fff;">Ronda ${ri + 1}</h3>`;
+                list.appendChild(header);
+
+                (round.matches || []).forEach(m => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'background:#222; padding:10px; border-radius:5px; margin-bottom:10px;';
+
+                    const currentP1 = pairCandidates.includes(m.p1) ? m.p1 : '';
+                    const currentP2 = pairCandidates.includes(m.p2) ? m.p2 : '';
+
+                    const options = ['<option value="">--Selecciona--</option>'].concat(pairCandidates.map(p => `<option value="${p}" ${p===currentP1?'selected':''}>${p}</option>`)).join('');
+                    const options2 = ['<option value="">--Selecciona--</option>'].concat(pairCandidates.map(p => `<option value="${p}" ${p===currentP2?'selected':''}>${p}</option>`)).join('');
+
+                    div.innerHTML = `
+                        <strong>${m.id}:</strong><br>
+                        P1: <select data-field="p1" style="width:40%; margin-right:5px; padding:5px;">${options}</select>
+                        P2: <select data-field="p2" style="width:40%; padding:5px;">${options2}</select><br>
+                        <input type="hidden" value="${m.id}" data-match-id="true">
+                    `;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        modal.classList.remove('hidden');
+        console.log('matchups modal opened');
+    },
+
+    submitModifyMatchups: () => {
+        const list = document.getElementById('musMatchupsList');
+        const divs = list.querySelectorAll('div');
+
+        // Detectar si estamos editando bracket o asignación de grupos
+        const isBracket = !!list.querySelector('select[data-field="p1"], select[data-field="p2"]');
+
+        if (isBracket) {
+            let hasError = false;
+            divs.forEach(div => {
+                const matchIdInput = div.querySelector('input[data-match-id]');
+                if (!matchIdInput) return; // header row
+
+                const selectP1 = div.querySelector('select[data-field="p1"]');
+                const selectP2 = div.querySelector('select[data-field="p2"]');
+                const matchId = matchIdInput.value;
+                const p1 = selectP1 ? selectP1.value.trim() : '';
+                const p2 = selectP2 ? selectP2.value.trim() : '';
+
+                if (!p1 || !p2 || p1 === p2) {
+                    hasError = true;
+                } else {
+                    app.mus.tourneyAction('updateBracketMatchup', { matchId, p1, p2 });
+                }
+            });
+
+            if (hasError) {
+                alert('Todos los enfrentamientos deben tener dos parejas distintas y no vacías.');
+                return;
+            }
+        } else {
+            const updates = {};
+            divs.forEach(div => {
+                const select = div.querySelector('select');
+                const pairInput = div.querySelector('input[type="hidden"]');
+                if (pairInput && select) {
+                    const pair = pairInput.value;
+                    updates[pair] = select.value;
+                }
+            });
+            app.mus.tourneyAction('updateGroupAssignments', updates);
+        }
+
+        document.getElementById('musModifyMatchupsModal').classList.add('hidden');
     },
 
     getRoomMatches: () => {
@@ -824,6 +1092,14 @@ app.mus = {
         if (!app.mus.isAdmin()) return;
         
         let html = `<h3 style="color:#f1c40f">⚙️ Panel de Administración</h3>`;
+        
+        html += `
+            <div class="card" style="background: rgba(46, 213, 115, 0.1); border: 1px solid #2ed573; margin-bottom: 20px;">
+                <p style="font-size: 0.8em; color: #ccc; margin-bottom: 10px;">Corrige nombres (ej: "carlos" -> "Carlos") y fusiona duplicados.</p>
+                <button onclick="app.mus.adminNormalizeNames()" class="main-btn" style="background:#2ed573; padding: 10px; margin:0;">✨ Normalizar Nombres</button>
+            </div>
+        `;
+
         html += `<h4 style="color:#aaa; border-bottom:1px solid #444; padding-bottom:5px; text-align:left;">👤 Jugadores</h4>`;
         html += `<ul style="list-style:none; padding:0; text-align:left; max-height: 250px; overflow-y: auto;">`;
         app.mus.data.players.forEach(p => {
@@ -872,9 +1148,17 @@ app.mus = {
     },
 
     adminRenamePlayer: (oldName) => {
-        const newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
+        let newName = prompt(`Modificar nombre de "${oldName}":`, oldName);
         if(newName && newName.trim() !== "" && newName !== oldName) {
-            socket.emit('mus_action', { type: 'adminEditPlayer', user: app.myPlayerName, value: { oldName, newName: newName.trim() } });
+            // Normalizamos antes de enviar: "cARLOS" -> "Carlos"
+            newName = newName.trim();
+            const normalized = newName.charAt(0).toUpperCase() + newName.slice(1).toLowerCase();
+            
+            socket.emit('mus_action', { 
+                type: 'adminEditPlayer', 
+                user: app.myPlayerName, 
+                value: { oldName, newName: normalized } 
+            });
         }
     },
     
@@ -895,10 +1179,14 @@ app.mus = {
         const p4 = prompt("Jugador 4 (Equipo 2):", m.p4) || m.p4;
         
         if(confirm(`Nuevos equipos:\nAzul: ${p1} y ${p2}\nRojo: ${p3} y ${p4}\n\n¿Guardar cambios?`)) {
-            socket.emit('mus_action', { type: 'adminEditMatch', user: app.myPlayerName, value: { id, p1, p2, p3, p4, s1: m.s1, s2: m.s2 } });
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { id: String(id), p1, p2, p3, p4, s1: m.s1, s2: m.s2 } 
+            });
         }
     },
-    
+
     adminEditMatchScore: (id) => {
         // Aseguramos que la comparación sea entre Textos
         const m = app.mus.data.matches.find(x => String(x.id) === String(id));
@@ -908,7 +1196,15 @@ app.mus = {
         const s2 = prompt(`Puntuación Equipo Rojo (${m.p3} y ${m.p4}):`, m.s2);
         
         if(s1 !== null && s2 !== null) {
-            socket.emit('mus_action', { type: 'adminEditMatch', user: app.myPlayerName, value: { id, p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, s1: parseInt(s1), s2: parseInt(s2) } });
+            socket.emit('mus_action', { 
+                type: 'adminEditMatch', 
+                user: app.myPlayerName, 
+                value: { 
+                    id: String(id), 
+                    p1: m.p1, p2: m.p2, p3: m.p3, p4: m.p4, 
+                    s1: parseInt(s1), s2: parseInt(s2) 
+                } 
+            });
         }
     },
 
@@ -1965,7 +2261,13 @@ app.mus = {
             stats[[m.p3, m.p4].sort().join(' y ')] = 1;
         });
         return Object.keys(stats).sort();
-    }
+    },
+
+    adminNormalizeNames: () => {
+        if(confirm("¿Quieres normalizar todos los nombres? (Primera letra mayúscula, resto minúsculas). Esto fusionará registros duplicados automáticamente.")) {
+            socket.emit('mus_action', { type: 'adminNormalizeNames', user: app.myPlayerName });
+        }
+    },
 };
 
 socket.on('mus_data', (d) => {

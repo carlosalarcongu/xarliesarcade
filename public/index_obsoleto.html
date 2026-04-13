@@ -271,7 +271,7 @@
 
         <div id="roleCard" class="blur-content" onclick="app.impostor.toggleRole()">
             <h1 id="myRoleTitle">...</h1>
-            <p id="myRoleWord" style="font-size: 2em; font-weight: 900; color: #ffeaa7; margin: 10px 0;">...</p>
+            <p id="myRoleWord" style="font-size: 2em; font-weight: 900; margin: 10px 0;">...</p>
             <p id="myRoleInfo" style="font-size: 0.9em; color: #ccc;">...</p>
         </div>
         <div class="card-note">👆 Clicar o mantener para ver rol</div>
@@ -848,18 +848,27 @@
             </div>
         </div>
 
-        <div id="musTournamentArea" class="hidden" style="width: 100%; text-align: left;">
-            <div class="card" style="background:#222; border: 2px solid #e1b12c; margin-bottom: 20px;">
+        <div id="musTournamentArea" class="" style="width: 100%; text-align: left;">
+            <div class="card" style="background:#222; border: 2px solid #e1b12c; margin-bottom: 20px; position: sticky; top: 0; z-index: 10;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div style="flex:1;">
                         <h3 id="musTName" style="color:#e1b12c; margin:0;">Nombre Torneo</h3>
                         <p id="musTInfo" style="color:#aaa; font-size:0.8em; margin:5px 0;">Fase: ...</p>
                         <p id="musTDesc" style="color:#ccc; font-size:0.8em; margin:5px 0; font-style:italic;"></p>
                     </div>
-                    <div id="musTAdminControls" class="hidden" style="display:flex; flex-direction:column; gap:5px;">
-                        <button onclick="app.mus.startTournament()" class="start-btn" style="padding:5px 15px; font-size:0.8em; width:auto; margin:0;">▶️ Iniciar Torneo</button>
-                        <button onclick="app.mus.advanceToBracket()" id="musTAdvanceBtn" class="kick-btn hidden" style="background:#9b59b6; padding:5px 15px; font-size:0.8em; width:auto; margin:0;">🏆 Pasar a Eliminatorias</button>
-                        <button onclick="app.mus.deleteTournament()" class="kick-btn" style="background:#e74c3c; padding:5px 15px; font-size:0.8em; width:auto; margin:0;">🗑️ Eliminar Torneo</button>
+                    <div id="musTAdminControls" class="" style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="app.mus.toggleAdminControls()" class="start-btn" style="background: rgba(255,255,255,0.1); color:#e1b12c; border: 1px solid #e1b12c; font-size:0.9em;">✏️ Admin</button>
+                        <div id="musAdminPanel" class="hidden" style="display:flex; flex-direction:column; gap:5px; margin-top:5px;">
+                            <button onclick="app.mus.startTournament()" id="musTStartBtn" class="start-btn">▶️ Iniciar</button>
+                            <button onclick="app.mus.advanceToBracket()" id="musTAdvanceBtn" class="kick-btn hidden">🏆 Bracket</button>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                <button onclick="app.mus.modifyPairs()" class="kick-btn" style="background:#8e44ad; padding:5px; font-size:0.7em; width:auto; margin:0;">👥 Parejas</button>
+                                <button onclick="app.mus.modifyResults()" class="kick-btn" style="background:#f39c12; padding:5px; font-size:0.7em; width:auto; margin:0;">📊 Resultados</button>
+                                <button onclick="app.mus.modifyMatchups()" class="kick-btn" style="background:#27ae60; padding:5px; font-size:0.7em; width:auto; margin:0;">⚔️ Enfrent.</button>
+                                <button onclick="app.mus.downloadPDF()" class="kick-btn" style="background:#3498db; padding:5px; font-size:0.7em; width:auto; margin:0;">📄 PDF</button>
+                            </div>
+                            <button onclick="app.mus.deleteTournament()" class="kick-btn" style="background:#e74c3c; padding:5px; font-size:0.7em; width:auto; margin:0;">🗑️ Eliminar</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -870,54 +879,63 @@
 
 
 
-    <div id="musCreateRoomModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:30px; overflow-y:auto;">
-        <div class="card" style="width:95%; max-width:400px; background:#2f3542; border:2px solid #27ae60; text-align:left;">
-            <h2 style="color:#27ae60; margin-top:0;">➕ Nueva Sala de Mus</h2>
-            
-            <label style="color:white; font-weight:bold; font-size:0.9em;">Nombre de la Sala / Torneo:</label>
-            <input type="text" id="mcRoomName" placeholder="Ej: Torneo Verano" style="width:100%; margin-bottom:15px; padding:10px; border-radius:5px;">
+        <div id="musCreateRoomModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:30px; overflow-y:auto;">
+            <div class="card" style="width:95%; max-width:400px; background:#2f3542; border:2px solid #27ae60; text-align:left;">
+                <h2 style="color:#27ae60; margin-top:0;">➕ Nueva Sala de Mus</h2>
+                
+                <label style="color:white; font-weight:bold; font-size:0.9em;">Nombre de la Sala / Torneo:</label>
+                <input type="text" id="mcRoomName" placeholder="Ej: Torneo Verano" style="width:100%; margin-bottom:15px; padding:10px; border-radius:5px;">
 
-            <label style="display:flex; align-items:center; gap:10px; color:#e1b12c; font-weight:bold; margin-bottom:15px;">
-                <input type="checkbox" id="mcIsTournament" onchange="document.getElementById('mcTournamentConfig').classList.toggle('hidden', !this.checked)" style="width:20px; height:20px;">
-                ESTA SALA ES UN TORNEO 🏆
-            </label>
+                <label style="display:flex; align-items:center; gap:10px; color:#e1b12c; font-weight:bold; margin-bottom:15px;">
+                    <input type="checkbox" id="mcIsTournament" onchange="document.getElementById('mcTournamentConfig').classList.toggle('hidden', !this.checked)" style="width:20px; height:20px;">
+                    ESTA SALA ES UN TORNEO 🏆
+                </label>
 
-            <div id="mcTournamentConfig" class="hidden" style="background:#1e272e; padding:15px; border-radius:10px; margin-bottom:15px;">
-                <label style="color:#aaa; font-size:0.8em;">Descripción del Torneo (opcional):</label>
-                <textarea id="mcDescription" placeholder="Ej: Torneo amistoso de verano..." style="width:100%; height:60px; padding:8px; margin-bottom:15px; border-radius:5px; font-family:monospace; font-size:0.9em;"></textarea>
+                <div id="mcTournamentConfig" class="hidden" style="background:#1e272e; padding:15px; border-radius:10px; margin-bottom:15px;">
+                    <label style="color:#aaa; font-size:0.8em;">Descripción del Torneo (opcional):</label>
+                    <textarea id="mcDescription" placeholder="Ej: Torneo amistoso de verano..." style="width:100%; height:60px; padding:8px; margin-bottom:15px; border-radius:5px; font-family:monospace; font-size:0.9em;"></textarea>
 
-                <label style="color:#74b9ff; font-size:0.85em; display:block; margin-bottom:5px;">Formato:</label>
-                <select id="mcFormat" onchange="document.getElementById('mcGroupConfig').classList.toggle('hidden', this.value !== 'GROUPS')" style="width:100%; padding:8px; margin-bottom:15px; border-radius:5px;">
-                    <option value="BRACKET">Directo a Eliminatorias (Cuadro)</option>
-                    <option value="GROUPS">Fase de Grupos + Eliminatorias</option>
-                </select>
+                    <label style="color:#74b9ff; font-size:0.85em; display:block; margin-bottom:5px;">Formato:</label>
+                    <select id="mcFormat" onchange="document.getElementById('mcGroupConfig').classList.toggle('hidden', this.value !== 'GROUPS'); document.getElementById('mcAdvanceConfig').classList.toggle('hidden', this.value !== 'GROUPS')" style="width:100%; padding:8px; margin-bottom:15px; border-radius:5px; background:#1e272e; color:#fff; border:1px solid #34495e;">
+                        <option value="BRACKET">Directo a Eliminatorias (Cuadro)</option>
+                        <option value="GROUPS">Fase de Grupos + Eliminatorias</option>
+                    </select>
 
-                <div id="mcGroupConfig" class="hidden" style="display:flex; gap:10px; margin-bottom:15px;">
-                    <div style="flex:1;">
-                        <label style="color:#aaa; font-size:0.8em;">Nº Grupos:</label>
-                        <input type="number" id="mcNumGroups" value="2" min="1" max="8" style="width:100%; padding:5px; text-align:center;">
+                    <div id="mcGroupConfig" class="hidden" style="display:flex; gap:10px; margin-bottom:15px;">
+                        <div style="flex:1;">
+                            <label style="color:#aaa; font-size:0.8em;">Nº Grupos:</label>
+                            <select id="mcNumGroups" style="width:100%; padding:5px; background:#1e272e; color:#fff; border:1px solid #34495e;">
+                                <option value="2">2</option>
+                                <option value="4">4</option>
+                                <option value="8">8</option>
+                            </select>
+                        </div>
                     </div>
-                    <div style="flex:1;">
-                        <label style="color:#aaa; font-size:0.8em;">Vueltas (Ida/Vuelta):</label>
-                        <input type="number" id="mcMatchesRival" value="1" min="1" max="4" style="width:100%; padding:5px; text-align:center;">
+
+                    <div id="mcAdvanceConfig" class="hidden" style="margin-bottom:15px;">
+                        <label style="color:#aaa; font-size:0.8em;">Avance a Eliminatorias:</label>
+                        <select id="mcAdvanceMethod" style="width:100%; padding:8px; border-radius:5px; background:#1e272e; color:#fff; border:1px solid #34495e;">
+                            <option value="ORDER">Por Orden (1A vs 2B, 2A vs 1B)</option>
+                            <option value="RANDOM">Aleatorio</option>
+                            <option value="MANUAL">Manual (Admin decide)</option>
+                        </select>
                     </div>
+
+                    <label style="display:flex; align-items:center; gap:5px; color:#ccc; font-size:0.85em; margin-bottom:10px;">
+                        <input type="checkbox" id="mcRandPairs" checked> Formar parejas al azar con los inscritos.
+                    </label>
+                    <label style="display:flex; align-items:center; gap:5px; color:#ccc; font-size:0.85em;">
+                        <input type="checkbox" id="mcRandBracket" checked> Sortear cruces / grupos al azar.
+                    </label>
+                    <p style="font-size:0.7em; color:#ff7675; margin-top:10px;">*Podrás asignar parejas y grupos manualmente después de cerrar inscripciones.</p>
                 </div>
 
-                <label style="display:flex; align-items:center; gap:5px; color:#ccc; font-size:0.85em; margin-bottom:10px;">
-                    <input type="checkbox" id="mcRandPairs" checked> Formar parejas al azar con los inscritos.
-                </label>
-                <label style="display:flex; align-items:center; gap:5px; color:#ccc; font-size:0.85em;">
-                    <input type="checkbox" id="mcRandBracket" checked> Sortear cruces / grupos al azar.
-                </label>
-                <p style="font-size:0.7em; color:#ff7675; margin-top:10px;">*Podrás asignar parejas y grupos manualmente después de cerrar inscripciones.</p>
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <button onclick="document.getElementById('createRoom').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
-                <button onclick="app.mus.submitCreateRoom()" class="main-btn" style="flex:1; background:#27ae60;">Crear Sala</button>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="document.getElementById('musCreateRoomModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
+                    <button onclick="app.mus.submitCreateRoom()" class="main-btn" style="flex:1; background:#27ae60;">Crear Sala</button>
+                </div>
             </div>
         </div>
-    </div>
         
     </div>
 
@@ -1868,6 +1886,10 @@
         <div id="tvEditControls" class="hidden" style="margin-bottom:15px; text-align:right; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
             <button id="btnRandBracket" class="kick-btn hidden" style="width:auto; background:#9b59b6; padding:8px 15px;" onclick="app.torneos.randomizeBracket()">🎲 Randomizar</button>
             <button id="btnManualBye" class="kick-btn hidden" style="width:auto; background:#34495e; padding:8px 15px;" onclick="app.torneos.openManualByeModal()">👉 Elegir Repesca</button>
+            <button id="btnAdvanceBracket" class="kick-btn hidden" style="width:auto; background:#e67e22; padding:8px 15px;" onclick="app.torneos.advanceToBracket()">🏆 Avanzar a Eliminatorias</button>
+            <button id="btnModifyPairs" class="kick-btn" style="width:auto; background:#8e44ad; padding:8px 15px;" onclick="app.torneos.modifyPairs()">👥 Modificar Parejas</button>
+            <button id="btnModifyResults" class="kick-btn" style="width:auto; background:#f39c12; padding:8px 15px;" onclick="app.torneos.modifyResults()">📊 Modificar Resultados</button>
+            <button id="btnModifyMatchups" class="kick-btn" style="width:auto; background:#27ae60; padding:8px 15px;" onclick="app.torneos.modifyMatchups()">⚔️ Modificar Enfrentamientos</button>
             <button class="main-btn" style="width:auto; background:#2ed573; padding:8px 15px;" onclick="app.torneos.openAddResultModal()">🖊️ Anotar/Editar Resultado</button>
         </div>
 
@@ -1916,6 +1938,7 @@
             <select id="tcFormat" onchange="app.torneos.toggleFormatOptions()" style="width:100%; margin-bottom:15px; padding:10px; border-radius:5px;">
                 <option value="BRACKET">Eliminatorias (Cuadro)</option>
                 <option value="LEAGUE">Liguilla (Puntos)</option>
+                <option value="GROUPS_BRACKET">Grupos + Eliminatorias</option>
             </select>
 
             <div id="tcLeagueConfig" class="hidden" style="background:#1e272e; padding:10px; border-radius:5px; margin-bottom:15px;">
@@ -1953,6 +1976,33 @@
                 <div style="display:flex; justify-content:space-between;">
                     <span style="color:#aaa; font-size:0.8em;">Partido 3er y 4to puesto:</span>
                     <input type="checkbox" id="tcThirdPlace" style="width:20px; height:20px;">
+                </div>
+            </div>
+
+            <div id="tcGroupsConfig" class="hidden" style="background:#1e272e; padding:10px; border-radius:5px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="color:#aaa; font-size:0.8em;">Número de Grupos:</span>
+                    <select id="tcNumGroups" style="padding:2px; border-radius:3px;">
+                        <option value="2">2 Grupos</option>
+                        <option value="4">4 Grupos</option>
+                        <option value="8">8 Grupos</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="color:#aaa; font-size:0.8em;">Avance a Eliminatorias:</span>
+                    <select id="tcAdvanceMethod" style="padding:2px; border-radius:3px;">
+                        <option value="ORDER">Por Orden (1A vs 2B, 2A vs 1B)</option>
+                        <option value="RANDOM">Aleatorio</option>
+                        <option value="MANUAL">Manual (Admin decide)</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="color:#aaa; font-size:0.8em;">Jugadores por Grupo:</span>
+                    <select id="tcPlayersPerGroup" style="padding:2px; border-radius:3px;">
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                    </select>
                 </div>
             </div>
 
@@ -2004,6 +2054,43 @@
             <div style="display:flex; gap:10px;">
                 <button onclick="document.getElementById('torneosByeModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
                 <button onclick="app.torneos.submitManualByes()" class="main-btn" style="flex:1; background:#3498db;">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales para Mus Torneos -->
+    <div id="musModifyPairsModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:30px; overflow-y:auto;">
+        <div class="card" style="width:95%; max-width:500px; background:#2f3542; border:2px solid #8e44ad; text-align:left;">
+            <h2 style="color:#8e44ad; margin-top:0;">👥 Modificar Parejas</h2>
+            <p style="color:#aaa; font-size:0.8em;">Edita las parejas del torneo. Los cambios se aplicarán inmediatamente.</p>
+            <div id="musPairsList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('musModifyPairsModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
+                <button onclick="app.mus.submitModifyPairs()" class="main-btn" style="flex:1; background:#8e44ad;">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="musModifyResultsModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:30px; overflow-y:auto;">
+        <div class="card" style="width:95%; max-width:500px; background:#2f3542; border:2px solid #f39c12; text-align:left;">
+            <h2 style="color:#f39c12; margin-top:0;">📊 Modificar Resultados</h2>
+            <p style="color:#aaa; font-size:0.8em;">Edita los resultados de partidos ya jugados. Esto actualizará las clasificaciones.</p>
+            <div id="musResultsList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('musModifyResultsModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
+                <button onclick="app.mus.submitModifyResults()" class="main-btn" style="flex:1; background:#f39c12;">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="musModifyMatchupsModal" class="hidden modal-overlay" style="align-items:flex-start; padding-top:30px; overflow-y:auto;">
+        <div class="card" style="width:95%; max-width:500px; background:#2f3542; border:2px solid #27ae60; text-align:left;">
+            <h2 style="color:#27ae60; margin-top:0;">⚔️ Modificar Enfrentamientos</h2>
+            <p style="color:#aaa; font-size:0.8em;">Cambia las asignaciones de parejas a grupos (solo en fase de grupos).</p>
+            <div id="musMatchupsList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('musModifyMatchupsModal').classList.add('hidden')" class="kick-btn" style="flex:1;">Cancelar</button>
+                <button onclick="app.mus.submitModifyMatchups()" class="main-btn" style="flex:1; background:#27ae60;">Guardar Cambios</button>
             </div>
         </div>
     </div>

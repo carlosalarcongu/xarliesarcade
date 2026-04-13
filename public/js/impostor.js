@@ -335,10 +335,13 @@ socket.on('privateRole', (data) => {
     const word = document.getElementById('myRoleWord');
     const info = document.getElementById('myRoleInfo');
 
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
     title.innerText = data.role;
-    title.style.color = 'white'; 
+    title.style.color = isDark ? 'white' : '#262626'; 
 
     word.innerText = data.word;
+    word.style.color = isDark ? '#ffeaa7' : '#4a148c'; // Dark purple for light mode
     
     if (data.role === 'IMPOSTOR') {
         info.innerText = data.hint ? `Tu Pista: ${data.hint}` : "Engaña a todos.";

@@ -122,7 +122,7 @@ function generateBracket(pairs, randomize) {
         let nextFeeders = [];
         const isFinal = allPending.length === 2;
         const isSemi = allPending.length === 4;
-        
+
         for (let i = 0; i < allPending.length; i += 2) {
             const f1 = allPending[i]; const f2 = allPending[i+1];
             const match = {
@@ -141,7 +141,71 @@ function generateBracket(pairs, randomize) {
         rounds.push(newRound);
         allPending = nextFeeders;
     }
+
     return { rounds, champion: null };
+}
+
+function recalculateBracketFromResults(bracket) {
+    if (!bracket || !bracket.rounds) return;
+    const allMatches = bracket.rounds.flatMap(r => r.matches || []);
+    const matchById = new Map(allMatches.map(m => [m.id, m]));
+
+    // Preparar la relación padres -> hijo
+    const childFeeds = {};
+    allMatches.forEach(match => {
+        if (match.nextMatchId) {
+            childFeeds[match.nextMatchId] = childFeeds[match.nextMatchId] || [];
+            childFeeds[match.nextMatchId].push(match.id);
+        }
+    });
+
+    // Ronda 1: recalculamos ganador según puntuaciones (quedan igual participantes)
+    if (bracket.rounds[0] && bracket.rounds[0].matches) {
+        bracket.rounds[0].matches.forEach(match => {
+            if (match.p1 && match.p2 && match.p1 !== '???' && match.p2 !== '???' && Number.isFinite(match.s1) && Number.isFinite(match.s2) && match.s1 !== match.s2) {
+                match.winner = match.s1 > match.s2 ? match.p1 : match.p2;
+            } else {
+                match.winner = null;
+            }
+        });
+    }
+
+    // Rondas siguientes: establecer participantes en función de ganadores previos
+    for (let ri = 1; ri < bracket.rounds.length; ri++) {
+        const round = bracket.rounds[ri];
+        round.matches.forEach(match => {
+            const parents = childFeeds[match.id] || [];
+            const parent1 = matchById.get(parents[0]);
+            const parent2 = matchById.get(parents[1]);
+
+            const expectedP1 = parent1 && parent1.winner ? parent1.winner : '???';
+            const expectedP2 = parent2 && parent2.winner ? parent2.winner : '???';
+
+            const participantsChanged = match.p1 !== expectedP1 || match.p2 !== expectedP2;
+            match.p1 = expectedP1;
+            match.p2 = expectedP2;
+
+            if (participantsChanged) {
+                match.s1 = 0;
+                match.s2 = 0;
+                match.winner = null;
+            }
+
+            if (match.p1 !== '???' && match.p2 !== '???' && Number.isFinite(match.s1) && Number.isFinite(match.s2) && match.s1 !== match.s2) {
+                match.winner = match.s1 > match.s2 ? match.p1 : match.p2;
+            } else {
+                match.winner = null;
+            }
+        });
+    }
+
+    const finalRound = bracket.rounds[bracket.rounds.length - 1];
+    if (finalRound && finalRound.matches) {
+        const finalMatch = finalRound.matches.find(m => m.winner);
+        bracket.champion = finalMatch ? finalMatch.winner : null;
+    } else {
+        bracket.champion = null;
+    }
 }
 
 module.exports = {
@@ -267,6 +331,21 @@ module.exports = {
                         if(sorted[0]) advancingPairs.push(sorted[0].pair);
                         if(sorted[1]) advancingPairs.push(sorted[1].pair);
                     });
+                    
+                    // Aplicar método de avance
+                    const method = state.config.advanceMethod || 'ORDER';
+                    if (method === 'RANDOM') {
+                        advancingPairs.sort(() => Math.random() - 0.5);
+                    } else if (method === 'ORDER') {
+                        // Ya está ordenado por grupos, pero para 2 grupos: A1 vs B2, A2 vs B1
+                        if (Object.keys(state.groups).length === 2) {
+                            const groups = Object.values(state.groups);
+                            const a = groups[0].standings.slice(0, 2).map(s => s.pair);
+                            const b = groups[1].standings.slice(0, 2).map(s => s.pair);
+                            advancingPairs = [a[0], b[1], a[1], b[0]];
+                        }
+                    } // MANUAL: dejar como está, admin puede modificar después
+                    
                     state.phase = 'BRACKET';
                     state.bracket = generateBracket(advancingPairs, state.config.randomizeBracket);
                 }
@@ -275,6 +354,13 @@ module.exports = {
                 }
                 else if (action.actionType === 'updatePairs') {
                     state.pairs = action.pairs || [];
+                    // re-generate groups
+                    const matchesPerRival = state.config.matchesPerRival || 1;
+                    state.groups = generateGroups(state.pairs, state.config.numGroups, matchesPerRival);
+                    // reset subsequent
+                    state.groupAssignments = {};
+                    state.bracket = {};
+                    state.phase = 'GROUPS';
                 }
                 else if (action.actionType === 'proceedToGroupAssignment') {
                     if (state.config.format === 'GROUPS') {
@@ -302,6 +388,57 @@ module.exports = {
                 else if (action.actionType === 'assignPairToGroup') {
                     state.groupAssignments[action.pair] = action.group;
                 }
+                else if (action.actionType === 'updateGroupAssignments') {
+                    state.groupAssignments = action.value || {};
+                    // generate groups from assignment
+                    let newPairsPerGroup = {};
+                    Object.keys(state.groupAssignments).forEach(pair => {
+                        const g = state.groupAssignments[pair];
+                        if (!newPairsPerGroup[g]) newPairsPerGroup[g] = [];
+                        newPairsPerGroup[g].push(pair);
+                    });
+                    state.groups = generateGroupsFromAssignment(newPairsPerGroup, state.config.matchesPerRival || 1);
+                    state.phase = 'GROUPS';
+                }
+                else if (action.actionType === 'updateBracketMatchup') {
+                    const { matchId, p1, p2 } = action.value || {};
+                    if (state.bracket && state.bracket.rounds) {
+                        let found = false;
+                        state.bracket.rounds.forEach(r => {
+                            r.matches.forEach(m => {
+                                if (m.id === matchId) {
+                                    found = true;
+                                    m.p1 = p1 || m.p1;
+                                    m.p2 = p2 || m.p2;
+                                    m.s1 = 0;
+                                    m.s2 = 0;
+                                    m.winner = null;
+                                }
+                            });
+                        });
+
+                        if (found) {
+                            // Si se actualiza un partido, invalidamos los descendientes
+                            const clearDescendants = (id) => {
+                                let changed = true;
+                                while (changed) {
+                                    changed = false;
+                                    state.bracket.rounds.forEach(r => {
+                                        r.matches.forEach(m => {
+                                            if ((m.p1 === id || m.p2 === id) && m.id !== id) {
+                                                m.p1 = m.p1 === id ? '???' : m.p1;
+                                                m.p2 = m.p2 === id ? '???' : m.p2;
+                                                m.s1 = 0; m.s2 = 0; m.winner = null;
+                                                changed = true;
+                                            }
+                                        });
+                                    });
+                                }
+                            };
+                            clearDescendants(matchId);
+                        }
+                    }
+                }
                 else if (action.actionType === 'finalizeGroupAssignment') {
                     if (state.config.format === 'GROUPS') {
                         let newPairsPerGroup = {};
@@ -316,9 +453,104 @@ module.exports = {
                         state.phase = 'BRACKET';
                     }
                 }
+                else if (action.actionType === 'updateMatchResult') {
+                    console.log('[tourneyAction updateMatchResult]', action.room, action.value.matchId, action.value.s1, action.value.s2, 'phase', state.phase);
+                    // update the match in db if exists, otherwise create quick entry for bracket/game state
+                    const existing = db.prepare('SELECT id FROM mus_matches WHERE id = ?').get(action.value.matchId);
+                    if (existing) {
+                        db.prepare('UPDATE mus_matches SET s1 = ?, s2 = ? WHERE id = ?').run(action.value.s1, action.value.s2, action.value.matchId);
+                    } else {
+                        let mData = null;
+                        if (state.phase === 'GROUPS' && state.groups) {
+                            Object.values(state.groups).forEach(g => {
+                                const mm = (g.matches || []).find(x => x.id === action.value.matchId);
+                                if (mm) mData = mm;
+                            });
+                        } else if (state.phase === 'BRACKET' && state.bracket && state.bracket.rounds) {
+                            state.bracket.rounds.forEach(r => {
+                                const mm = (r.matches || []).find(x => x.id === action.value.matchId);
+                                if (mm) mData = mm;
+                            });
+                        }
+                        if (mData) {
+                            db.prepare('INSERT OR REPLACE INTO mus_matches (id, roomId, p1, p2, p3, p4, s1, s2, date, addedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                                .run(mData.id, action.room, mData.p1 || '', mData.p2 || '', mData.p3 || '', mData.p4 || '', action.value.s1, action.value.s2, new Date().toISOString(), 'admin');
+                        }
+                    }
+
+                    // update in state: siempre tratar grupos y bracket, cualquiera que exista, para evitar fase inconsistencias.
+                    let groupUpdated = false;
+                    Object.keys(state.groups || {}).forEach(gName => {
+                        state.groups[gName].matches.forEach(m => {
+                            if (m.id === action.value.matchId) {
+                                m.s1 = parseInt(action.value.s1);
+                                m.s2 = parseInt(action.value.s2);
+                                m.winner = (m.s1 !== m.s2) ? (m.s1 > m.s2 ? m.p1 : m.p2) : null;
+                                groupUpdated = true;
+                            }
+                        });
+
+                        if (groupUpdated) {
+                            let standings = state.groups[gName].standings;
+                            standings.forEach(s => { s.pts = 0; s.w = 0; s.l = 0; s.diff = 0; });
+                            state.groups[gName].matches.forEach(mt => {
+                                if (mt.winner) {
+                                    const winnerPair = mt.winner;
+                                    const loserPair = mt.p1 === winnerPair ? mt.p2 : mt.p1;
+                                    const winnerStanding = standings.find(s => s.pair === winnerPair);
+                                    const loserStanding = standings.find(s => s.pair === loserPair);
+                                    if (winnerStanding) { winnerStanding.pts += 3; winnerStanding.w += 1; winnerStanding.diff += (mt.s1 - mt.s2); }
+                                    if (loserStanding) { loserStanding.l += 1; loserStanding.diff += (mt.s2 - mt.s1); }
+                                }
+                            });
+                            standings.sort((a,b) => b.pts - a.pts || b.diff - a.diff);
+                        }
+                    });
+
+                    let bracketUpdated = false;
+                    if (state.bracket && state.bracket.rounds) {
+                        state.bracket.rounds.forEach(r => {
+                            r.matches.forEach(m => {
+                                if (m.id === action.value.matchId) {
+                                    m.s1 = parseInt(action.value.s1);
+                                    m.s2 = parseInt(action.value.s2);
+                                    m.winner = (m.s1 !== m.s2) ? (m.s1 > m.s2 ? m.p1 : m.p2) : null;
+                                    bracketUpdated = true;
+                                }
+                            });
+                        });
+                    }
+
+                    if (bracketUpdated) {
+                        recalculateBracketFromResults(state.bracket);
+                    }
+                }
 
                 db.prepare('UPDATE mus_rooms SET tournamentState = ? WHERE name = ?').run(JSON.stringify(state), action.room);
                 io.emit('mus_data', getFullMusData());
+            }
+
+            // --- ACCIÓN: ELIMINAR TORNEO (SOLO BBDD) ---
+            if (action.type === 'deleteTournament') {
+                if (!isAdmin) return socket.emit('mus_msg', 'No tienes permisos para eliminar el torneo.');
+                
+                const roomName = action.room;
+                if (!roomName) return;
+
+                try {
+                    // Eliminamos la sala de la tabla mus_rooms
+                    // Nota: Esto NO borra los mus_matches históricos, solo la instancia del torneo
+                    db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
+                    
+                    // Notificamos a todos los clientes para que refresquen la lista de salas
+                    io.emit('mus_data', getFullMusData());
+                    
+                    // Enviamos un mensaje de confirmación opcional al administrador
+                    socket.emit('mus_msg', `Torneo "${roomName}" eliminado correctamente.`);
+                } catch (error) {
+                    console.error('Error al eliminar torneo:', error);
+                    socket.emit('mus_msg', 'Error interno al eliminar el torneo.');
+                }
             }
 
             if (action.type === 'addMatch') {
@@ -432,6 +664,46 @@ module.exports = {
                   .run(v.p1, v.p2, v.p3, v.p4, parseInt(v.s1), parseInt(v.s2), String(v.id));
                 io.emit('mus_data', getFullMusData());
             }
+
+            // --- NUEVA ACCIÓN: NORMALIZAR NOMBRES ---
+            if (action.type === 'adminNormalizeNames') {
+                if (!isAdmin) return;
+
+                const normalize = (str) => {
+                    if (!str) return str;
+                    const clean = str.trim();
+                    return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+                };
+
+                // 1. Obtener todos los jugadores
+                const players = db.prepare('SELECT name FROM mus_players').all();
+
+                for (let p of players) {
+                    const oldName = p.name;
+                    const newName = normalize(oldName);
+
+                    if (oldName !== newName) {
+                        // Actualizar tabla de jugadores
+                        db.prepare('UPDATE OR IGNORE mus_players SET name = ? WHERE name = ?').run(newName, oldName);
+                        // Actualizar todas las menciones en las partidas
+                        db.prepare('UPDATE mus_matches SET p1 = ? WHERE p1 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET p2 = ? WHERE p2 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET p3 = ? WHERE p3 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET p4 = ? WHERE p4 = ?').run(newName, oldName);
+                        db.prepare('UPDATE mus_matches SET addedBy = ? WHERE addedBy = ?').run(newName, oldName);
+                    }
+                }
+
+                // 2. Limpiar duplicados que hayan podido quedar tras la normalización
+                // (Por ejemplo, si existía "carlos" y "Carlos", ahora ambos son "Carlos")
+                db.prepare(`
+                    DELETE FROM mus_players 
+                    WHERE rowid NOT IN (SELECT MIN(rowid) FROM mus_players GROUP BY name)
+                `).run();
+
+                io.emit('mus_data', getFullMusData());
+                socket.emit('mus_msg', 'Nombres normalizados y duplicados eliminados.');
+            }
         });
 
         // =========================================================================
@@ -450,9 +722,6 @@ module.exports = {
             const fs = require('fs');
             
             const downloadsDir = path.join(__dirname, '../public/downloads');
-            const fontRegular = path.join(__dirname, '../public/fonts/Poppins-Regular.ttf');
-            const fontBold = path.join(__dirname, '../public/fonts/Poppins-Bold.ttf');
-            
             if (!fs.existsSync(downloadsDir)) fs.mkdirSync(downloadsDir, { recursive: true });
 
             const fileName = `torneo_${roomName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
@@ -662,29 +931,20 @@ module.exports = {
                     // === PIE DE PÁGINA ===
                     doc.fontSize(7).font('MainFont').fillColor('#777777').text(`Generado: ${new Date().toLocaleDateString('es-ES')} - Xarlie's Arcade`, 20, 810, { align: 'center', width: 555 });
 
-                    doc.end();
-                    
-                    writeStream.on('finish', () => {
-                        resolve(fileName);
-                    });
-                    
-                    writeStream.on('error', reject);
-                    doc.on('error', reject);
-                });
-            };
+                doc.end();
 
-            generatePDF()
-                .then(fileName => {
-                    db.prepare('DELETE FROM mus_rooms WHERE name = ? AND isTournament = 1').run(roomName);
-                    io.emit('mus_data', getFullMusData());
-                    socket.emit('tournament_deleted', { room: roomName });
+                writeStream.on('finish', () => {
+                    // Solo devolvemos el nombre del archivo para que el front lo descargue
                     callback({ success: true, fileName });
-                })
-                .catch(err => {
-                    console.error('Error generando PDF:', err);
-                    callback({ success: false, error: err.message });
                 });
+
+            } catch (err) {
+                console.error('Error generando PDF:', err);
+                callback({ success: false, error: err.message });
+            }
         });
+
+        
 
     },
     
