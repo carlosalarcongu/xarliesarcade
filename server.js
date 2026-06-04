@@ -72,6 +72,7 @@ const gamesModules = {
     darkstories: require('./games/darkstories'),
     beber: require('./games/beber'),
     analytics: require('./games/analytics'),
+    tierlist: require('./games/tierlist'),
     feedback: require('./games/feedback'),
     torneos: require('./games/torneos')
 };

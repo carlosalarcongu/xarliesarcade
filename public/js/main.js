@@ -49,6 +49,24 @@ window.app = {
         }
     },
 
+    updateRestrictedButtons: () => {
+        const btn = document.getElementById('tierlistBtn');
+        if (!btn) return;
+        
+        const lowerName = (app.myPlayerName || "").toLowerCase();
+        const inWhitelist = app.musWhitelist && app.musWhitelist.includes(lowerName);
+        
+        if (!inWhitelist) {
+            btn.classList.add('disabled');
+            btn.onclick = () => {
+                alert("🔒 Acceso Restringido.\nSolo los jugadores de la Whitelist pueden acceder a la Tier List.");
+            };
+        } else {
+            btn.classList.remove('disabled');
+            btn.onclick = () => app.selectRoom('tierlist');
+        }
+    },
+
     currentNews: null,
 
     dismissNews: (e) => {
@@ -387,7 +405,7 @@ window.app = {
             'fiestaScreen', 'statsSelectionScreen',
             'fifaScreen', 'torresLobby', 'torresGame',
             'darkstoriesScreen', 'beberScreen', 'beberStatsScreen',
-            'analyticsScreen', 'authAdminScreen'
+            'analyticsScreen', 'authAdminScreen', 'tierlistScreen',
         ];
         
         screens.forEach(s => {
@@ -441,7 +459,7 @@ window.app = {
             const globalScreens = [
                 'analyticsScreen', 'musScreen', 'fifaScreen', 'beberScreen', 'beberStatsScreen', 
                 'contextoScreen', 'consejoScreen', 'fiestaScreen', 'darkstoriesScreen', 
-                'torneosLobby', 'torneosViewScreen', 'giveScreen', 'feedbackScreen'
+                'torneosLobby', 'torneosViewScreen', 'giveScreen', 'feedbackScreen', 'tierlistScreen'
             ];
             
             if (profileScreens.includes(id)) {
@@ -481,6 +499,10 @@ window.app = {
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
+        if (id === 'statsSelectionScreen') {
+            app.updateRestrictedButtons();
+        }
+
         // if (id === 'statsSelectionScreen') {
         //     const musCard = document.getElementById('cardMusStats');
         //     if (musCard) {
@@ -506,7 +528,10 @@ window.app = {
             socket.emit('registerRoomVisit', { name: app.myPlayerName, room: room });
         }
 
-        if (['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber', 'analytics'].includes(room)) {
+        // 1. SALAS GLOBALES (No requieren crear sala ni unirse a un lobby)
+        const globalRooms = ['feedback', 'mus', 'give', 'contexto', 'consejo', 'fiesta', 'trivial', 'fifa', 'darkstories', 'beber', 'analytics', 'tierlist'];
+
+        if (globalRooms.includes(room)) {
             if(room === 'mus') { app.showScreen('musScreen'); if(app.mus.init) app.mus.init(); return; }
             if(room === 'fifa') { app.showScreen('fifaScreen'); if(app.fifa.init) app.fifa.init(); return; }
             if(room === 'give') { app.showScreen('giveScreen'); return; }
@@ -516,6 +541,13 @@ window.app = {
             if(room === 'darkstories') { app.showScreen('darkstoriesScreen'); if(app.darkstories.init) app.darkstories.init(); return; }
             if(room === 'beber') { app.showScreen('beberScreen'); if(app.beber.init) app.beber.init(); return; }
             if(room === 'analytics') { app.showScreen('analyticsScreen'); if(app.analytics.init) app.analytics.init(); return; }
+            
+            // ---> AQUÍ ESTÁ EL ENRUTAMIENTO DIRECTO A LA TIER LIST
+            if(room === 'tierlist') { 
+                app.showScreen('tierlistScreen'); 
+                if(app.tierlist && app.tierlist.init) app.tierlist.init(); 
+                return; 
+            }
             
             if (room === 'fiesta') {
                  const name = app.myPlayerName || "Fiestero";
@@ -532,6 +564,7 @@ window.app = {
             }
         }
         
+        // 2. JUEGOS NORMALES (Piden crear o unirse a una sala)
         const savedId = localStorage.getItem(room + '_playerId');
         const savedRoomId = localStorage.getItem(room + '_roomId');
         
@@ -945,6 +978,7 @@ app.musWhitelist = [];
 
 socket.on('updateMusWhitelist', (list) => {
     app.musWhitelist = list;
+    if (app.updateRestrictedButtons) app.updateRestrictedButtons();
     if (app.currentScreenId === 'hubScreen' || app.currentScreenId === 'statsSelectionScreen') {
         app.showScreen(app.currentScreenId, true); 
     }

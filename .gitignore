@@ -28,3 +28,8 @@ pending_requests.json
 chat.zip
 import_whatsapp.js
 *whatsapp*
+tier_media
+*media
+*.jpg
+*.jpeg
+*.mp4
