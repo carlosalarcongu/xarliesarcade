@@ -4,6 +4,18 @@ window.app.tierlist = {
     data: { quotes: [], votes: [] },
     viewMode: 'personal',
 
+    unlockedTiers: { 'SG': false, 'SS': false },
+
+    unlockTier: (tierId) => {
+        const pass = prompt("Introduce la contraseña para ver esta categoría:");
+        if (pass === "lasmonjas") {
+            app.tierlist.unlockedTiers[tierId] = true;
+            app.tierlist.render();
+        } else {
+            alert("Contraseña incorrecta.");
+        }
+    },
+
     listenerAttached: false,
 
     init: () => {
@@ -86,6 +98,13 @@ window.app.tierlist = {
             tiers[t].forEach(q => {
                 const div = document.createElement('div');
                 div.className = 'tier-item';
+
+                // Lógica de bloqueo
+                const isLockedCategory = (t === 'SG' || t === 'SS') && !app.tierlist.unlockedTiers[t];
+                if (isLockedCategory) {
+                    div.className += ' locked';
+                }
+
                 div.draggable = false;
                 div.id = `quote-${q.id}`;
                 div.dataset.id = q.id;
