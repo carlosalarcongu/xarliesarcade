@@ -90,30 +90,56 @@ window.app.tierlist = {
                 div.id = `quote-${q.id}`;
                 div.dataset.id = q.id;
 
-                div.onclick = () => {
-                    if (app.tierlist.viewMode === 'personal') {
-                        app.tierlist.selectedQuoteId = q.id;
-                        document.getElementById('tierMoveModal').classList.remove('hidden');
-                    } else {
-                        alert("Cambia a 'Ver Mi Tierlist' para poder clasificar.");
-                    }
-                };
-
                 const cleanMedia = q.media ? q.media.replace(/[\u200B-\u200D\uFEFF\u200E\u200F\r\n\t]/g, '').trim() : null;
                 let mediaHtml = '';
+                let isImage = false;
+                let safeUrl = '';
                 
                 if (cleanMedia) {
                     const ext = cleanMedia.split('.').pop().toLowerCase();
-                    const safeUrl = `/tier_media/${encodeURIComponent(cleanMedia)}`;
+                    safeUrl = `/tier_media/${encodeURIComponent(cleanMedia)}`;
                     
                     if (['mp4', 'webm', 'mov'].includes(ext)) {
                         mediaHtml = `<video src="${safeUrl}" controls style="width:100%; border-radius:5px; margin-bottom:5px; max-height: 120px; background: #000; pointer-events: auto;"></video>`;
                     } else if (['opus', 'ogg', 'mp3', 'wav', 'm4a'].includes(ext)) {
                         mediaHtml = `<audio src="${safeUrl}" controls style="width:100%; margin-bottom:5px; height: 35px; pointer-events: auto;"></audio>`;
                     } else {
-                        mediaHtml = `<img src="${safeUrl}" alt="${cleanMedia}" style="width:100%; border-radius:5px; margin-bottom:5px; object-fit: cover; max-height: 120px; pointer-events: none;">`;
+                        // AQUÍ ES DONDE TRATAMOS IMÁGENES Y GIFs
+                        // Incluimos explícitamente gif, jpg, jpeg, png, webp
+                        mediaHtml = `<img src="${safeUrl}" style="width:100%; border-radius:5px; margin-bottom:5px; object-fit: cover; max-height: 120px; pointer-events: none;">`;
+                        isImage = true; 
                     }
                 }
+
+                div.onclick = () => {
+                    if (app.tierlist.viewMode === 'personal') {
+                        app.tierlist.selectedQuoteId = q.id;
+                        
+                        const bgContainer = document.getElementById('tierMoveBackground');
+                        const ext = cleanMedia ? cleanMedia.split('.').pop().toLowerCase() : '';
+        
+                        // Limpiamos el fondo anterior
+                        bgContainer.innerHTML = '';
+                        bgContainer.style.backgroundImage = 'none';
+
+                        // Si es imagen o gif, usamos background-image. Si es mp4, usamos video tag.
+                        if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+                            bgContainer.style.backgroundImage = `url('${safeUrl}')`;
+                        } else if (['mp4', 'webm', 'mov'].includes(ext)) {
+                            bgContainer.innerHTML = `
+                                <video autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;">
+                                    <source src="${safeUrl}" type="video/mp4">
+                                </video>
+                            `;
+                        }
+
+                        const content = `<div style="white-space: pre-wrap;">"${q.quote}"</div>`;
+                        document.getElementById('tierMovePreviewNormal').innerHTML = content;
+                        document.getElementById('tierMovePreviewExtended').innerHTML = content;
+                        
+                        document.getElementById('tierMoveModal').classList.remove('hidden');
+                    }
+                };
 
                 let adminHtml = '';
                 if (isAdmin) {
@@ -165,5 +191,29 @@ window.app.tierlist = {
             socket.emit('tierlist_action', { type: 'editQuote', user: app.myPlayerName, quoteId: id, newText });
             document.getElementById('tierEditModal').classList.add('hidden');
         }
-    }
+    },
+
+    toggleExtended: () => {
+        const ui = document.getElementById('tierMoveUI');
+        const backBtn = document.getElementById('tierExtendedBack');
+        const overlay = document.getElementById('tierMoveOverlay');
+        const previewNormal = document.getElementById('tierMovePreviewNormal');
+        const previewExtended = document.getElementById('tierMovePreviewExtended');
+        
+        if (ui.classList.contains('hidden')) {
+            // Volver a normal
+            ui.classList.remove('hidden');
+            backBtn.classList.add('hidden');
+            overlay.style.opacity = '1';
+            previewNormal.classList.remove('hidden');
+            previewExtended.classList.add('hidden');
+        } else {
+            // Modo extendido
+            ui.classList.add('hidden');
+            backBtn.classList.remove('hidden');
+            overlay.style.opacity = '0';
+            previewNormal.classList.add('hidden');
+            previewExtended.classList.remove('hidden');
+        }
+    },
 };
