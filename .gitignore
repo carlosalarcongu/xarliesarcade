@@ -24,3 +24,7 @@ register.sh
 pending*
 pending_requests.json
 *.txt
+*chat*
+chat.zip
+import_whatsapp.js
+*whatsapp*

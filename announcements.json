@@ -5,5 +5,12 @@
     "room": "darkstories",
     "active": false,
     "createdAt": 1776116537190
+  },
+  {
+    "id": "ann_1777082815026",
+    "text": "Protege tu nombre con contraseña !!",
+    "room": "feedback",
+    "active": true,
+    "createdAt": 1777082815026
   }
 ]
